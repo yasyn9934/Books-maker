@@ -943,6 +943,43 @@
                 </div>
             </div>
             
+            <!-- ✅ قسم قائمة الروابط الموجودة -->
+<div id="existingSharesSection" style="display:none; margin-top:20px;">
+    <hr style="border:0; border-top:1px solid #eee; margin-bottom:14px;">
+    <p style="font-size:12pt; font-weight:bold; color:#333; margin-bottom:10px;">
+        📋 الروابط الحالية لهذا الكتاب:
+    </p>
+    <!-- التخطيط: زر التأكيد (اليمين) + القائمة (اليسار) -->
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+
+        <!-- زر التأكيد — على اليمين في RTL (أول العنصر) -->
+        <button
+            id="confirmShareChangesBtn"
+            onclick="confirmShareChanges()"
+            title="حفظ تعديلات الروابط"
+            style="
+                flex-shrink:0; width:46px; min-height:80px;
+                background:var(--royal-green); color:white;
+                border:none; border-radius:10px;
+                font-size:16pt; cursor:pointer;
+                display:flex; align-items:center; justify-content:center;
+                box-shadow:0 3px 8px rgba(107,142,35,0.3);
+                transition:0.2s;
+            ">✓</button>
+
+        <!-- القائمة — على اليسار -->
+        <div
+            id="sharesList"
+            style="
+                flex:1; max-height:220px; overflow-y:auto;
+                border:1px solid #e0e0e0; border-radius:10px;
+                background:#fafafa;
+            ">
+        </div>
+    </div>
+    <div id="sharesListStatus" style="text-align:center; font-size:10pt; color:#888; margin-top:6px; min-height:18px;"></div>
+</div>
+            
             <div class="modal-actions">
                 <button class="btn btn-primary" id="confirmShareBtn" onclick="generateShareLink()">تأكيد وتوليد الرابط</button>
                 <button class="btn" style="background:#d32f2f; color:white;" onclick="closeModal('shareSettingsModal')">إغاق</button>
@@ -2496,7 +2533,7 @@ function _pvLoadScript(url, cb) {
                 `;
             }
         }
-
+        
         // ══════════════════════════════════════════════════════════════
 // وظائف مشاركة الكتب
 // ══════════════════════════════════════════════════════════════
@@ -2506,6 +2543,14 @@ function openShareSettings() {
     document.getElementById('shareSettingsModal').style.display = 'flex';
     document.getElementById('generatedLinkArea').style.display = 'none';
     setShareType('perm');
+
+    // ✅ إصلاح الخطأ: إعادة تهيئة زر الإنشاء في كل مرة تُفتح النافذة
+    const btn = document.getElementById('confirmShareBtn');
+    btn.disabled = false;
+    btn.innerText = 'تأكيد وتوليد الرابط';
+
+    // تحميل الروابط الموجودة لهذا الكتاب
+    loadBookShares();
 }
 
 function setShareType(type) {
@@ -2594,7 +2639,241 @@ function copyShareLink() {
     document.execCommand('copy');
     alert("تم نسخ الرابط إلى الحافظة!");
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// ✅ نظام إدارة الروابط الموجودة
+// ══════════════════════════════════════════════════════════════
+
+let pendingShareChanges = {};       // { shareId: { ...التعديلات } }
+let pendingShareDeletions = new Set(); // معرّفات الروابط المطلوب حذفها
+
+// --- جلب الروابط من السحابة ---
+async function loadBookShares() {
+    const section  = document.getElementById('existingSharesSection');
+    const list     = document.getElementById('sharesList');
+    const status   = document.getElementById('sharesListStatus');
+
+    section.style.display = 'none';
+    list.innerHTML = '<div style="padding:12px; text-align:center; color:#aaa; font-size:11pt;">⏳ جاري تحميل الروابط...</div>';
+    status.innerText = '';
+
+    // يتطلب تسجيل الدخول
+    if (typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'member') return;
+
+    try {
+        const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action:  'get_book_shares',
+                userId:  currentUser.id,
+                bookId:  currentActionBookId
+            })
+        });
+        const result = await res.json();
+
+        if (result.success && result.shares && result.shares.length > 0) {
+            section.style.display = 'block';
+            pendingShareChanges   = {};
+            pendingShareDeletions = new Set();
+            renderSharesList(result.shares);
+        } else {
+            // لا توجد روابط بعد — أخفِ القسم
+            section.style.display = 'none';
+        }
+    } catch (e) {
+        section.style.display = 'none';
+    }
+}
+
+// --- رسم قائمة الروابط ---
+function renderSharesList(shares) {
+    const list = document.getElementById('sharesList');
+    list.innerHTML = '';
+
+    if (shares.length === 0) {
+        list.innerHTML = '<div style="padding:16px; text-align:center; color:#aaa; font-size:11pt;">لا توجد روابط بعد.</div>';
+        return;
+    }
+
+    shares.forEach((share, idx) => {
+        const isTemp    = share.settings?.type === 'temp';
+        const date      = new Date(share.createdAt).toLocaleDateString('ar-SA');
+        const expH      = share.settings?.expireTime?.h || 0;
+        const expM      = share.settings?.expireTime?.m || 0;
+        const expS      = share.settings?.expireTime?.s || 0;
+        const sid       = share.shareId;
+        const borderBot = idx < shares.length - 1 ? '1px solid #eee' : 'none';
+
+        const row = document.createElement('div');
+        row.id = 'share_row_' + sid;
+        row.style.cssText = `padding:12px 14px; border-bottom:${borderBot}; background:white; transition:0.2s;`;
+
+        row.innerHTML = `
+          <!-- رأس الصف: النوع + التاريخ + زر الحذف -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <button
+              onclick="markDeleteShare('${sid}')"
+              title="حذف هذا الرابط"
+              style="
+                padding:3px 8px; background:#fff1f1; color:#d32f2f;
+                border:1px solid #ffcdd2; border-radius:6px;
+                cursor:pointer; font-size:12pt; line-height:1;
+                transition:0.2s;
+              "
+              onmouseover="this.style.background='#d32f2f';this.style.color='white';"
+              onmouseout="this.style.background='#fff1f1';this.style.color='#d32f2f';"
+            >🗑</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:10pt; color:#aaa;">${date}</span>
+              <span style="
+                font-size:11pt; font-weight:bold;
+                color:${isTemp ? '#b8860b' : '#6B8E23'};
+              ">${isTemp ? '⏳ مؤقت' : '♾️ دائم'}</span>
+            </div>
+          </div>
+
+          <!-- حقول التعديل -->
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+
+            <!-- نوع الرابط -->
+            <select
+              id="share_type_${sid}"
+              onchange="
+                setPendingChange('${sid}', 'type', this.value);
+                document.getElementById('share_time_${sid}').style.display =
+                  this.value === 'temp' ? 'flex' : 'none';
+              "
+              style="padding:5px 8px; border:1px solid #ddd; border-radius:7px;
+                     font-family:'Amiri',serif; font-size:11pt; cursor:pointer;"
+            >
+              <option value="perm" ${!isTemp ? 'selected' : ''}>♾️ دائم</option>
+              <option value="temp" ${isTemp  ? 'selected' : ''}>⏳ مؤقت</option>
+            </select>
+
+            <!-- حد الاستخدام -->
+            <input
+              type="number" min="0" placeholder="حد الاستخدام (0=بلا حد)"
+              value="${share.useLimit || ''}"
+              title="حد عدد مرات الاستخدام (0 = غير محدود)"
+              onchange="setPendingChange('${sid}', 'useLimit', parseInt(this.value) || 0);"
+              style="width:140px; padding:5px 8px; border:1px solid #ddd;
+                     border-radius:7px; font-family:'Amiri',serif; font-size:11pt;"
+            >
+
+            <!-- حقول الوقت (تظهر فقط إذا النوع = مؤقت) -->
+            <div
+              id="share_time_${sid}"
+              style="display:${isTemp ? 'flex' : 'none'}; gap:4px; align-items:center;"
+            >
+              <span style="font-size:10pt; color:#888;">ينتهي بعد:</span>
+              <input type="number" min="0" placeholder="س"  title="ساعات"
+                value="${expH || ''}"
+                onchange="setPendingChange('${sid}', 'expireH', parseInt(this.value)||0);"
+                style="width:48px; padding:5px 4px; border:1px solid #ddd; border-radius:7px; font-size:10pt; text-align:center;">
+              <input type="number" min="0" placeholder="د"   title="دقائق"
+                value="${expM || ''}"
+                onchange="setPendingChange('${sid}', 'expireM', parseInt(this.value)||0);"
+                style="width:48px; padding:5px 4px; border:1px solid #ddd; border-radius:7px; font-size:10pt; text-align:center;">
+              <input type="number" min="0" placeholder="ث"   title="ثواني"
+                value="${expS || ''}"
+                onchange="setPendingChange('${sid}', 'expireS', parseInt(this.value)||0);"
+                style="width:48px; padding:5px 4px; border:1px solid #ddd; border-radius:7px; font-size:10pt; text-align:center;">
+            </div>
+
+          </div>
+        `;
+
+        list.appendChild(row);
+    });
+}
+
+// --- تخزين التعديل المعلّق لرابط معين ---
+function setPendingChange(shareId, field, value) {
+    if (!pendingShareChanges[shareId]) pendingShareChanges[shareId] = {};
+    pendingShareChanges[shareId][field] = value;
+}
+
+// --- تأشير رابط للحذف ---
+function markDeleteShare(shareId) {
+    if (!confirm('هل تريد حذف هذا الرابط؟ لن يتم الحذف الفعلي إلا بعد النقر على زر ✓')) return;
+    pendingShareDeletions.add(shareId);
+    const row = document.getElementById('share_row_' + shareId);
+    if (row) {
+        row.style.opacity        = '0.35';
+        row.style.pointerEvents  = 'none';
+        row.style.textDecoration = 'line-through';
+        row.style.background     = '#fff5f5';
+    }
+}
+
+// --- حفظ كل التعديلات والحذف دفعة واحدة عند الضغط على ✓ ---
+async function confirmShareChanges() {
+    const btn    = document.getElementById('confirmShareChangesBtn');
+    const status = document.getElementById('sharesListStatus');
+
+    btn.disabled  = true;
+    btn.innerText = '⏳';
+    status.style.color  = '#888';
+    status.innerText = 'جاري الحفظ...';
+
+    let ok = true;
+
+    try {
+        // 1. إرسال التعديلات (تجاهل الروابط المحددة للحذف)
+        for (const [shareId, changes] of Object.entries(pendingShareChanges)) {
+            if (pendingShareDeletions.has(shareId)) continue;
+            const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action:   'update_share',
+                    userId:   currentUser.id,
+                    shareId:  shareId,
+                    changes:  changes
+                })
+            });
+            const r = await res.json();
+            if (!r.success) { ok = false; console.warn('فشل تعديل:', shareId, r.message); }
+        }
+
+        // 2. إرسال الحذف
+        for (const shareId of pendingShareDeletions) {
+            const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action:  'delete_share',
+                    userId:  currentUser.id,
+                    shareId: shareId
+                })
+            });
+            const r = await res.json();
+            if (!r.success) { ok = false; console.warn('فشل حذف:', shareId, r.message); }
+        }
+
+        // تصفير الحالة المعلّقة
+        pendingShareChanges   = {};
+        pendingShareDeletions = new Set();
+
+        if (ok) {
+            status.style.color = '#22c55e';
+            status.innerText   = '✅ تم الحفظ بنجاح';
+        } else {
+            status.style.color = '#ef4444';
+            status.innerText   = '⚠️ تم الحفظ جزئياً — راجع الكونسول';
+        }
+
+        // إعادة تحميل القائمة بعد ثانية
+        setTimeout(() => loadBookShares(), 1200);
+
+    } catch (e) {
+        status.style.color = '#ef4444';
+        status.innerText   = '❌ خطأ في الاتصال — حاول مجدداً';
+        console.error(e);
+    } finally {
+        btn.disabled  = false;
+        btn.innerText = '✓';
+    }
+}
     </script>
 </body>
 </html>
-
