@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>التعليقات - صانع الكتب</title>
+    <script src="../auth.js"></script>
+    <style>
+        @font-face { font-family: 'Amiri'; src: url('../fonts/Amiri-Regular.ttf') format('truetype'); font-weight: normal; }
+        @font-face { font-family: 'Aref Ruqaa'; src: url('../fonts/ArefRuqaa-Bold.ttf') format('truetype'); font-weight: normal; }
+
+        :root {
+            --gold: #b8860b;
+            --green: #6B8E23;
+            --gold-light: rgba(184,134,11,0.12);
+            --gold-mid: rgba(184,134,11,0.25);
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --card: #ffffff;
+            --text: #1c1e21;
+            --muted: #65676b;
+            --border: #e4e6eb;
+            --input-bg: #f0f2f5;
+            --danger: #d32f2f;
+            --danger-light: #fff5f5;
+            --topbar-h: 60px;
+            --shadow: 0 1px 4px rgba(0,0,0,0.10);
+            --shadow-lg: 0 4px 16px rgba(0,0,0,0.16);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { user-select: none; -webkit-user-select: none; }
+        input, textarea { user-select: text; -webkit-user-select: text; }
+
+        html, body { height: 100%; font-family: 'Amiri', serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+        /* ========== LOADING ========== */
+        #loading-overlay {
+            position: fixed; inset: 0; background: var(--white);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner { width: 44px; height: 44px; border: 4px solid #f0f0f0; border-top: 4px solid var(--gold); border-radius: 50%; animation: spin 0.75s linear infinite; margin-bottom: 18px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-overlay p { font-size: 14pt; color: var(--muted); }
+
+        /* ========== TOP BAR ========== */
+        .top-bar {
+            position: fixed; top: 0; inset-inline: 0;
+            height: var(--topbar-h); background: var(--white);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 14px;
+            z-index: 100; box-shadow: var(--shadow);
+        }
+        .back-btn {
+            display: flex; align-items: center; gap: 5px;
+            background: none; border: none;
+            font-family: 'Amiri', serif; font-size: 11.5pt;
+            color: var(--green); cursor: pointer;
+            padding: 7px 11px; border-radius: 8px;
+            transition: background .2s; flex-shrink: 0; white-space: nowrap;
+        }
+        .back-btn:hover { background: var(--gold-light); }
+        .back-arrow { font-size: 14pt; line-height: 1; }
+        .top-bar-title {
+            flex: 1; text-align: center;
+            font-family: 'Aref Ruqaa', serif; font-size: 15pt; color: var(--gold);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 10px;
+        }
+        .top-bar-spacer { width: 90px; flex-shrink: 0; }
+
+        /* ========== COMMENTS CONTAINER ========== */
+        #comments-container {
+            position: fixed; top: var(--topbar-h); inset-inline: 0; bottom: 62px;
+            overflow-y: auto; padding: 14px 12px 8px;
+            scroll-behavior: smooth; transition: bottom .2s;
+        }
+        #comments-container::-webkit-scrollbar { width: 4px; }
+        #comments-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        /* ========== EMPTY STATE ========== */
+        #empty-state {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; text-align: center; padding: 40px;
+        }
+        .empty-icon { font-size: 68px; opacity: .45; animation: float 3.2s ease-in-out infinite; margin-bottom: 18px; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        .empty-title { font-size: 18pt; color: var(--muted); margin-bottom: 7px; }
+        .empty-sub { font-size: 11.5pt; color: var(--muted); opacity: .7; }
+
+        /* ========== COMMENT CARD ========== */
+        .comment-card, .reply-card {
+            background: var(--card); border-radius: 13px; margin-bottom: 11px;
+            box-shadow: var(--shadow); overflow: hidden; transition: box-shadow .2s;
+        }
+        .comment-card:hover { box-shadow: var(--shadow-lg); }
+        .comment-card.hidden-comment { opacity: .62; border: 1.5px dashed var(--border); }
+        .comment-card.highlighted { animation: cardHighlight 2.2s ease; }
+        @keyframes cardHighlight { 0%{background:rgba(184,134,11,.18)} 100%{background:var(--card)} }
+
+        /* header */
+        .cc-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 11px 11px 5px; }
+        .cc-author-row { display: flex; align-items: center; gap: 9px; }
+        .cc-avatar {
+            width: 37px; height: 37px; border-radius: 50%; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--green) 100%);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 15pt; font-weight: bold; font-family: 'Aref Ruqaa', serif;
+        }
+        .cc-author-name { font-size: 12pt; font-weight: bold; line-height: 1.3; }
+        .cc-time { font-size: 8.5pt; color: var(--muted); }
+        .cc-hidden-badge { font-size: 7.5pt; background: rgba(255,152,0,.18); color: #e65100; padding: 1px 6px; border-radius: 8px; margin-top: 2px; display: inline-block; }
+        .three-dot-btn { background: none; border: none; font-size: 20pt; color: var(--muted); cursor: pointer; padding: 2px 7px; border-radius: 6px; transition: background .18s; line-height: 1; }
+        .three-dot-btn:hover { background: var(--bg); color: var(--text); }
+
+        /* body */
+        .cc-body { padding: 0 12px 7px; }
+        .reply-to-indicator { background: var(--gold-light); border-inline-end: 3px solid var(--gold); border-radius: 5px; padding: 5px 9px; margin-bottom: 7px; font-size: 9.5pt; }
+        .reply-to-indicator strong { color: var(--gold); display: block; margin-bottom: 2px; }
+        .reply-to-preview { color: var(--muted); font-size: 9pt; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cc-text { font-size: 13pt; line-height: 1.65; word-break: break-word; margin-bottom: 7px; }
+
+        /* images */
+        .cc-images { margin-bottom: 7px; }
+        .images-grid { display: grid; gap: 3px; border-radius: 9px; overflow: hidden; }
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr; }
+        .grid-3 .img-wrap:first-child { grid-column: span 2; }
+        .grid-4 { grid-template-columns: 1fr 1fr; }
+        .img-wrap { aspect-ratio: 4/3; overflow: hidden; cursor: pointer; }
+        .img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .22s; display: block; }
+        .img-wrap:hover img { transform: scale(1.04); }
+
+        /* video */
+        .cc-video { margin-bottom: 7px; border-radius: 9px; overflow: hidden; }
+        .cc-video video { width: 100%; max-height: 260px; background: #000; display: block; }
+
+        /* other files */
+        .cc-files { margin-bottom: 7px; }
+        .file-item { display: flex; align-items: center; gap: 9px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; margin-bottom: 5px; cursor: pointer; text-decoration: none; color: var(--text); transition: background .18s; }
+        .file-item:hover { background: var(--gold-light); }
+        .file-icon { font-size: 19px; flex-shrink: 0; }
+        .file-name { font-size: 10.5pt; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* audio */
+        .cc-audios { margin-bottom: 7px; }
+        .audio-item { display: flex; align-items: center; gap: 9px; background: var(--gold-light); border-radius: 22px; padding: 7px 12px; margin-bottom: 5px; }
+        .audio-item audio { flex: 1; height: 30px; }
+
+        /* reactions display */
+        .reactions-display { display: flex; align-items: center; gap: 5px; padding: 2px 12px 7px; }
+        .reactions-stack { display: flex; align-items: center; pointer-events: none; }
+        .r-badge { width: 21px; height: 21px; font-size: 13px; background: var(--white); border: 2px solid var(--bg); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+        .r-badge:not(:first-child) { margin-inline-end: -8px; }
+        .r-count { font-size: 9.5pt; color: var(--muted); }
+
+        /* footer */
+        .cc-footer { display: flex; border-top: 1px solid var(--border); margin: 0 12px; position: relative; }
+        .footer-btn { flex: 1; background: none; border: none; font-family: 'Amiri', serif; font-size: 12pt; color: var(--muted); cursor: pointer; padding: 8px 0; transition: background .18s, color .18s; border-radius: 5px; }
+        .footer-btn:hover { background: var(--bg); color: var(--text); }
+        .footer-btn.reacted { color: var(--gold); font-weight: bold; }
+
+        /* reaction picker */
+        .reaction-picker-wrap { position: relative; flex: 1; display: flex; }
+        .reaction-picker {
+            position: absolute; bottom: calc(100% + 6px); right: 0;
+            background: var(--white); border-radius: 28px; box-shadow: var(--shadow-lg);
+            padding: 6px 10px; display: none; gap: 8px; z-index: 200;
+            border: 1px solid var(--border);
+        }
+        .reaction-picker.open { display: flex; animation: popIn .18s ease; }
+        @keyframes popIn { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+        .r-opt { font-size: 24px; cursor: pointer; border: none; background: none; padding: 4px; border-radius: 50%; transition: transform .15s, background .15s; }
+        .r-opt:hover { transform: scale(1.35); background: var(--bg); }
+        .r-opt.selected { background: var(--gold-light); outline: 2px solid var(--gold); }
+
+        /* replies view */
+        #replies-view { display: none; }
+        #replies-view.show { display: block; }
+        .replies-parent-wrap { margin-bottom: 4px; }
+        .replies-divider { text-align: center; font-size: 10pt; color: var(--muted); padding: 8px 0; position: relative; }
+        .replies-divider::before, .replies-divider::after { content:''; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--border); }
+        .replies-divider::before { inset-inline-end: 0; }
+        .replies-divider::after { inset-inline-start: 0; }
+        .replies-empty { text-align: center; padding: 28px; color: var(--muted); font-size: 11.5pt; }
+        .replies-empty span { font-size: 36px; display: block; opacity: .35; margin-bottom: 8px; }
+
+        /* ========== INPUT AREA ========== */
+        #input-area {
+            position: fixed; bottom: 0; inset-inline: 0;
+            background: var(--white); border-top: 1px solid var(--border); z-index: 100;
+        }
+
+        /* reply indicator */
+        #reply-indicator {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 15px; background: var(--gold-light);
+            border-bottom: 1px solid var(--gold-mid); display: none;
+        }
+        .ri-content { font-size: 10pt; color: var(--muted); flex: 1; overflow: hidden; }
+        .ri-content strong { color: var(--gold); }
+        .ri-preview { display: block; font-size: 9pt; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+        .ri-cancel { background: none; border: none; font-size: 13pt; color: var(--muted); cursor: pointer; padding: 3px 7px; }
+
+        /* attachments preview */
+        #attachments-preview {
+            display: flex; gap: 7px; padding: 7px 14px;
+            overflow-x: auto; border-bottom: 1px solid var(--border); display: none;
+        }
+        #attachments-preview::-webkit-scrollbar { height: 3px; }
+        #attachments-preview::-webkit-scrollbar-thumb { background: var(--border); }
+        .att-thumb {
+            position: relative; flex-shrink: 0; width: 70px; height: 70px;
+            border-radius: 8px; overflow: hidden; background: var(--bg); border: 1px solid var(--border);
+        }
+        .att-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .att-icon { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 22px; gap: 3px; }
+        .att-icon span { font-size: 7.5pt; color: var(--muted); max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+        .att-remove { position: absolute; top: 2px; inset-inline-start: 2px; width: 19px; height: 19px; background: rgba(0,0,0,.62); color: #fff; border: none; border-radius: 50%; font-size: 9pt; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        /* input bar */
+        .input-bar { display: flex; align-items: flex-end; gap: 7px; padding: 9px 14px; }
+
+        /* plus button */
+        .plus-wrap { position: relative; flex-shrink: 0; }
+        .plus-btn {
+            width: 40px; height: 40px; border-radius: 50%; background: var(--bg); border: none;
+            font-size: 22pt; color: var(--gold); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .2s, transform .3s cubic-bezier(.34,1.56,.64,1); line-height: 1;
+        }
+        .plus-btn:hover { background: var(--gold-light); }
+        .plus-btn.open { transform: rotate(45deg); background: var(--gold-light); }
+
+        /* plus menu buttons - positioned absolutely above + button */
+        .pm-btn {
+            position: absolute; inset-inline-start: 50%; transform: translateX(-50%) translateY(10px);
+            width: 44px; height: 44px; border-radius: 50%; background: var(--white);
+            border: 1px solid var(--border); cursor: pointer; font-size: 19px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none;
+            transition: opacity .22s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+            bottom: 0;
+        }
+        /* RTL fix */
+        html[dir=rtl] .pm-btn { transform: translateX(50%) translateY(10px); }
+        .pm-btn:hover { background: var(--gold-light); }
+
+        .pm-btn.show { opacity: 1; pointer-events: auto; }
+        #pm-image.show  { transform: translateX(50%) translateY(0); bottom: 50px; }
+        #pm-video.show  { transform: translateX(50%) translateY(0); bottom: 100px; }
+        #pm-file.show   { transform: translateX(50%) translateY(0); bottom: 150px; }
+
+        /* collapse back */
+        #pm-image.hide, #pm-video.hide, #pm-file.hide {
+            opacity: 0; pointer-events: none;
+            transform: translateX(50%) translateY(10px) !important;
+            bottom: 0 !important;
+        }
+
+        /* text input */
+        #comment-input {
+            flex: 1; background: var(--input-bg); border: 1.5px solid var(--border);
+            border-radius: 20px; padding: 9px 15px;
+            font-family: 'Amiri', serif; font-size: 13pt; resize: none; outline: none;
+            max-height: 120px; overflow-y: auto; line-height: 1.5;
+            transition: border-color .2s;
+        }
+        #comment-input:focus { border-color: var(--gold); }
+
+        /* send button */
+        .send-btn {
+            width: 40px; height: 40px; border-radius: 50%; background: var(--gold);
+            border: none; cursor: pointer; color: #fff; font-size: 17pt;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .18s, transform .12s; flex-shrink: 0;
+        }
+        .send-btn:disabled { background: #c8c8c8; cursor: default; }
+        .send-btn:not(:disabled):hover { background: #9a6e09; }
+        .send-btn:not(:disabled):active { transform: scale(.88); }
+
+        /* ========== OVERLAYS & MODALS ========== */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.42); z-index: 300; display: none; }
+        .overlay.show { display: block; }
+
+        /* context menu (bottom sheet) */
+        #ctx-menu {
+            position: fixed; bottom: 0; inset-inline: 0; background: var(--white);
+            border-radius: 16px 16px 0 0; z-index: 301;
+            transform: translateY(100%); transition: transform .28s cubic-bezier(.32,0,.67,0);
+            padding-bottom: max(env(safe-area-inset-bottom), 16px);
+        }
+        #ctx-menu.show { transform: translateY(0); transition: transform .28s cubic-bezier(.33,1,.68,1); }
+        .ctx-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 11px auto 6px; }
+        .ctx-item { display: flex; align-items: center; gap: 11px; padding: 14px 20px; font-family: 'Amiri', serif; font-size: 13pt; cursor: pointer; background: none; border: none; width: 100%; text-align: right; color: var(--text); transition: background .18s; }
+        .ctx-item:hover { background: var(--bg); }
+        .ctx-item.danger { color: var(--danger); }
+
+        /* modals */
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: var(--white); border-radius: 14px; overflow: hidden; z-index: 302; width: min(390px, 92vw); box-shadow: var(--shadow-lg); display: none; }
+        .modal.show { display: block; animation: popIn .2s ease; }
+        .modal-head { padding: 14px 20px; font-family: 'Aref Ruqaa', serif; font-size: 16pt; font-weight: bold; text-align: center; color: #fff; }
+        .modal-head.gold-head { background: var(--gold); }
+        .modal-head.danger-head { background: var(--danger); }
+        .modal-body { padding: 18px 20px; }
+        .modal-body p { font-size: 12pt; line-height: 1.8; color: var(--text); margin-bottom: 16px; }
+        .modal-body input, .modal-body textarea { width: 100%; padding: 9px 13px; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; background: var(--bg); outline: none; margin-bottom: 9px; resize: vertical; color: var(--text); }
+        .modal-body input:focus, .modal-body textarea:focus { border-color: var(--gold); }
+        .modal-body textarea { min-height: 75px; }
+        .modal-btns { display: flex; gap: 9px; margin-top: 6px; }
+        .btn-gold { flex: 1; padding: 10px; background: var(--gold); color: #fff; border: none; border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; cursor: pointer; transition: background .18s; }
+        .btn-gold:hover { background: #9a6e09; }
+        .btn-red { flex: 1; padding: 10px; background: var(--danger); color: #fff; border: none; border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; cursor: pointer; }
+        .btn-red:hover { background: #b71c1c; }
+        .btn-cancel { flex: 1; padding: 10px; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; cursor: pointer; }
+        .btn-cancel:hover { background: var(--border); }
+
+        /* max-files warning */
+        #max-files-warn {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            background: var(--white); border-radius: 12px; box-shadow: var(--shadow-lg);
+            z-index: 500; width: min(370px, 92vw); overflow: hidden; display: none;
+        }
+        #max-files-warn.show { display: block; animation: slideDown .28s ease; }
+        @keyframes slideDown { from{opacity:0;transform:translateX(-50%) translateY(-16px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+        .warn-head { background: var(--danger); color: #fff; padding: 12px 18px; font-family: 'Aref Ruqaa', serif; font-size: 17pt; font-weight: bold; text-align: center; }
+        .warn-body { background: #fff8f8; padding: 14px 18px; font-size: 11pt; line-height: 1.85; color: var(--text); white-space: pre-line; }
+
+        /* image viewer */
+        #img-viewer {
+            position: fixed; inset: 0; background: rgba(0,0,0,.95);
+            z-index: 600; align-items: center; justify-content: center; display: none;
+        }
+        #img-viewer.show { display: flex; }
+        #img-viewer img { max-width: 96%; max-height: 96%; border-radius: 8px; }
+        #img-viewer-close { position: absolute; top: 18px; inset-inline-end: 22px; background: none; border: none; color: #fff; font-size: 28pt; cursor: pointer; }
+
+        /* toast */
+        #toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.78); color: #fff; padding: 9px 20px; border-radius: 20px; font-size: 11pt; z-index: 600; display: none; }
+        #toast.show { display: block; animation: fadeUp .25s ease; }
+        @keyframes fadeUp { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+        /* ========== UTILITY ========== */
+        .d-none { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <p>جاري تحميل التعليقات...</p>
+</div>
+
+<!-- Top Bar -->
+<div class="top-bar">
+    <button class="back-btn" id="back-btn" onclick="handleBack()">
+        <span class="back-arrow">→</span>
+        <span id="back-text">رجوع إلى الكتاب</span>
+    </button>
+    <div class="top-bar-title" id="bar-title">...</div>
+    <div class="top-bar-spacer"></div>
+</div>
+
+<!-- Comments / Replies Container -->
+<div id="comments-container">
+
+    <!-- Empty state (main comments) -->
+    <div id="empty-state" class="d-none">
+        <div class="empty-icon">💬</div>
+        <div class="empty-title">لا توجد تعليقات</div>
+        <div class="empty-sub">كن أول من يعلق على هذا الكتاب!</div>
+    </div>
+
+    <!-- Main comments list -->
+    <div id="comments-list"></div>
+
+    <!-- Replies view -->
+    <div id="replies-view">
+        <div id="replies-parent-card"></div>
+        <div class="replies-divider">الردود</div>
+        <div id="replies-empty" class="replies-empty d-none">
+            <span>↩</span>لا توجد ردود بعد، كن أول من يرد!
+        </div>
+        <div id="replies-list"></div>
+    </div>
+</div>
+
+<!-- Input Area -->
+<div id="input-area">
+
+    <!-- Reply-to-sub-reply indicator -->
+    <div id="reply-indicator">
+        <div class="ri-content">
+            <span>رداً على <strong id="ri-name"></strong></span>
+            <span class="ri-preview" id="ri-preview"></span>
+        </div>
+        <button class="ri-cancel" onclick="cancelSubReply()" title="إلغاء الرد">✕</button>
+    </div>
+
+    <!-- Attachments preview -->
+    <div id="attachments-preview"></div>
+
+    <!-- Input Bar -->
+    <div class="input-bar">
+        <!-- Plus -->
+        <div class="plus-wrap" id="plus-wrap">
+            <button class="pm-btn" id="pm-file"  title="إرفاق ملف"  onclick="triggerUpload('file')">📄</button>
+            <button class="pm-btn" id="pm-video" title="إرفاق فيديو" onclick="triggerUpload('video')">🎥</button>
+            <button class="pm-btn" id="pm-image" title="إرفاق صورة" onclick="triggerUpload('image')">🖼️</button>
+            <button class="plus-btn" id="plus-btn" onclick="togglePlusMenu()">+</button>
+        </div>
+        <textarea id="comment-input" placeholder="اكتب تعليقاً..." rows="1"
+            oninput="onInputChange(this)" onkeydown="onKeyDown(event)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="doSend()" disabled>↑</button>
+    </div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="inp-image" accept="image/*" multiple style="display:none" onchange="onFileSelect(event,'image')">
+<input type="file" id="inp-video" accept="video/*"          style="display:none" onchange="onFileSelect(event,'video')">
+<input type="file" id="inp-file"                            style="display:none" onchange="onFileSelect(event,'other')">
+
+<!-- Max-files warning popup -->
+<div id="max-files-warn">
+    <div class="warn-head">تنبيه!</div>
+    <div class="warn-body" id="warn-body"></div>
+</div>
+
+<!-- Context menu overlay + sheet -->
+<div id="ctx-overlay" class="overlay" onclick="closeCtxMenu()"></div>
+<div id="ctx-menu">
+    <div class="ctx-handle"></div>
+    <div id="ctx-items"></div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="del-overlay" class="overlay" onclick="closeDeleteModal()"></div>
+<div id="del-modal" class="modal">
+    <div class="modal-head danger-head">تحذير!</div>
+    <div class="modal-body">
+        <p>هل أنت متأكد من حذف هذا التعليق؟ لن تتمكن من استعادته بعد الحذف.</p>
+        <div class="modal-btns">
+            <button class="btn-red"    onclick="confirmDelete()">حذف نهائياً</button>
+            <button class="btn-cancel" onclick="closeDeleteModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- Report modal -->
+<div id="rep-overlay" class="overlay" onclick="closeReportModal()"></div>
+<div id="rep-modal" class="modal">
+    <div class="modal-head gold-head">الإبلاغ عن تعليق</div>
+    <div class="modal-body">
+        <input  type="text" id="rep-reason"  placeholder="سبب البلاغ (مختصر) *">
+        <textarea           id="rep-details" placeholder="تفاصيل إضافية (اختياري)"></textarea>
+        <div class="modal-btns">
+            <button class="btn-gold"   onclick="submitReport()">إرسال البلاغ</button>
+            <button class="btn-cancel" onclick="closeReportModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer -->
+<div id="img-viewer">
+    <button id="img-viewer-close" onclick="closeImgViewer()">✕</button>
+    <img id="img-viewer-img" src="" alt="">
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// =====================================================================
+// STATE
+// =====================================================================
+const urlParams  = new URLSearchParams(window.location.search);
+const shareId    = urlParams.get('id');
+const deepCmt    = parseInt(urlParams.get('comment') ?? '-1');
+
+let bookTitle    = '';
+let bookOwnerId  = '';
+let comments     = [];
+
+let attachedFiles    = [];          // {type, data, name}
+let plusOpen         = false;
+let plusAnimating    = false;
+
+let viewMode         = 'main';      // 'main' | 'replies'
+let parentComment    = null;        // comment obj when in replies mode
+let subReplyTarget   = null;        // {id, authorName, text}
+
+let pendingDelete    = null;        // {commentId, replyId}
+let pendingReport    = null;        // {commentId, replyId, commentOwnerId, commentOwnerName}
+let warnTimer        = null;
+
+const MAX_SLOTS = 4;
+
+// =====================================================================
+// INIT
+// =====================================================================
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!shareId) { showError('رابط غير صالح.'); return; }
+
+    try {
+        await Promise.all([loadBookInfo(), loadComments()]);
+    } catch(e) {
+        console.error(e);
+        showError('حدث خطأ أثناء التحميل.');
+        return;
+    }
+
+    document.getElementById('loading-overlay').style.display = 'none';
+    renderMain();
+    updateContainerBottom();
+
+    // Deep-link scroll
+    const targetId = deepCmt >= 0 ? deepCmt
+        : (window.location.hash.startsWith('#comment-') ? parseInt(window.location.hash.slice(9)) : -1);
+    if (targetId >= 0) setTimeout(() => scrollToCmt(targetId), 400);
+});
+
+async function api(action, payload = {}) {
+    const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action, ...payload })
+    });
+    return res.json();
+}
+
+async function loadBookInfo() {
+    const r = await api('get_shared_book', { shareId });
+    if (r.success) {
+        bookTitle   = r.bookData?.title || r.bookData?.t_title || 'كتاب';
+        bookOwnerId = r.ownerId || '';
+        document.getElementById('bar-title').textContent = bookTitle;
+        document.title = 'تعليقات: ' + bookTitle;
+    }
+}
+
+async function loadComments() {
+    const r = await api('get_comments', { shareId });
+    if (r.success) comments = r.comments || [];
+}
+
+// =====================================================================
+// HELPERS
+// =====================================================================
+function uid()   { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null; }
+function uname() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : 'زائر'; }
+
+function canSee(c) {
+    if (!c.hidden) return true;
+    const u = uid();
+    return u === c.authorId || u === bookOwnerId;
+}
+
+function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function relTime(ts) {
+    if (!ts) return '';
+    const d = Date.now() - ts, m = Math.floor(d/60000), h = Math.floor(d/3600000), dy = Math.floor(d/86400000);
+    if (m < 1)  return 'الآن';
+    if (m < 60) return `منذ ${m} دقيقة`;
+    if (h < 24) return `منذ ${h} ساعة`;
+    if (dy < 30) return `منذ ${dy} يوم`;
+    return new Date(ts).toLocaleDateString('ar-SA');
+}
+
+function fileIcon(name) {
+    if (!name) return '📎';
+    const e = name.split('.').pop().toLowerCase();
+    return ({pdf:'📕',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📋',pptx:'📋',zip:'🗜️',rar:'🗜️',txt:'📄',mp3:'🎵',wav:'🎵',ogg:'🎵'})[e] || '📎';
+}
+
+function myReact(c) {
+    const u = uid(); if (!u) return null;
+    const rx = c.reactions || {};
+    if ((rx.heart||[]).includes(u)) return 'heart';
+    if ((rx.laugh||[]).includes(u)) return 'laugh';
+    if ((rx.like ||[]).includes(u)) return 'like';
+    return null;
+}
+
+function rxEmoji(k) { return ({heart:'❤️', laugh:'😂', like:'👍'})[k] || '🙂'; }
+function rxLabel(k) { return ({heart:'أحببته', laugh:'أضحكني', like:'أعجبني'})[k] || ''; }
+
+// =====================================================================
+// RENDER MAIN
+// =====================================================================
+function renderMain() {
+    const list  = document.getElementById('comments-list');
+    const empty = document.getElementById('empty-state');
+    const rv    = document.getElementById('replies-view');
+
+    list.innerHTML = '';
+    rv.classList.remove('show');
+    document.getElementById('back-text').textContent = 'رجوع إلى الكتاب';
+
+    const visible = comments.filter(canSee);
+    if (visible.length === 0) {
+        empty.classList.remove('d-none');
+    } else {
+        empty.classList.add('d-none');
+        visible.forEach(c => list.appendChild(buildCard(c, false)));
+    }
+}
+
+// =====================================================================
+// BUILD COMMENT CARD
+// =====================================================================
+function buildCard(c, isReply) {
+    const card = document.createElement('div');
+    card.className = isReply ? 'reply-card' : 'comment-card';
+    card.id = 'comment-' + c.id;
+    if (c.hidden) card.classList.add('hidden-comment');
+
+    const me = uid();
+    const isOwn  = me === c.authorId;
+    const isBO   = me === bookOwnerId;
+
+    // ---- Header ----
+    let html = `<div class="cc-header">
+        <div class="cc-author-row">
+            <div class="cc-avatar">${esc((c.authorName||'?')[0].toUpperCase())}</div>
+            <div>
+                <div class="cc-author-name">${esc(c.authorName||'مجهول')}</div>
+                <div class="cc-time">${relTime(c.timestamp)}</div>
+                ${c.hidden ? '<div class="cc-hidden-badge">مخفي</div>' : ''}
+            </div>
+        </div>
+        <button class="three-dot-btn" onclick="openMenu(${c.id},'${isReply?'reply':'comment'}',${isOwn},${isBO})">⋮</button>
+    </div>`;
+
+    // ---- Body ----
+    html += '<div class="cc-body">';
+
+    if (isReply && c.replyTo != null) {
+        html += `<div class="reply-to-indicator">
+            <strong>${esc(c.replyToName||'')}</strong>
+            <span class="reply-to-preview">${esc((c.replyToText||'').substring(0,70))}${(c.replyToText||'').length>70?'…':''}</span>
+        </div>`;
+    }
+
+    html += `<div class="cc-text">${esc(c.text)}</div>`;
+
+    const files  = c.files  || [];
+    const imgs   = files.filter(f => f.type==='image');
+    const vids   = files.filter(f => f.type==='video');
+    const auds   = files.filter(f => f.type==='audio');
+    const others = files.filter(f => !['image','video','audio'].includes(f.type));
+
+    // Images grid
+    if (imgs.length) {
+        const gc = `grid-${Math.min(imgs.length,4)}`;
+        html += `<div class="cc-images"><div class="images-grid ${gc}">`;
+        imgs.slice(0,4).forEach(img => {
+            html += `<div class="img-wrap" onclick="openImgViewer('${img.data}')"><img src="${img.data}" alt="${esc(img.name)}" loading="lazy"></div>`;
+        });
+        html += '</div></div>';
+    }
+
+    // Video
+    if (vids.length) {
+        html += `<div class="cc-video"><video controls preload="metadata"><source src="${vids[0].data}"></video></div>`;
+    }
+
+    // Other files (above audio)
+    if (others.length) {
+        html += '<div class="cc-files">';
+        others.forEach(f => {
+            html += `<a class="file-item" href="${f.data}" download="${esc(f.name||'ملف')}" target="_blank">
+                <span class="file-icon">${fileIcon(f.name)}</span>
+                <span class="file-name">${esc(f.name||'ملف')}</span></a>`;
+        });
+        html += '</div>';
+    }
+
+    // Audio (bottom)
+    if (auds.length) {
+        html += '<div class="cc-audios">';
+        auds.forEach(a => {
+            html += `<div class="audio-item"><span style="font-size:19px;flex-shrink:0">🎵</span>
+                <audio controls preload="none"><source src="${a.data}"></audio></div>`;
+        });
+        html += '</div>';
+    }
+
+    html += '</div>'; // cc-body
+
+    // ---- Reactions display ----
+    const rx  = c.reactions || {};
+    const rList = [
+        {k:'heart',e:'❤️'},{k:'laugh',e:'😂'},{k:'like',e:'👍'}
+    ].filter(r => (rx[r.k]||[]).length > 0)
+     .sort((a,b) => (rx[b.k]||[]).length - (rx[a.k]||[]).length);
+    const total = rList.reduce((s,r) => s + (rx[r.k]||[]).length, 0);
+
+    if (total > 0) {
+        html += `<div class="reactions-display"><div class="reactions-stack">`;
+        rList.slice(0,3).forEach(r => { html += `<span class="r-badge">${r.e}</span>`; });
+        html += `</div><span class="r-count">${total}</span></div>`;
+    }
+
+    // ---- Footer ----
+    const mr  = myReact(c);
+    const rBtnLabel = mr ? `${rxEmoji(mr)} ${rxLabel(mr)}` : '🙂 تفاعل';
+    const replyCnt  = (c.replies||[]).length;
+
+    html += `<div class="cc-footer">
+        <div class="reaction-picker-wrap">
+            <button class="footer-btn${mr?' reacted':''}" onclick="toggleRxPicker(event,${c.id},${isReply?1:0})">${rBtnLabel}</button>
+            <div id="rxp-${c.id}" class="reaction-picker">
+                <button class="r-opt${mr==='heart'?' selected':''}" onclick="pickReaction(event,${c.id},'heart',${isReply?1:0})">❤️</button>
+                <button class="r-opt${mr==='laugh'?' selected':''}" onclick="pickReaction(event,${c.id},'laugh',${isReply?1:0})">😂</button>
+                <button class="r-opt${mr==='like' ?' selected':''}" onclick="pickReaction(event,${c.id},'like', ${isReply?1:0})">👍</button>
+            </div>
+        </div>`;
+
+    if (!isReply) {
+        html += `<button class="footer-btn" onclick="openReplies(${c.id})">↩ رد${replyCnt?' ('+replyCnt+')':''}</button>`;
+    } else {
+        html += `<button class="footer-btn" onclick="setSubReply(${c.id})">↩ رد</button>`;
+    }
+
+    html += '</div>';
+    card.innerHTML = html;
+    return card;
+}
+
+// =====================================================================
+// REPLIES VIEW
+// =====================================================================
+function openReplies(cid) {
+    parentComment = comments.find(c => c.id === cid);
+    if (!parentComment) return;
+    viewMode = 'replies';
+
+    document.getElementById('back-text').textContent = 'رجوع إلى تعليقات الكتاب';
+    document.getElementById('comments-list').style.display = 'none';
+    document.getElementById('empty-state').classList.add('d-none');
+
+    const rv = document.getElementById('replies-view');
+    rv.classList.add('show');
+    renderReplies();
+    document.getElementById('comments-container').scrollTop = 0;
+}
+
+function renderReplies() {
+    const pc    = document.getElementById('replies-parent-card');
+    const rl    = document.getElementById('replies-list');
+    const re    = document.getElementById('replies-empty');
+    pc.innerHTML = '';
+    rl.innerHTML = '';
+
+    pc.appendChild(buildCard(parentComment, false));
+
+    const visible = (parentComment.replies||[]).filter(canSee);
+    if (visible.length === 0) { re.classList.remove('d-none'); }
+    else { re.classList.add('d-none'); visible.forEach(r => rl.appendChild(buildCard(r, true))); }
+}
+
+function handleBack() {
+    if (viewMode === 'replies') {
+        closeReplies();
+    } else {
+        window.history.back();
+    }
+}
+
+function closeReplies() {
+    viewMode = 'main';
+    document.getElementById('back-text').textContent = 'رجوع إلى الكتاب';
+    document.getElementById('comments-list').style.display = '';
+    document.getElementById('replies-view').classList.remove('show');
+    cancelSubReply();
+
+    const cid = parentComment ? parentComment.id : null;
+    parentComment = null;
+    renderMain();
+    if (cid !== null) setTimeout(() => scrollToCmt(cid), 120);
+}
+
+function setSubReply(rid) {
+    if (!parentComment) return;
+    const r = (parentComment.replies||[]).find(x => x.id === rid);
+    if (!r) return;
+    subReplyTarget = { id: rid, authorName: r.authorName, text: r.text };
+    document.getElementById('ri-name').textContent    = r.authorName;
+    document.getElementById('ri-preview').textContent = (r.text||'').substring(0,60) + ((r.text||'').length>60?'…':'');
+    document.getElementById('reply-indicator').style.display = 'flex';
+    document.getElementById('comment-input').focus();
+    updateContainerBottom();
+}
+
+function cancelSubReply() {
+    subReplyTarget = null;
+    document.getElementById('reply-indicator').style.display = 'none';
+    updateContainerBottom();
+}
+
+function scrollToCmt(id) {
+    const el = document.getElementById('comment-' + id);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlighted');
+        setTimeout(() => el.classList.remove('highlighted'), 2500);
+    }
+}
+
+// =====================================================================
+// PLUS MENU
+// =====================================================================
+function togglePlusMenu() {
+    if (plusAnimating) return;
+    plusAnimating = true;
+    const btn  = document.getElementById('plus-btn');
+    const btns = ['pm-image','pm-video','pm-file'];
+
+    if (plusOpen) {
+        // Close: add 'hide' class in reverse order
+        btns.forEach((id,i) => {
+            const b = document.getElementById(id);
+            b.classList.remove('show');
+            b.classList.add('hide');
+        });
+        btn.classList.remove('open');
+        setTimeout(() => {
+            btns.forEach(id => {
+                const b = document.getElementById(id);
+                b.classList.remove('hide');
+            });
+            plusAnimating = false;
+            plusOpen = false;
+        }, 280);
+    } else {
+        plusOpen = true;
+        btn.classList.add('open');
+        // Open: stagger from image (closest) upward
+        btns.forEach((id,i) => {
+            setTimeout(() => {
+                document.getElementById(id).classList.add('show');
+            }, i * 60);
+        });
+        setTimeout(() => { plusAnimating = false; }, 350);
+    }
+}
+
+function triggerUpload(type) {
+    if (plusAnimating) return;
+    if (plusOpen) togglePlusMenu();
+    setTimeout(() => {
+        if (type === 'image') document.getElementById('inp-image').click();
+        else if (type === 'video') document.getElementById('inp-video').click();
+        else document.getElementById('inp-file').click();
+    }, plusOpen ? 320 : 0);
+}
+
+// =====================================================================
+// FILE HANDLING
+// =====================================================================
+function usedSlots() {
+    return attachedFiles.reduce((s,f) => s + (f.type==='video' ? MAX_SLOTS : 1), 0);
+}
+
+function onFileSelect(event, type) {
+    const files = Array.from(event.target.files);
+    event.target.value = '';
+
+    for (const file of files) {
+        // Already have a video?
+        if (type === 'video' && attachedFiles.some(f => f.type==='video')) {
+            showWarn('video_dup'); break;
+        }
+        const needed = type === 'video' ? MAX_SLOTS : 1;
+        if (usedSlots() + needed > MAX_SLOTS) { showWarn(type); break; }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            // Detect if it's audio even if type='other'
+            let actualType = type;
+            if (type === 'other' && file.type.startsWith('audio/')) actualType = 'audio';
+            attachedFiles.push({ type: actualType, data: e.target.result, name: file.name });
+            renderAttachments();
+            checkSend();
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function renderAttachments() {
+    const c = document.getElementById('attachments-preview');
+    if (!attachedFiles.length) { c.style.display = 'none'; updateContainerBottom(); return; }
+    c.style.display = 'flex';
+    c.innerHTML = '';
+    attachedFiles.forEach((f,i) => {
+        const d = document.createElement('div');
+        d.className = 'att-thumb';
+        if (f.type === 'image') {
+            d.innerHTML = `<img src="${f.data}" alt="${esc(f.name)}">`;
+        } else {
+            const icon = f.type==='video' ? '🎥' : f.type==='audio' ? '🎵' : fileIcon(f.name);
+            d.innerHTML = `<div class="att-icon">${icon}<span>${esc(f.name)}</span></div>`;
+        }
+        d.innerHTML += `<button class="att-remove" onclick="removeAtt(${i})">✕</button>`;
+        c.appendChild(d);
+    });
+    updateContainerBottom();
+}
+
+function removeAtt(i) {
+    attachedFiles.splice(i,1);
+    renderAttachments();
+    checkSend();
+}
+
+function showWarn(type) {
+    if (warnTimer) { clearTimeout(warnTimer); }
+    let msg;
+    if (type === 'video_dup') {
+        msg = 'يمكن إرفاق فيديو واحد فقط في الرسالة الواحدة.';
+    } else {
+        msg = 'وصلت إلى الحد الأقصى من الملفات المرفقة!\n\n' +
+              '• الحد الأقصى للصور والملفات الأخرى: 4 ملفات\n' +
+              '• الفيديو: فيديو واحد فقط ويأخذ سعة 4 ملفات كاملة\n' +
+              '  (أي لا يمكن إضافة أي ملف آخر عند إرفاق فيديو)';
+    }
+    document.getElementById('warn-body').textContent = msg;
+    const w = document.getElementById('max-files-warn');
+    w.classList.add('show');
+
+    const dismiss = e => {
+        if (!w.contains(e.target)) { w.classList.remove('show'); document.removeEventListener('click', dismiss); clearTimeout(warnTimer); }
+    };
+    setTimeout(() => document.addEventListener('click', dismiss), 100);
+    warnTimer = setTimeout(() => { w.classList.remove('show'); document.removeEventListener('click', dismiss); }, 7000);
+}
+
+// =====================================================================
+// INPUT
+// =====================================================================
+function onInputChange(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    checkSend();
+    updateContainerBottom();
+}
+
+function onKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (!document.getElementById('send-btn').disabled) doSend();
+    }
+}
+
+function checkSend() {
+    const hasText = document.getElementById('comment-input').value.trim().length > 0;
+    document.getElementById('send-btn').disabled = !hasText;
+}
+
+function updateContainerBottom() {
+    const ia = document.getElementById('input-area');
+    requestAnimationFrame(() => {
+        document.getElementById('comments-container').style.bottom = ia.offsetHeight + 'px';
+    });
+}
+
+// =====================================================================
+// SEND
+// =====================================================================
+async function doSend() {
+    const input = document.getElementById('comment-input');
+    const text  = input.value.trim();
+    if (!text) return;
+
+    const me = uid();
+    if (!me) { showToast('يجب تسجيل الدخول للتعليق'); return; }
+
+    document.getElementById('send-btn').disabled = true;
+
+    const payload = {
+        shareId, text, authorId: me, authorName: uname(),
+        files: attachedFiles.map(f => ({ type: f.type, data: f.data, name: f.name }))
+    };
+
+    try {
+        let res;
+        if (viewMode === 'replies' && parentComment) {
+            res = await api('save_reply', {
+                ...payload,
+                commentId: parentComment.id,
+                replyTo:     subReplyTarget ? subReplyTarget.id         : null,
+                replyToName: subReplyTarget ? subReplyTarget.authorName : null,
+                replyToText: subReplyTarget ? subReplyTarget.text       : null
+            });
+            if (res.success) {
+                if (!parentComment.replies) parentComment.replies = [];
+                parentComment.replies.push(res.reply);
+                const idx = comments.findIndex(c => c.id === parentComment.id);
+                if (idx >= 0) comments[idx] = parentComment;
+                clearInput();
+                renderReplies();
+                setTimeout(() => {
+                    const cc = document.getElementById('comments-container');
+                    cc.scrollTop = cc.scrollHeight;
+                }, 80);
+            }
+        } else {
+            res = await api('save_comment', payload);
+            if (res.success) {
+                comments.push(res.comment);
+                clearInput();
+                renderMain();
+                setTimeout(() => {
+                    const cc = document.getElementById('comments-container');
+                    cc.scrollTop = cc.scrollHeight;
+                }, 80);
+            }
+        }
+        if (!res.success) { showToast('فشل الإرسال: ' + (res.message||'')); }
+    } catch(e) {
+        console.error(e);
+        showToast('حدث خطأ أثناء الإرسال');
+    }
+
+    checkSend();
+}
+
+function clearInput() {
+    const inp = document.getElementById('comment-input');
+    inp.value = ''; inp.style.height = 'auto';
+    attachedFiles = [];
+    renderAttachments();
+    cancelSubReply();
+    checkSend();
+}
+
+// =====================================================================
+// CONTEXT MENU (THREE-DOT)
+// =====================================================================
+function openMenu(id, type, isOwn, isBO) {
+    const items = document.getElementById('ctx-items');
+    items.innerHTML = '';
+
+    // Share link (all users)
+    addCtxItem(items,'🔗 مشاركة رابط التعليق', () => {
+        copyCommentLink(id);
+        closeCtxMenu();
+    });
+
+    if (isOwn) {
+        // Copy text
+        addCtxItem(items,'📋 نسخ النص', () => {
+            const c = getCmt(id, type==='reply');
+            if (c) navigator.clipboard.writeText(c.text||'').then(() => showToast('تم نسخ النص'));
+            closeCtxMenu();
+        });
+        // Edit
+        addCtxItem(items,'✏️ تعديل التعليق', () => {
+            doEdit(id, type==='reply');
+            closeCtxMenu();
+        });
+        // Toggle hidden
+        const c = getCmt(id, type==='reply');
+        addCtxItem(items, c?.hidden ? '👁️ إظهار للجميع' : '🙈 إخفاء عن الآخرين', () => {
+            doToggleHide(id, type==='reply');
+            closeCtxMenu();
+        });
+        // Delete
+        addCtxItem(items,'🗑️ حذف التعليق', () => {
+            pendingDelete = { commentId: type==='reply' ? parentComment.id : id, replyId: type==='reply' ? id : null };
+            closeCtxMenu();
+            openDeleteModal();
+        }, true);
+    }
+
+    if (!isOwn) {
+        // Report
+        addCtxItem(items,'🚩 الإبلاغ عن التعليق', () => {
+            const c = getCmt(id, type==='reply');
+            pendingReport = {
+                commentId: type==='reply' ? parentComment.id : id,
+                replyId: type==='reply' ? id : null,
+                commentOwnerId:   c ? c.authorId   : '',
+                commentOwnerName: c ? c.authorName : ''
+            };
+            closeCtxMenu();
+            openReportModal();
+        }, true);
+    }
+
+    document.getElementById('ctx-overlay').classList.add('show');
+    document.getElementById('ctx-menu').classList.add('show');
+}
+
+function addCtxItem(container, label, action, danger=false) {
+    const btn = document.createElement('button');
+    btn.className = 'ctx-item' + (danger?' danger':'');
+    btn.textContent = label;
+    btn.onclick = action;
+    container.appendChild(btn);
+}
+
+function closeCtxMenu() {
+    document.getElementById('ctx-overlay').classList.remove('show');
+    document.getElementById('ctx-menu').classList.remove('show');
+}
+
+function getCmt(id, isReply) {
+    if (isReply && parentComment) return (parentComment.replies||[]).find(r => r.id===id);
+    return comments.find(c => c.id===id);
+}
+
+// =====================================================================
+// ACTIONS: LINK, EDIT, HIDE, DELETE, REPORT
+// =====================================================================
+function copyCommentLink(id) {
+    const base = window.location.origin + window.location.pathname.replace('comments.html','index.html');
+    const url  = `${base}?id=${shareId}&comment=${id}`;
+    navigator.clipboard.writeText(url).then(() => showToast('تم نسخ الرابط'));
+}
+
+function doEdit(id, isReply) {
+    const c  = getCmt(id, isReply);
+    const el = document.getElementById('comment-' + id);
+    if (!c || !el) return;
+
+    const textEl = el.querySelector('.cc-text');
+    if (!textEl) return;
+
+    const origHTML = textEl.innerHTML;
+    const origText = c.text;
+
+    textEl.contentEditable = 'plaintext-only';
+    textEl.style.cssText = 'border:1.5px solid var(--gold);border-radius:5px;padding:4px 7px;outline:none;';
+    textEl.focus();
+
+    if (!el.querySelector('.edit-actions')) {
+        const ea = document.createElement('div');
+        ea.className = 'edit-actions';
+        ea.style.cssText = 'display:flex;gap:7px;margin:7px 0 0';
+
+        const sv = document.createElement('button');
+        sv.className = 'btn-gold'; sv.style.flex = '1'; sv.style.padding = '6px';
+        sv.textContent = 'حفظ';
+        sv.onclick = async () => {
+            const newText = textEl.textContent.trim();
+            if (!newText) { showToast('النص لا يمكن أن يكون فارغاً'); return; }
+            const res = await api('edit_comment', {
+                shareId,
+                commentId: isReply ? parentComment.id : id,
+                replyId:   isReply ? id : null,
+                userId: uid(), text: newText
+            });
+            if (res.success) {
+                c.text = newText;
+                textEl.textContent = newText;
+                showToast('تم التعديل');
+            } else {
+                textEl.innerHTML = origHTML;
+                showToast('فشل التعديل');
+            }
+            cleanup();
+        };
+
+        const cx = document.createElement('button');
+        cx.className = 'btn-cancel'; cx.style.flex = '1'; cx.style.padding = '6px';
+        cx.textContent = 'إلغاء';
+        cx.onclick = () => { textEl.innerHTML = origHTML; cleanup(); };
+
+        function cleanup() {
+            textEl.contentEditable = 'false';
+            textEl.style.cssText = '';
+            ea.remove();
+        }
+
+        ea.appendChild(sv); ea.appendChild(cx);
+        textEl.insertAdjacentElement('afterend', ea);
+    }
+}
+
+async function doToggleHide(id, isReply) {
+    const res = await api('toggle_hidden_comment', {
+        shareId,
+        commentId: isReply ? parentComment.id : id,
+        replyId:   isReply ? id : null,
+        userId: uid()
+    });
+    if (res.success) {
+        const c = getCmt(id, isReply);
+        if (c) c.hidden = !c.hidden;
+        isReply ? renderReplies() : renderMain();
+        showToast('تم التحديث');
+    }
+}
+
+function openDeleteModal() {
+    document.getElementById('del-overlay').classList.add('show');
+    document.getElementById('del-modal').classList.add('show');
+}
+function closeDeleteModal() {
+    document.getElementById('del-overlay').classList.remove('show');
+    document.getElementById('del-modal').classList.remove('show');
+    pendingDelete = null;
+}
+async function confirmDelete() {
+    if (!pendingDelete) return;
+    const res = await api('delete_comment', {
+        shareId,
+        commentId: pendingDelete.commentId,
+        replyId:   pendingDelete.replyId,
+        userId: uid()
+    });
+    closeDeleteModal();
+    if (res.success) {
+        if (pendingDelete.replyId !== null) {
+            if (parentComment) {
+                parentComment.replies = (parentComment.replies||[]).filter(r => r.id !== pendingDelete.replyId);
+                const idx = comments.findIndex(c => c.id === parentComment.id);
+                if (idx >= 0) comments[idx] = parentComment;
+                renderReplies();
+            }
+        } else {
+            comments = comments.filter(c => c.id !== pendingDelete.commentId);
+            if (viewMode === 'replies' && parentComment?.id === pendingDelete.commentId) closeReplies();
+            else renderMain();
+        }
+        showToast('تم الحذف');
+    }
+    pendingDelete = null;
+}
+
+function openReportModal() {
+    document.getElementById('rep-reason').value = '';
+    document.getElementById('rep-details').value = '';
+    document.getElementById('rep-overlay').classList.add('show');
+    document.getElementById('rep-modal').classList.add('show');
+}
+function closeReportModal() {
+    document.getElementById('rep-overlay').classList.remove('show');
+    document.getElementById('rep-modal').classList.remove('show');
+    pendingReport = null;
+}
+async function submitReport() {
+    const reason = document.getElementById('rep-reason').value.trim();
+    if (!reason) { showToast('يرجى كتابة سبب البلاغ'); return; }
+    const res = await api('save_report', {
+        shareId,
+        commentId:        pendingReport.commentId,
+        replyId:          pendingReport.replyId,
+        reporterId:       uid(),
+        reporterName:     uname(),
+        commentOwnerId:   pendingReport.commentOwnerId,
+        commentOwnerName: pendingReport.commentOwnerName,
+        reason,
+        details: document.getElementById('rep-details').value.trim()
+    });
+    closeReportModal();
+    showToast(res.success ? 'تم إرسال البلاغ' : 'فشل إرسال البلاغ');
+}
+
+// =====================================================================
+// REACTIONS
+// =====================================================================
+let openPickerId = null;
+
+function toggleRxPicker(event, cid, isReply) {
+    event.stopPropagation();
+    const picker = document.getElementById('rxp-' + cid);
+    if (!picker) return;
+    if (picker.classList.contains('open')) {
+        picker.classList.remove('open');
+        openPickerId = null;
+    } else {
+        if (openPickerId !== null) {
+            const old = document.getElementById('rxp-' + openPickerId);
+            if (old) old.classList.remove('open');
+        }
+        picker.classList.add('open');
+        openPickerId = cid;
+        setTimeout(() => {
+            function closeHandler(e) {
+                if (!picker.contains(e.target)) {
+                    picker.classList.remove('open');
+                    if (openPickerId === cid) openPickerId = null;
+                    document.removeEventListener('click', closeHandler);
+                }
+            }
+            document.addEventListener('click', closeHandler);
+        }, 0);
+    }
+}
+
+async function pickReaction(event, cid, reaction, isReply) {
+    event.stopPropagation();
+    const me = uid();
+    if (!me) { showToast('يجب تسجيل الدخول للتفاعل'); return; }
+
+    const c       = getCmt(cid, isReply===1);
+    if (!c) return;
+    const current = myReact(c);
+    const deselect = current === reaction;
+
+    if (!c.reactions) c.reactions = { heart:[], laugh:[], like:[] };
+    ['heart','laugh','like'].forEach(k => {
+        if (!c.reactions[k]) c.reactions[k] = [];
+        c.reactions[k] = c.reactions[k].filter(id => id !== me);
+    });
+    if (!deselect) c.reactions[reaction].push(me);
+
+    const picker = document.getElementById('rxp-' + cid);
+    if (picker) { picker.classList.remove('open'); openPickerId = null; }
+
+    isReply===1 ? renderReplies() : renderMain();
+
+    await api('save_reaction', {
+        shareId,
+        commentId: isReply===1 ? parentComment.id : cid,
+        replyId:   isReply===1 ? cid : null,
+        userId:    me,
+        reaction:  deselect ? null : reaction
+    });
+}
+
+// =====================================================================
+// IMAGE VIEWER
+// =====================================================================
+function openImgViewer(src) {
+    document.getElementById('img-viewer-img').src = src;
+    document.getElementById('img-viewer').classList.add('show');
+}
+function closeImgViewer() {
+    document.getElementById('img-viewer').classList.remove('show');
+    document.getElementById('img-viewer-img').src = '';
+}
+
+// =====================================================================
+// TOAST & ERROR
+// =====================================================================
+let toastTimer = null;
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showError(msg) {
+    document.getElementById('loading-overlay').innerHTML = `
+        <div style="text-align:center;padding:40px">
+            <div style="font-size:52px;margin-bottom:16px;opacity:.5">😕</div>
+            <h2 style="color:var(--danger);margin-bottom:8px;font-family:'Aref Ruqaa',serif">عذراً!</h2>
+            <p style="color:var(--muted);font-size:12pt">${msg}</p>
+            <button onclick="history.back()" style="margin-top:22px;padding:10px 24px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-family:'Amiri',serif;font-size:12pt;cursor:pointer">رجوع</button>
+        </div>`;
+    document.getElementById('loading-overlay').style.display = 'flex';
+}
+
+// =====================================================================
+// GLOBAL EVENT LISTENERS
+// =====================================================================
+// Close plus menu on outside click
+document.addEventListener('click', e => {
+    if (plusOpen && !e.target.closest('#plus-wrap')) {
+        if (!plusAnimating) togglePlusMenu();
+    }
+});
+
+// Update bottom when keyboard opens/closes on mobile
+window.visualViewport?.addEventListener('resize', updateContainerBottom);
+window.addEventListener('resize', updateContainerBottom);
+
+// Close image viewer on Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (!document.getElementById('img-viewer').classList.contains('show')) return;
+        closeImgViewer();
+    }
+});
+</script>
+</body>
+</html>

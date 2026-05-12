@@ -274,7 +274,7 @@
 
         <div class="top-bar-left">
             <button class="top-btn gold" id="toggleViewBtn" onclick="toggleViewMode()">عرض تفاعلي 📱</button>
-            <button class="top-btn" id="commentBtn" onclick="openComments()" title="التعليقات (قريباً)" disabled>التعليقات</button>
+            <button class="top-btn" id="commentBtn" onclick="openComments()" title="التعليقات">💬 التعليقات</button>
             <button class="top-btn primary" id="downloadBtn" onclick="downloadBook()">تحميل الكتاب</button>
         </div>
     </div>
@@ -777,7 +777,8 @@
     }
 
     function openComments() {
-        alert("ميزة التعليقات ستكون متاحة قريباً!");
+        if (!shareId) { alert("رابط غير صالح."); return; }
+        window.location.href = 'comments.html?id=' + encodeURIComponent(shareId);
     }
 </script>
 
