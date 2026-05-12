@@ -340,6 +340,89 @@
         #toast.show { display: block; animation: fadeUp .25s ease; }
         @keyframes fadeUp { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
+
+        /* ============================================================
+           RESPONSIVE DESIGN — comments.html
+           ============================================================ */
+
+        /* ============ ديسكتوب / تابلت كبير: > 768px ============ */
+        @media (min-width: 769px) {
+            /* نحصر عرض المحتوى في منتصف الشاشة */
+            #comments-container {
+                left: 50%;
+                right: auto;
+                inset-inline: unset;
+                width: min(700px, 100vw);
+                transform: translateX(-50%);
+                padding: 18px 0 10px;
+            }
+            #comments-list,
+            #replies-view,
+            #empty-state { max-width: 700px; margin: 0 auto; padding: 0 12px; }
+
+            #input-area {
+                left: 50%;
+                right: auto;
+                inset-inline: unset;
+                width: min(700px, 100vw);
+                transform: translateX(-50%);
+                border-radius: 16px 16px 0 0;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
+            }
+            .top-bar {
+                /* يمتد كاملاً لكن نحدد max-width للمحتوى الداخلي */
+            }
+            .top-bar-title { font-size: 16pt; }
+            .back-btn      { font-size: 12pt; }
+
+            /* بطاقات التعليقات تكبر قليلاً */
+            .comment-card, .reply-card { border-radius: 14px; }
+            .cc-text  { font-size: 13.5pt; }
+            .cc-video video { max-height: 340px; }
+        }
+
+        /* ============ ديسكتوب واسع: > 1100px ============ */
+        @media (min-width: 1100px) {
+            #comments-container,
+            #input-area { width: min(760px, 100vw); }
+            #comments-list,
+            #replies-view,
+            #empty-state { max-width: 760px; }
+        }
+
+        /* ============ موبايل صغير: ≤ 380px ============ */
+        @media (max-width: 380px) {
+            :root { --topbar-h: 56px; }
+            .top-bar { padding: 0 9px; }
+            .back-btn {
+                font-size: 10pt;
+                padding: 6px 7px;
+            }
+            /* نخفي نص "رجوع إلى" ونبقي النص الرئيسي فقط */
+            .back-arrow { font-size: 12pt; }
+            .top-bar-title { font-size: 12pt; }
+            .top-bar-spacer { width: 60px; }
+
+            .cc-text { font-size: clamp(11pt, 3.8vw, 13pt); }
+            .cc-author-name { font-size: 11pt; }
+
+            .footer-btn { font-size: 10.5pt; padding: 7px 0; }
+            #comment-input { font-size: 12pt; padding: 8px 12px; }
+
+            .modal { width: 96vw; }
+            .modal-head { font-size: 14pt; }
+            .modal-body p { font-size: 11pt; }
+        }
+
+        /* ============ تأكيد: الصور تبقى في حدودها دائماً ============ */
+        img, video { max-width: 100%; height: auto; }
+
+        /* ============ تحسين لوحة المفاتيح على iOS ============ */
+        @supports (-webkit-touch-callout: none) {
+            #input-area { padding-bottom: env(safe-area-inset-bottom); }
+            #comments-container { padding-bottom: 4px; }
+        }
+
         /* ========== UTILITY ========== */
         .d-none { display: none !important; }
     </style>
@@ -513,6 +596,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loading-overlay').style.display = 'none';
     renderMain();
     updateContainerBottom();
+    startSync(); // بدء المزامنة الفورية
 
     // Deep-link scroll
     const targetId = deepCmt >= 0 ? deepCmt
@@ -540,7 +624,10 @@ async function loadBookInfo() {
 
 async function loadComments() {
     const r = await api('get_comments', { shareId });
-    if (r.success) comments = r.comments || [];
+    if (r.success) {
+        comments = r.comments || [];
+        lastModifiedCache = r.lastModified || 0;
+    }
 }
 
 // =====================================================================
@@ -1208,29 +1295,34 @@ function closeDeleteModal() {
 }
 async function confirmDelete() {
     if (!pendingDelete) return;
+
+    // نحفظ القيم محلياً قبل أي عملية async أو إغلاق للنافذة
+    const { commentId, replyId } = pendingDelete;
+
     const res = await api('delete_comment', {
         shareId,
-        commentId: pendingDelete.commentId,
-        replyId:   pendingDelete.replyId,
+        commentId,
+        replyId,
         userId: uid()
     });
-    closeDeleteModal();
+
+    closeDeleteModal(); // تُصفّر pendingDelete — لذا نستخدم المتغيرات المحلية بعدها
+
     if (res.success) {
-        if (pendingDelete.replyId !== null) {
+        if (replyId !== null) {
             if (parentComment) {
-                parentComment.replies = (parentComment.replies||[]).filter(r => r.id !== pendingDelete.replyId);
+                parentComment.replies = (parentComment.replies||[]).filter(r => r.id !== replyId);
                 const idx = comments.findIndex(c => c.id === parentComment.id);
                 if (idx >= 0) comments[idx] = parentComment;
                 renderReplies();
             }
         } else {
-            comments = comments.filter(c => c.id !== pendingDelete.commentId);
-            if (viewMode === 'replies' && parentComment?.id === pendingDelete.commentId) closeReplies();
+            comments = comments.filter(c => c.id !== commentId);
+            if (viewMode === 'replies' && parentComment?.id === commentId) closeReplies();
             else renderMain();
         }
         showToast('تم الحذف');
     }
-    pendingDelete = null;
 }
 
 function openReportModal() {
@@ -1381,6 +1473,92 @@ document.addEventListener('keydown', e => {
         closeImgViewer();
     }
 });
+
+// ============================================================
+// RESPONSIVE JS
+// ============================================================
+
+// لوحة المفاتيح على iOS تُزيح الـ viewport — نصحح موضع الإدخال
+if (window.visualViewport) {
+    let lastH = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', () => {
+        const vvh    = window.visualViewport.height;
+        const offset = window.innerHeight - vvh;
+        const ia     = document.getElementById('input-area');
+        if (ia) {
+            ia.style.transform  = offset > 50 ? `translateY(-${offset}px)` : '';
+            // على ديسكتوب نُبقي الـ transform المركزي مع الانتقال للأعلى
+            if (window.innerWidth >= 769) {
+                ia.style.transform = offset > 50
+                    ? `translateX(-50%) translateY(-${offset}px)`
+                    : 'translateX(-50%)';
+            }
+        }
+        updateContainerBottom();
+        lastH = vvh;
+    });
+}
+
+// ضبط ارتفاع الحاوية لمنع الطفحان عند resize
+window.addEventListener('resize', updateContainerBottom);
+
+
+// =====================================================================
+// REAL-TIME SYNC (polling خفيف كل 7 ثوانٍ)
+// =====================================================================
+let lastModifiedCache = 0;
+let syncIntervalId    = null;
+
+function startSync() {
+    if (syncIntervalId) return;
+    syncIntervalId = setInterval(syncPoll, 7000);
+}
+
+function stopSync() {
+    clearInterval(syncIntervalId);
+    syncIntervalId = null;
+}
+
+async function syncPoll() {
+    try {
+        // استعلام خفيف: هل تغيّر lastModified؟
+        const res = await api('get_comments_status', { shareId });
+        if (!res.success) return;
+
+        if (res.lastModified > lastModifiedCache) {
+            lastModifiedCache = res.lastModified;
+            // جلب التعليقات الكاملة المحدّثة
+            const full = await api('get_comments', { shareId });
+            if (!full.success) return;
+
+            const prevLen = comments.length;
+            comments = full.comments || [];
+
+            // إذا كنا في وضع الردود: نُحدِّث parentComment
+            if (viewMode === 'replies' && parentComment) {
+                const fresh = comments.find(c => c.id === parentComment.id);
+                if (!fresh) {
+                    // التعليق الأصلي حُذف → ارجع للقائمة الرئيسية
+                    closeReplies();
+                    return;
+                }
+                parentComment = fresh;
+                renderReplies();
+            } else {
+                renderMain();
+            }
+        }
+    } catch (e) {
+        // خطأ صامت — لا نُزعج المستخدم
+    }
+}
+
+// إيقاف المزامنة عند إخفاء التبويب لتوفير الطاقة
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopSync();
+    else startSync();
+});
+
 </script>
 </body>
 </html>
