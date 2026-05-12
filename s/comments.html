@@ -345,49 +345,52 @@
            RESPONSIVE DESIGN — comments.html
            ============================================================ */
 
-        /* ============ ديسكتوب / تابلت كبير: > 768px ============ */
-        @media (min-width: 769px) {
-            /* نحصر عرض المحتوى في منتصف الشاشة */
-            #comments-container {
-                left: 50%;
-                right: auto;
-                inset-inline: unset;
-                width: min(700px, 100vw);
-                transform: translateX(-50%);
-                padding: 18px 0 10px;
-            }
-            #comments-list,
-            #replies-view,
-            #empty-state { max-width: 700px; margin: 0 auto; padding: 0 12px; }
+        /* ============================================================
+           RESPONSIVE — ديسكتوب وتابلت
+           التمركز يعتمد على margin:auto بدلاً من transform
+           لتجنب مشاكل RTL
+        ============================================================ */
 
+        /* متغيرات العرض */
+        :root {
+            --content-w: 100%;   /* موبايل: عرض كامل */
+        }
+        @media (min-width: 769px)  { :root { --content-w: 700px; } }
+        @media (min-width: 1100px) { :root { --content-w: 760px; } }
+        @media (min-width: 1400px) { :root { --content-w: 820px; } }
+
+        /* ────── الشريط العلوي: يمتد كامل العرض دائماً ────── */
+        .top-bar {
+            left: 0; right: 0;   /* بدون تغيير */
+        }
+
+        /* ────── حاوية التعليقات ────── */
+        @media (min-width: 769px) {
+            #comments-container {
+                /* نلغي inset-inline ونعتمد على margin:auto */
+                left: 0; right: 0;
+                width: var(--content-w);
+                margin-inline: auto;
+                /* إزالة أي transform سابق */
+                transform: none !important;
+                padding: 18px 12px 10px;
+            }
+
+            /* ────── شريط الإدخال ────── */
             #input-area {
-                left: 50%;
-                right: auto;
-                inset-inline: unset;
-                width: min(700px, 100vw);
-                transform: translateX(-50%);
+                left: 0; right: 0;
+                width: var(--content-w);
+                margin-inline: auto;
+                transform: none !important;
                 border-radius: 16px 16px 0 0;
                 box-shadow: 0 -4px 20px rgba(0,0,0,0.10);
             }
-            .top-bar {
-                /* يمتد كاملاً لكن نحدد max-width للمحتوى الداخلي */
-            }
+
             .top-bar-title { font-size: 16pt; }
             .back-btn      { font-size: 12pt; }
-
-            /* بطاقات التعليقات تكبر قليلاً */
             .comment-card, .reply-card { border-radius: 14px; }
             .cc-text  { font-size: 13.5pt; }
             .cc-video video { max-height: 340px; }
-        }
-
-        /* ============ ديسكتوب واسع: > 1100px ============ */
-        @media (min-width: 1100px) {
-            #comments-container,
-            #input-area { width: min(760px, 100vw); }
-            #comments-list,
-            #replies-view,
-            #empty-state { max-width: 760px; }
         }
 
         /* ============ موبايل صغير: ≤ 380px ============ */
@@ -560,6 +563,7 @@
 const urlParams  = new URLSearchParams(window.location.search);
 const shareId    = urlParams.get('id');
 const deepCmt    = parseInt(urlParams.get('comment') ?? '-1');
+const deepReply  = urlParams.get('reply') !== null ? parseInt(urlParams.get('reply')) : -1;
 
 let bookTitle    = '';
 let bookOwnerId  = '';
@@ -601,7 +605,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Deep-link scroll
     const targetId = deepCmt >= 0 ? deepCmt
         : (window.location.hash.startsWith('#comment-') ? parseInt(window.location.hash.slice(9)) : -1);
-    if (targetId >= 0) setTimeout(() => scrollToCmt(targetId), 400);
+
+    if (targetId >= 0 && deepReply >= 0) {
+        // فتح الردود ثم التمرير للرد المحدد
+        const parentCmt = comments.find(c => c.id === targetId);
+        if (parentCmt) {
+            openReplies(targetId);
+            setTimeout(() => {
+                const replyEl = document.getElementById('comment-' + deepReply);
+                if (replyEl) {
+                    replyEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    replyEl.classList.add('highlighted');
+                    setTimeout(() => replyEl.classList.remove('highlighted'), 2500);
+                }
+            }, 450);
+        }
+    } else if (targetId >= 0) {
+        setTimeout(() => scrollToCmt(targetId), 400);
+    }
 });
 
 async function api(action, payload = {}) {
@@ -626,7 +647,7 @@ async function loadComments() {
     const r = await api('get_comments', { shareId });
     if (r.success) {
         comments = r.comments || [];
-        lastModifiedCache = r.lastModified || 0;
+        syncHash = buildSyncHash(comments);
     }
 }
 
@@ -1088,8 +1109,9 @@ async function doSend() {
                 parentComment.replies.push(res.reply);
                 const idx = comments.findIndex(c => c.id === parentComment.id);
                 if (idx >= 0) comments[idx] = parentComment;
+                syncHash = buildSyncHash(comments);
                 clearInput();
-                renderReplies();
+                patchAppendReply(res.reply); // إضافة الرد الجديد فقط
                 setTimeout(() => {
                     const cc = document.getElementById('comments-container');
                     cc.scrollTop = cc.scrollHeight;
@@ -1099,8 +1121,9 @@ async function doSend() {
             res = await api('save_comment', payload);
             if (res.success) {
                 comments.push(res.comment);
+                syncHash = buildSyncHash(comments);
                 clearInput();
-                renderMain();
+                patchAppendComment(res.comment); // إضافة التعليق الجديد فقط
                 setTimeout(() => {
                     const cc = document.getElementById('comments-container');
                     cc.scrollTop = cc.scrollHeight;
@@ -1131,10 +1154,15 @@ function clearInput() {
 function openMenu(id, type, isOwn, isBO) {
     const items = document.getElementById('ctx-items');
     items.innerHTML = '';
+    const isReplyType = (type === 'reply');
 
-    // Share link (all users)
+    // Share link (all users) — الردود تحصل على رابط خاص بها
     addCtxItem(items,'🔗 مشاركة رابط التعليق', () => {
-        copyCommentLink(id);
+        if (isReplyType && parentComment) {
+            copyCommentLink(parentComment.id, id); // comment=parentId&reply=replyId
+        } else {
+            copyCommentLink(id, null);
+        }
         closeCtxMenu();
     });
 
@@ -1204,9 +1232,10 @@ function getCmt(id, isReply) {
 // =====================================================================
 // ACTIONS: LINK, EDIT, HIDE, DELETE, REPORT
 // =====================================================================
-function copyCommentLink(id) {
+function copyCommentLink(commentId, replyId) {
     const base = window.location.origin + window.location.pathname.replace('comments.html','index.html');
-    const url  = `${base}?id=${shareId}&comment=${id}`;
+    let url = `${base}?id=${shareId}&comment=${commentId}`;
+    if (replyId !== null && replyId !== undefined) url += `&reply=${replyId}`;
     navigator.clipboard.writeText(url).then(() => showToast('تم نسخ الرابط'));
 }
 
@@ -1406,7 +1435,9 @@ async function pickReaction(event, cid, reaction, isReply) {
     const picker = document.getElementById('rxp-' + cid);
     if (picker) { picker.classList.remove('open'); openPickerId = null; }
 
-    isReply===1 ? renderReplies() : renderMain();
+    // تحديث جزئي للتفاعلات فقط بدل إعادة رسم الصفحة كاملاً
+    patchCardReactions(cid, c, isReply===1);
+    syncHash = buildSyncHash(comments); // تحديث البصمة لتجنب إعادة الرسم من الـ sync
 
     await api('save_reaction', {
         shareId,
@@ -1480,22 +1511,14 @@ document.addEventListener('keydown', e => {
 
 // لوحة المفاتيح على iOS تُزيح الـ viewport — نصحح موضع الإدخال
 if (window.visualViewport) {
-    let lastH = window.visualViewport.height;
     window.visualViewport.addEventListener('resize', () => {
-        const vvh    = window.visualViewport.height;
-        const offset = window.innerHeight - vvh;
-        const ia     = document.getElementById('input-area');
+        const offset = window.innerHeight - window.visualViewport.height;
+        const ia = document.getElementById('input-area');
         if (ia) {
-            ia.style.transform  = offset > 50 ? `translateY(-${offset}px)` : '';
-            // على ديسكتوب نُبقي الـ transform المركزي مع الانتقال للأعلى
-            if (window.innerWidth >= 769) {
-                ia.style.transform = offset > 50
-                    ? `translateX(-50%) translateY(-${offset}px)`
-                    : 'translateX(-50%)';
-            }
+            // نحرك فقط عمودياً — التمركز الأفقي يعتمد على margin:auto
+            ia.style.bottom = offset > 50 ? offset + 'px' : '0';
         }
         updateContainerBottom();
-        lastH = vvh;
     });
 }
 
@@ -1504,14 +1527,277 @@ window.addEventListener('resize', updateContainerBottom);
 
 
 // =====================================================================
-// REAL-TIME SYNC (polling خفيف كل 7 ثوانٍ)
+// SURGICAL DOM UPDATE HELPERS
+// كل دالة تحدث جزءاً واحداً فقط دون المساس بباقي البطاقة
 // =====================================================================
-let lastModifiedCache = 0;
-let syncIntervalId    = null;
+
+/** بناء HTML لعرض التفاعلات */
+function buildRxDisplayHTML(c) {
+    const rx = c.reactions || {};
+    const rList = [
+        {k:'heart',e:'❤️'},{k:'laugh',e:'😂'},{k:'like',e:'👍'}
+    ].filter(r => (rx[r.k]||[]).length > 0)
+     .sort((a,b) => (rx[b.k]||[]).length - (rx[a.k]||[]).length);
+    const total = rList.reduce((s,r) => s + (rx[r.k]||[]).length, 0);
+    if (total === 0) return '';
+    let h = `<div class="reactions-display"><div class="reactions-stack">`;
+    rList.slice(0,3).forEach(r => { h += `<span class="r-badge">${r.e}</span>`; });
+    h += `</div><span class="r-count">${total}</span></div>`;
+    return h;
+}
+
+/** بناء HTML لزر التفاعل في الـ footer */
+function buildRxBtnHTML(c, isReply) {
+    const mr = myReact(c);
+    const label = mr ? `${rxEmoji(mr)} ${rxLabel(mr)}` : '🙂 تفاعل';
+    const iR = isReply ? 1 : 0;
+    return `<button class="footer-btn${mr?' reacted':''}" onclick="toggleRxPicker(event,${c.id},${iR})">${label}</button>
+            <div id="rxp-${c.id}" class="reaction-picker">
+                <button class="r-opt${mr==='heart'?' selected':''}" onclick="pickReaction(event,${c.id},'heart',${iR})">❤️</button>
+                <button class="r-opt${mr==='laugh'?' selected':''}" onclick="pickReaction(event,${c.id},'laugh',${iR})">😂</button>
+                <button class="r-opt${mr==='like' ?' selected':''}" onclick="pickReaction(event,${c.id},'like', ${iR})">👍</button>
+            </div>`;
+}
+
+/**
+ * تحديث التفاعلات فقط على بطاقة محددة
+ * لا يمس الفيديو/الصوت/النص أبداً
+ */
+function patchCardReactions(cardId, c, isReply) {
+    const card = document.getElementById('comment-' + cardId);
+    if (!card) return;
+
+    // تحديث عرض التفاعلات
+    const oldDisplay = card.querySelector('.reactions-display');
+    const newHTML    = buildRxDisplayHTML(c);
+    const footer     = card.querySelector('.cc-footer');
+    if (footer) {
+        if (oldDisplay) {
+            if (newHTML) oldDisplay.outerHTML = newHTML;
+            else oldDisplay.remove();
+        } else if (newHTML) {
+            footer.insertAdjacentHTML('beforebegin', newHTML);
+        }
+    }
+
+    // تحديث زر التفاعل في الـ footer
+    const wrap = card.querySelector('.reaction-picker-wrap');
+    if (wrap) wrap.innerHTML = buildRxBtnHTML(c, isReply);
+}
+
+/**
+ * تحديث نص التعليق فقط
+ */
+function patchCardText(cardId, newText) {
+    const card = document.getElementById('comment-' + cardId);
+    if (!card) return;
+    const textEl = card.querySelector('.cc-text');
+    if (textEl) textEl.textContent = newText;
+}
+
+/**
+ * تحديث حالة الإخفاء فقط — يوقف الوسائط إذا أصبح مخفياً عن المستخدم
+ */
+function patchCardHidden(cardId, hidden, authorId) {
+    const card = document.getElementById('comment-' + cardId);
+    if (!card) return;
+    const canView = !hidden || uid() === authorId || uid() === bookOwnerId;
+    if (canView) {
+        card.classList.remove('hidden-comment');
+        const badge = card.querySelector('.cc-hidden-badge');
+        if (!hidden && badge) badge.remove();
+    } else {
+        card.classList.add('hidden-comment');
+        // إيقاف أي وسائط جارية
+        card.querySelectorAll('video, audio').forEach(m => { m.pause(); m.currentTime = 0; });
+    }
+}
+
+/**
+ * إضافة رد جديد في نهاية القائمة (في وضع الردود)
+ */
+function patchAppendReply(reply) {
+    const rl = document.getElementById('replies-list');
+    const re = document.getElementById('replies-empty');
+    if (!rl) return;
+    if (re) re.classList.add('d-none');
+    rl.appendChild(buildCard(reply, true));
+    // تحديث عداد الردود في بطاقة الأم
+    if (parentComment) {
+        const parentCard = document.getElementById('comment-' + parentComment.id);
+        // الأم ستكون في replies-parent-card وليس في القائمة الرئيسية
+        // نحدث زر الرد في القائمة الرئيسية إن وُجد
+        const mainCard = document.querySelector('#comments-list #comment-' + parentComment.id);
+        if (mainCard) {
+            const replyBtn = mainCard.querySelector('.footer-btn:last-child');
+            if (replyBtn && replyBtn.textContent.startsWith('↩')) {
+                const cnt = (parentComment.replies||[]).length;
+                replyBtn.textContent = `↩ رد${cnt?' ('+cnt+')':''}`;
+            }
+        }
+    }
+}
+
+/**
+ * حذف بطاقة من DOM
+ */
+function patchRemoveCard(cardId) {
+    const el = document.getElementById('comment-' + cardId);
+    if (el) el.remove();
+}
+
+/**
+ * إضافة تعليق جديد في نهاية القائمة الرئيسية
+ */
+function patchAppendComment(c) {
+    const list  = document.getElementById('comments-list');
+    const empty = document.getElementById('empty-state');
+    if (!list) return;
+    empty.classList.add('d-none');
+    list.appendChild(buildCard(c, false));
+}
+
+// =====================================================================
+// SMART SYNC — مقارنة ذكية وتحديث جزئي
+// =====================================================================
+let syncIntervalId = null;
+let syncHash       = '';
+let isSyncing      = false;
+
+function buildSyncHash(cmts) {
+    let h = cmts.length + '|';
+    cmts.forEach(c => {
+        const rx = c.reactions || {};
+        h += [c.id, c.timestamp||0, c.editedAt||0, c.hidden?1:0,
+              (c.replies||[]).length,
+              (rx.heart||[]).length,(rx.laugh||[]).length,(rx.like||[]).length
+        ].join(':') + '|';
+        (c.replies||[]).forEach(r => {
+            const rrx = r.reactions||{};
+            h += [r.id,r.timestamp||0,r.editedAt||0,r.hidden?1:0,
+                  (rrx.heart||[]).length,(rrx.laugh||[]).length,(rrx.like||[]).length
+            ].join(':') + ';';
+        });
+    });
+    return h;
+}
+
+/**
+ * تطبيق التغييرات بشكل جراحي دقيق
+ */
+function applyFreshComments(newComments) {
+    const newHash = buildSyncHash(newComments);
+    if (newHash === syncHash) return;
+    syncHash = newHash;
+
+    const oldMap = {};
+    comments.forEach(c => { oldMap[c.id] = c; });
+    const newMap = {};
+    newComments.forEach(c => { newMap[c.id] = c; });
+
+    if (viewMode === 'main') {
+        // ── تعليق محذوف ──
+        comments.forEach(old => {
+            if (!newMap[old.id]) patchRemoveCard(old.id);
+        });
+
+        // ── تعليق جديد ──
+        newComments.forEach(nc => {
+            if (!oldMap[nc.id]) {
+                patchAppendComment(nc);
+                return;
+            }
+            const oc = oldMap[nc.id];
+            // نص تغيّر
+            if ((nc.editedAt||0) !== (oc.editedAt||0)) patchCardText(nc.id, nc.text);
+            // إخفاء تغيّر
+            if (nc.hidden !== oc.hidden) patchCardHidden(nc.id, nc.hidden, nc.authorId);
+            // تفاعلات تغيّرت
+            const rxOld = JSON.stringify(oc.reactions||{});
+            const rxNew = JSON.stringify(nc.reactions||{});
+            if (rxNew !== rxOld) patchCardReactions(nc.id, nc, false);
+            // عدد الردود تغيّر — فقط نحدث عداد زر الرد
+            const oldRepCnt = (oc.replies||[]).length;
+            const newRepCnt = (nc.replies||[]).length;
+            if (newRepCnt !== oldRepCnt) {
+                const card = document.getElementById('comment-' + nc.id);
+                if (card) {
+                    const replyBtn = card.querySelector('.cc-footer .footer-btn:last-child');
+                    if (replyBtn && replyBtn.textContent.startsWith('↩')) {
+                        replyBtn.textContent = `↩ رد${newRepCnt?' ('+newRepCnt+')':''}`;
+                    }
+                }
+            }
+        });
+
+        // إذا أصبح لا توجد تعليقات
+        const visible = newComments.filter(canSee);
+        const empty = document.getElementById('empty-state');
+        if (empty) {
+            if (visible.length === 0) empty.classList.remove('d-none');
+            else empty.classList.add('d-none');
+        }
+
+    } else if (viewMode === 'replies' && parentComment) {
+        const freshParent = newMap[parentComment.id];
+        if (!freshParent) { closeReplies(); return; }
+
+        const oldReplies = parentComment.replies || [];
+        const newReplies = freshParent.replies || [];
+        const oldRMap = {}, newRMap = {};
+        oldReplies.forEach(r => { oldRMap[r.id] = r; });
+        newReplies.forEach(r => { newRMap[r.id] = r; });
+
+        // ── تحديث التعليق الأم إن تغيّر ──
+        if ((freshParent.editedAt||0) !== (parentComment.editedAt||0))
+            patchCardText(freshParent.id, freshParent.text);
+        if (freshParent.hidden !== parentComment.hidden)
+            patchCardHidden(freshParent.id, freshParent.hidden, freshParent.authorId);
+        const rxOldP = JSON.stringify(parentComment.reactions||{});
+        const rxNewP = JSON.stringify(freshParent.reactions||{});
+        if (rxNewP !== rxOldP) patchCardReactions(freshParent.id, freshParent, false);
+
+        // ── ردود محذوفة ──
+        oldReplies.forEach(r => { if (!newRMap[r.id]) patchRemoveCard(r.id); });
+
+        // ── ردود جديدة ──
+        newReplies.forEach(nr => {
+            if (!oldRMap[nr.id]) { patchAppendReply(nr); return; }
+            const or = oldRMap[nr.id];
+            if ((nr.editedAt||0) !== (or.editedAt||0)) patchCardText(nr.id, nr.text);
+            if (nr.hidden !== or.hidden) patchCardHidden(nr.id, nr.hidden, nr.authorId);
+            const rxOR = JSON.stringify(or.reactions||{});
+            const rxNR = JSON.stringify(nr.reactions||{});
+            if (rxNR !== rxOR) patchCardReactions(nr.id, nr, true);
+        });
+
+        // ── قسم الردود الفارغ ──
+        const re = document.getElementById('replies-empty');
+        if (re) {
+            const vis = newReplies.filter(canSee);
+            if (vis.length === 0) re.classList.remove('d-none');
+            else re.classList.add('d-none');
+        }
+
+        parentComment = freshParent;
+    }
+
+    comments = newComments;
+}
+
+async function syncPoll() {
+    if (isSyncing || !shareId) return;
+    isSyncing = true;
+    try {
+        const res = await api('get_comments', { shareId });
+        if (res.success) applyFreshComments(res.comments || []);
+    } catch (e) { /* صامت */ }
+    finally { isSyncing = false; }
+}
 
 function startSync() {
     if (syncIntervalId) return;
-    syncIntervalId = setInterval(syncPoll, 7000);
+    syncIntervalId = setInterval(syncPoll, 6000);
 }
 
 function stopSync() {
@@ -1519,44 +1805,9 @@ function stopSync() {
     syncIntervalId = null;
 }
 
-async function syncPoll() {
-    try {
-        // استعلام خفيف: هل تغيّر lastModified؟
-        const res = await api('get_comments_status', { shareId });
-        if (!res.success) return;
-
-        if (res.lastModified > lastModifiedCache) {
-            lastModifiedCache = res.lastModified;
-            // جلب التعليقات الكاملة المحدّثة
-            const full = await api('get_comments', { shareId });
-            if (!full.success) return;
-
-            const prevLen = comments.length;
-            comments = full.comments || [];
-
-            // إذا كنا في وضع الردود: نُحدِّث parentComment
-            if (viewMode === 'replies' && parentComment) {
-                const fresh = comments.find(c => c.id === parentComment.id);
-                if (!fresh) {
-                    // التعليق الأصلي حُذف → ارجع للقائمة الرئيسية
-                    closeReplies();
-                    return;
-                }
-                parentComment = fresh;
-                renderReplies();
-            } else {
-                renderMain();
-            }
-        }
-    } catch (e) {
-        // خطأ صامت — لا نُزعج المستخدم
-    }
-}
-
-// إيقاف المزامنة عند إخفاء التبويب لتوفير الطاقة
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopSync();
-    else startSync();
+    else { syncPoll(); startSync(); }
 });
 
 </script>

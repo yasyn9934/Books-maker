@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض الكتاب المشترك - صانع الكتب</title>
-    <!-- ══ توجيه فوري لروابط التعليقات — يعمل قبل تحميل أي مورد ══ -->
+    <!-- ══ توجيه فوري لروابط التعليقات والردود — قبل أي مورد ══ -->
     <script>
         (function () {
             var p   = new URLSearchParams(window.location.search);
             var sid = p.get('id');
             var cmt = p.get('comment');
-            // إذا وُجد معامل "comment" في الرابط → توجيه فوري لصفحة التعليقات
+            var rpl = p.get('reply');
             if (sid && cmt !== null) {
-                window.location.replace(
-                    'comments.html?id=' + encodeURIComponent(sid) +
-                    '&comment='         + encodeURIComponent(cmt)
-                );
+                var dest = 'comments.html?id=' + encodeURIComponent(sid)
+                         + '&comment='         + encodeURIComponent(cmt);
+                if (rpl !== null) dest += '&reply=' + encodeURIComponent(rpl);
+                window.location.replace(dest);
             }
         })();
     </script>
