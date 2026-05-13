@@ -130,7 +130,8 @@
             flex-direction: column;
             gap: 30px;
             width: 250mm;
-            margin: 0 auto; /* توسيط عبر margin بدلاً من flex الأصل */
+            max-width: 100%; /* لا يتجاوز عرض الشاشة */
+            margin: 0 auto;
         }
 
         /* ===== وضع التطبيق التفاعلي ===== */
@@ -890,35 +891,44 @@
         const viewer = document.getElementById('content-viewer');
         const pages  = document.querySelectorAll('.page-wrapper');
         if (!pages.length || !viewer) return;
-        // المسافة الجانبية من الـ padding (20px يمين + 20px يسار)
+
+        // العرض المتاح = عرض المشاهد ناقص padding (20px كل جانب)
         const availW = viewer.clientWidth - 40;
-        const pageW  = pages[0].getBoundingClientRect().width;
-        if (pageW <= 0) return;
-        const scale = Math.min(1, availW / pageW);
-        pages.forEach(p => {
-            if (scale < 1) {
-                p.style.transform      = `scale(${scale})`;
-                p.style.transformOrigin = 'top center';
-                // تعويض الفراغ الناتج عن التحجيم
-                const diff = p.offsetHeight * (1 - scale);
-                p.style.marginBottom   = `-${diff - 30}px`;
-            } else {
-                p.style.transform    = '';
-                p.style.marginBottom = '';
-            }
-        });
-        // إغلاق الفجوات عند التصغير
+
+        // نُعيد الـ transform أولاً لنحسب العرض الطبيعي
+        pages.forEach(p => { p.style.transform = ''; p.style.marginBottom = ''; });
         const container = document.getElementById('book-container');
-        if (container) container.style.gap = scale < 1 ? `${30 * scale}px` : '';
+        if (container) container.style.gap = '';
+
+        const pageW = pages[0].offsetWidth;
+        if (pageW <= 0) return;
+
+        const scale = Math.min(1, availW / pageW);
+
+        if (scale >= 0.999) return; // لا حاجة للتحجيم
+
+        pages.forEach(p => {
+            const naturalH = p.offsetHeight;
+            p.style.transform       = `scale(${scale})`;
+            p.style.transformOrigin = 'top center';
+            // نُزيل الفراغ الناتج: الارتفاع بعد التحجيم = naturalH * scale
+            // الفرق = naturalH * (1 - scale) → نُزيله من margin-bottom
+            const gap = naturalH * (1 - scale);
+            p.style.marginBottom = `-${gap - 20}px`;
+        });
+
+        // تقليل gap بين الصفحات بنسبة التحجيم
+        if (container) container.style.gap = `${Math.max(8, 30 * scale)}px`;
     }
 
-    // تشغيل بعد بناء الكتاب
-    const _origBuildBookPreview = typeof buildBookPreview === 'function' ? buildBookPreview : null;
+    // ── ضبط مقياس الكتاب ──
     function runAfterRender() {
         updateTopbarHeight();
-        requestAnimationFrame(() => requestAnimationFrame(scaleBookPages));
+        // نعطي المتصفح 3 إطارات لحساب أبعاد mm قبل التحجيم
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(scaleBookPages)));
     }
 
+    // تحديث عند تغيير حجم النافذة
     window.addEventListener('resize', () => {
         updateTopbarHeight();
         scaleBookPages();
@@ -928,11 +938,17 @@
         scaleBookPages();
     });
 
-    // ندير runAfterRender بعد renderBook
-    const _origRenderBook = renderBook;
-    // نُنفذها بعد التحميل
+    // نُغلّف renderBook لنُنفّذ runAfterRender بعدها تلقائياً
+    const _originalRenderBook = renderBook;
+    renderBook = function() {
+        _originalRenderBook();
+        // نجدول بعد انتهاء الـ requestAnimationFrame الداخلي في renderBook
+        setTimeout(runAfterRender, 150);
+    };
+
+    // تشغيل أولي بعد التحميل
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(runAfterRender, 300);
+        setTimeout(runAfterRender, 400);
     });
 
 </script>

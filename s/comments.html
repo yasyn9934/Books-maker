@@ -274,10 +274,34 @@
             border: none; cursor: pointer; color: #fff; font-size: 17pt;
             display: flex; align-items: center; justify-content: center;
             transition: background .18s, transform .12s; flex-shrink: 0;
+            position: relative; overflow: hidden;
         }
         .send-btn:disabled { background: #c8c8c8; cursor: default; }
         .send-btn:not(:disabled):hover { background: #9a6e09; }
         .send-btn:not(:disabled):active { transform: scale(.88); }
+        /* حلقة التقدم داخل زر الإرسال */
+        .send-btn svg.progress-ring {
+            position: absolute; inset: 0; width: 40px; height: 40px;
+            transform: rotate(-90deg); pointer-events: none;
+        }
+        .send-btn svg.progress-ring circle {
+            fill: none; stroke: rgba(255,255,255,0.9); stroke-width: 3;
+            stroke-linecap: round;
+            stroke-dasharray: 110; stroke-dashoffset: 110;
+            transition: stroke-dashoffset .12s linear;
+            r: 17; cx: 20; cy: 20;
+        }
+        .send-btn.sending { background: #9a6e09; cursor: wait; }
+        .send-btn .send-icon { transition: opacity .18s; }
+        .send-btn.sending .send-icon { opacity: 0; }
+
+        /* روابط داخل التعليقات */
+        .cc-text a { color: var(--green); text-decoration: underline; word-break: break-all; }
+        .cc-text a:hover { color: var(--gold); }
+
+        /* YouTube embed */
+        .cc-youtube { margin-bottom: 7px; border-radius: 9px; overflow: hidden; aspect-ratio: 16/9; }
+        .cc-youtube iframe { width: 100%; height: 100%; border: none; display: block; }
 
         /* ========== OVERLAYS & MODALS ========== */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.42); z-index: 300; display: none; }
@@ -491,14 +515,17 @@
     <div class="input-bar">
         <!-- Plus -->
         <div class="plus-wrap" id="plus-wrap">
-            <button class="pm-btn" id="pm-file"  title="إرفاق ملف"  onclick="triggerUpload('file')">📄</button>
-            <button class="pm-btn" id="pm-video" title="إرفاق فيديو" onclick="triggerUpload('video')">🎥</button>
-            <button class="pm-btn" id="pm-image" title="إرفاق صورة" onclick="triggerUpload('image')">🖼️</button>
-            <button class="plus-btn" id="plus-btn" onclick="togglePlusMenu()">+</button>
+            <button class="pm-btn" id="pm-file"  title="إرفاق ملف"  onclick="triggerUpload('file')" onmousedown="event.preventDefault()">📄</button>
+            <button class="pm-btn" id="pm-video" title="إرفاق فيديو" onclick="triggerUpload('video')" onmousedown="event.preventDefault()">🎥</button>
+            <button class="pm-btn" id="pm-image" title="إرفاق صورة" onclick="triggerUpload('image')" onmousedown="event.preventDefault()">🖼️</button>
+            <button class="plus-btn" id="plus-btn" onclick="togglePlusMenu()" onmousedown="event.preventDefault()" ontouchstart="event.stopPropagation()">+</button>
         </div>
         <textarea id="comment-input" placeholder="اكتب تعليقاً..." rows="1"
             oninput="onInputChange(this)" onkeydown="onKeyDown(event)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="doSend()" disabled>↑</button>
+        <button class="send-btn" id="send-btn" onclick="doSend()" disabled>
+            <span class="send-icon">↑</span>
+            <svg class="progress-ring" viewBox="0 0 40 40"><circle/></svg>
+        </button>
     </div>
 </div>
 
@@ -646,7 +673,7 @@ async function loadBookInfo() {
 async function loadComments() {
     const r = await api('get_comments', { shareId });
     if (r.success) {
-        comments = r.comments || [];
+        comments = sortByTimestamp(r.comments || []);
         syncHash = buildSyncHash(comments);
     }
 }
@@ -747,13 +774,13 @@ function buildCard(c, isReply) {
     html += '<div class="cc-body">';
 
     if (isReply && c.replyTo != null) {
-        html += `<div class="reply-to-indicator">
+        html += `<div class="reply-to-indicator" onclick="scrollToReply(${c.replyTo})" style="cursor:pointer" title="انتقل إلى الرد الأصلي">
             <strong>${esc(c.replyToName||'')}</strong>
             <span class="reply-to-preview">${esc((c.replyToText||'').substring(0,70))}${(c.replyToText||'').length>70?'…':''}</span>
         </div>`;
     }
 
-    html += `<div class="cc-text">${esc(c.text)}</div>`;
+    html += `<div class="cc-text">${renderTextWithLinks(c.text)}</div>`;
 
     const files  = c.files  || [];
     const imgs   = files.filter(f => f.type==='image');
@@ -771,9 +798,18 @@ function buildCard(c, isReply) {
         html += '</div></div>';
     }
 
-    // Video
+    // Video (مرفق) — إذا وُجد لا يُعرض يوتيوب
     if (vids.length) {
         html += `<div class="cc-video"><video controls preload="metadata"><source src="${vids[0].data}"></video></div>`;
+    }
+
+    // YouTube embed — فقط إذا لم توجد ملفات مرفقة
+    const hasAttachments = (imgs.length + vids.length + auds.length + others.length) > 0;
+    if (!hasAttachments) {
+        const ytId = extractYouTubeId(c.text||'');
+        if (ytId) {
+            html += `<div class="cc-youtube"><iframe src="https://www.youtube.com/embed/${ytId}" allowfullscreen loading="lazy"></iframe></div>`;
+        }
     }
 
     // Other files (above audio)
@@ -975,11 +1011,20 @@ function usedSlots() {
 }
 
 function onFileSelect(event, type) {
-    const files = Array.from(event.target.files);
+    let files = Array.from(event.target.files);
     event.target.value = '';
 
+    // تقييد الصور بحد أقصى 4 صور عند الاختيار
+    if (type === 'image') {
+        const currentImgs = attachedFiles.filter(f => f.type === 'image').length;
+        const canAdd = MAX_SLOTS - currentImgs;
+        if (files.length > canAdd) {
+            files = files.slice(0, Math.max(0, canAdd));
+            if (canAdd <= 0) { showWarn(type); return; }
+        }
+    }
+
     for (const file of files) {
-        // Already have a video?
         if (type === 'video' && attachedFiles.some(f => f.type==='video')) {
             showWarn('video_dup'); break;
         }
@@ -988,7 +1033,6 @@ function onFileSelect(event, type) {
 
         const reader = new FileReader();
         reader.onload = e => {
-            // Detect if it's audio even if type='other'
             let actualType = type;
             if (type === 'other' && file.type.startsWith('audio/')) actualType = 'audio';
             attachedFiles.push({ type: actualType, data: e.target.result, name: file.name });
@@ -1058,10 +1102,8 @@ function onInputChange(el) {
 }
 
 function onKeyDown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!document.getElementById('send-btn').disabled) doSend();
-    }
+    // Enter يضيف سطراً جديداً فقط — الإرسال عبر زر الإرسال
+    // لا نتدخل في سلوك Enter الافتراضي
 }
 
 function checkSend() {
@@ -1079,6 +1121,47 @@ function updateContainerBottom() {
 // =====================================================================
 // SEND
 // =====================================================================
+// دالة مساعدة لتحديث حلقة التقدم في زر الإرسال
+function setSendProgress(pct) {
+    const btn    = document.getElementById('send-btn');
+    const circle = btn.querySelector('.progress-ring circle');
+    if (!circle) return;
+    const circumference = 2 * Math.PI * 17; // r=17
+    const offset = circumference * (1 - Math.min(1, pct));
+    circle.style.strokeDasharray  = circumference;
+    circle.style.strokeDashoffset = offset;
+}
+
+function startSendProgress() {
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+    btn.classList.add('sending');
+    setSendProgress(0);
+    // مرحلة الرفع: 0→60% تدريجياً
+    let pct = 0;
+    const iv = setInterval(() => {
+        pct += 0.015;
+        if (pct >= 0.60) { clearInterval(iv); }
+        setSendProgress(pct);
+    }, 80);
+    return iv;
+}
+
+function finishSendProgress(iv, success) {
+    clearInterval(iv);
+    const btn = document.getElementById('send-btn');
+    // 60→100% سريعاً عند الاستقبال
+    setSendProgress(0.95);
+    setTimeout(() => {
+        setSendProgress(1);
+        setTimeout(() => {
+            btn.classList.remove('sending');
+            setSendProgress(0);
+            checkSend();
+        }, 280);
+    }, 120);
+}
+
 async function doSend() {
     const input = document.getElementById('comment-input');
     const text  = input.value.trim();
@@ -1087,7 +1170,7 @@ async function doSend() {
     const me = uid();
     if (!me) { showToast('يجب تسجيل الدخول للتعليق'); return; }
 
-    document.getElementById('send-btn').disabled = true;
+    const progressIv = startSendProgress();
 
     const payload = {
         shareId, text, authorId: me, authorName: uname(),
@@ -1111,7 +1194,7 @@ async function doSend() {
                 if (idx >= 0) comments[idx] = parentComment;
                 syncHash = buildSyncHash(comments);
                 clearInput();
-                patchAppendReply(res.reply); // إضافة الرد الجديد فقط
+                patchAppendReply(res.reply);
                 setTimeout(() => {
                     const cc = document.getElementById('comments-container');
                     cc.scrollTop = cc.scrollHeight;
@@ -1123,20 +1206,20 @@ async function doSend() {
                 comments.push(res.comment);
                 syncHash = buildSyncHash(comments);
                 clearInput();
-                patchAppendComment(res.comment); // إضافة التعليق الجديد فقط
+                patchAppendComment(res.comment);
                 setTimeout(() => {
                     const cc = document.getElementById('comments-container');
                     cc.scrollTop = cc.scrollHeight;
                 }, 80);
             }
         }
-        if (!res.success) { showToast('فشل الإرسال: ' + (res.message||'')); }
+        finishSendProgress(progressIv, res?.success);
+        if (!res.success) showToast('فشل الإرسال: ' + (res.message||''));
     } catch(e) {
+        finishSendProgress(progressIv, false);
         console.error(e);
         showToast('حدث خطأ أثناء الإرسال');
     }
-
-    checkSend();
 }
 
 function clearInput() {
@@ -1159,20 +1242,21 @@ function openMenu(id, type, isOwn, isBO) {
     // Share link (all users) — الردود تحصل على رابط خاص بها
     addCtxItem(items,'🔗 مشاركة رابط التعليق', () => {
         if (isReplyType && parentComment) {
-            copyCommentLink(parentComment.id, id); // comment=parentId&reply=replyId
+            copyCommentLink(parentComment.id, id);
         } else {
             copyCommentLink(id, null);
         }
         closeCtxMenu();
     });
 
+    // نسخ النص — يظهر للجميع
+    addCtxItem(items,'📋 نسخ النص', () => {
+        const c = getCmt(id, type==='reply');
+        if (c) navigator.clipboard.writeText(c.text||'').then(() => showToast('تم نسخ النص'));
+        closeCtxMenu();
+    });
+
     if (isOwn) {
-        // Copy text
-        addCtxItem(items,'📋 نسخ النص', () => {
-            const c = getCmt(id, type==='reply');
-            if (c) navigator.clipboard.writeText(c.text||'').then(() => showToast('تم نسخ النص'));
-            closeCtxMenu();
-        });
         // Edit
         addCtxItem(items,'✏️ تعديل التعليق', () => {
             doEdit(id, type==='reply');
@@ -1658,6 +1742,82 @@ function patchAppendComment(c) {
 }
 
 // =====================================================================
+// HELPER FUNCTIONS
+// =====================================================================
+
+/** ترتيب تصاعدي حسب الوقت (الأقدم أولاً) */
+function sortByTimestamp(arr) {
+    return [...arr].sort((a, b) => (a.timestamp||0) - (b.timestamp||0));
+}
+
+/**
+ * دمج التفاعلات مع الحفاظ على تفاعل المستخدم الحالي محلياً.
+ * التفاعلات الخارجية (من الآخرين) تُحدَّث من الخادم.
+ * تفاعل المستخدم الحالي يبقى كما اختاره هو آخر مرة.
+ */
+function mergeReactionsPreserveMe(oldRx, newRx) {
+    const me = uid();
+    if (!me) return newRx;
+
+    const merged = JSON.parse(JSON.stringify(newRx || {}));
+    ['heart','laugh','like'].forEach(k => { if (!merged[k]) merged[k] = []; });
+
+    // ما كان تفاعل المستخدم في النسخة المحلية القديمة؟
+    const myOldRx = (['heart','laugh','like'].find(k => (oldRx||{})[k]?.includes(me))) || null;
+    // ما هو تفاعله في النسخة الجديدة من الخادم؟
+    const myNewRx = (['heart','laugh','like'].find(k => (newRx||{})[k]?.includes(me))) || null;
+
+    // أزل المستخدم الحالي من الخادم أولاً (سنضيفه لاحقاً بقرار محلي)
+    ['heart','laugh','like'].forEach(k => {
+        merged[k] = merged[k].filter(id => id !== me);
+    });
+
+    // أضف تفاعله المحلي — الأولوية للقيمة المحلية
+    const myLocalRx = myOldRx; // آخر ما اختاره محلياً
+    if (myLocalRx) merged[myLocalRx].push(me);
+
+    return merged;
+}
+
+/**
+ * استخراج معرّف فيديو يوتيوب من نص
+ */
+function extractYouTubeId(text) {
+    const m = text.match(
+        /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+    );
+    return m ? m[1] : null;
+}
+
+/**
+ * تحويل النص العادي إلى HTML مع جعل الروابط قابلة للنقر
+ */
+function renderTextWithLinks(text) {
+    if (!text) return '';
+    // escape أولاً
+    const safe = String(text)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    // تحويل URLs إلى <a>
+    return safe.replace(
+        /(https?:\/\/[^\s<>"]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+}
+
+/**
+ * التمرير إلى رد معين داخل قسم الردود وتمييزه
+ */
+function scrollToReply(replyId) {
+    const el = document.getElementById('comment-' + replyId);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlighted');
+        setTimeout(() => el.classList.remove('highlighted'), 2500);
+    }
+}
+
+// =====================================================================
 // SMART SYNC — مقارنة ذكية وتحديث جزئي
 // =====================================================================
 let syncIntervalId = null;
@@ -1712,10 +1872,14 @@ function applyFreshComments(newComments) {
             if ((nc.editedAt||0) !== (oc.editedAt||0)) patchCardText(nc.id, nc.text);
             // إخفاء تغيّر
             if (nc.hidden !== oc.hidden) patchCardHidden(nc.id, nc.hidden, nc.authorId);
-            // تفاعلات تغيّرت
+            // تفاعلات تغيّرت — لكن نحمي تفاعل المستخدم الحالي
             const rxOld = JSON.stringify(oc.reactions||{});
             const rxNew = JSON.stringify(nc.reactions||{});
-            if (rxNew !== rxOld) patchCardReactions(nc.id, nc, false);
+            if (rxNew !== rxOld) {
+                const merged = mergeReactionsPreserveMe(oc.reactions, nc.reactions);
+                nc.reactions = merged;
+                patchCardReactions(nc.id, nc, false);
+            }
             // عدد الردود تغيّر — فقط نحدث عداد زر الرد
             const oldRepCnt = (oc.replies||[]).length;
             const newRepCnt = (nc.replies||[]).length;
@@ -1755,7 +1919,10 @@ function applyFreshComments(newComments) {
             patchCardHidden(freshParent.id, freshParent.hidden, freshParent.authorId);
         const rxOldP = JSON.stringify(parentComment.reactions||{});
         const rxNewP = JSON.stringify(freshParent.reactions||{});
-        if (rxNewP !== rxOldP) patchCardReactions(freshParent.id, freshParent, false);
+        if (rxNewP !== rxOldP) {
+            freshParent.reactions = mergeReactionsPreserveMe(parentComment.reactions, freshParent.reactions);
+            patchCardReactions(freshParent.id, freshParent, false);
+        }
 
         // ── ردود محذوفة ──
         oldReplies.forEach(r => { if (!newRMap[r.id]) patchRemoveCard(r.id); });
@@ -1768,7 +1935,10 @@ function applyFreshComments(newComments) {
             if (nr.hidden !== or.hidden) patchCardHidden(nr.id, nr.hidden, nr.authorId);
             const rxOR = JSON.stringify(or.reactions||{});
             const rxNR = JSON.stringify(nr.reactions||{});
-            if (rxNR !== rxOR) patchCardReactions(nr.id, nr, true);
+            if (rxNR !== rxOR) {
+                nr.reactions = mergeReactionsPreserveMe(or.reactions, nr.reactions);
+                patchCardReactions(nr.id, nr, true);
+            }
         });
 
         // ── قسم الردود الفارغ ──
@@ -1782,7 +1952,7 @@ function applyFreshComments(newComments) {
         parentComment = freshParent;
     }
 
-    comments = newComments;
+    comments = sortByTimestamp(newComments);
 }
 
 async function syncPoll() {
@@ -1797,7 +1967,7 @@ async function syncPoll() {
 
 function startSync() {
     if (syncIntervalId) return;
-    syncIntervalId = setInterval(syncPoll, 6000);
+    syncIntervalId = setInterval(syncPoll, 2500);
 }
 
 function stopSync() {
