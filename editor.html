@@ -7,11 +7,10 @@
     <script src="auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="plugins.js"></script>
-    
     <script src="PDFs/royal-assets.js"></script>
     <script src="PDFs/royal-parser.js"></script>
     <script src="PDFs/royal-renderer.js"></script>
-    
+
     <script>
         let currentSiteFeatures = {};
         document.addEventListener("DOMContentLoaded", function() {
@@ -22,7 +21,6 @@
                 injectDynamicStyles(RoyalFeatures);
             }
         });
-
         function injectDynamicStyles(featuresObj) {
             let oldStyle = document.getElementById('dynamic-royal-styles');
             if(oldStyle) oldStyle.remove();
@@ -36,426 +34,1794 @@
     </script>
 
     <style>
-        @font-face { font-family: 'Amiri'; src: url('fonts/Amiri-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-        @font-face { font-family: 'Amiri'; src: url('fonts/Amiri-Bold.ttf') format('truetype'); font-weight: bold; font-style: normal; }
-        @font-face { font-family: 'Aref Ruqaa'; src: url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); font-weight: normal; font-style: normal; }
-        @font-face { font-family: 'Aref Ruqaa'; src: url('fonts/ArefRuqaa-Bold.ttf') format('truetype'); font-weight: bold; font-style: normal; }
+        /* ── FONTS ─────────────────────────────────────────── */
+        @font-face { font-family:'Amiri';      src:url('fonts/Amiri-Regular.ttf')     format('truetype'); font-weight:normal; }
+        @font-face { font-family:'Amiri';      src:url('fonts/Amiri-Bold.ttf')        format('truetype'); font-weight:bold;   }
+        @font-face { font-family:'Aref Ruqaa'; src:url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); font-weight:normal; }
+        @font-face { font-family:'Aref Ruqaa'; src:url('fonts/ArefRuqaa-Bold.ttf')    format('truetype'); font-weight:bold;   }
 
-        :root { --global-page-bg: #FFFDD0; --global-font-size: 20pt; --royal-gold: #b8860b; --royal-green: #6B8E23; }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        @page { size: 250mm 353mm; margin: 0; } 
+        /* ── DESIGN TOKENS ──────────────────────────────────── */
+        :root {
+            --global-page-bg:  #FFFDD0;
+            --global-font-size: 20pt;
+            --royal-gold:  #b8860b;
+            --royal-green: #6B8E23;
+            --bg:        #0d0c09;
+            --surf1:     #181510;
+            --surf2:     #21200f;
+            --surf3:     #2c291a;
+            --gold:      #c9a227;
+            --gold-dim:  rgba(201,162,39,.18);
+            --gold-line: rgba(201,162,39,.28);
+            --green:     #4e7c5f;
+            --blue:      #2980b9;
+            --purple:    #8e44ad;
+            --orange:    #d35400;
+            --red:       #c0392b;
+            --text:      #ede8d5;
+            --text-dim:  #a09070;
+            --text-muted:#6b5f48;
+            --hdr-h:     58px;
+            --panel-h:   52vh;
+            --rad:       10px;
+            --ease:      cubic-bezier(.4,0,.2,1);
+        }
 
-        body { font-family: 'Amiri', serif; background-color: #f4f6f8; color: #333; display: flex; flex-direction: column; align-items: center; padding: 30px 20px; transition: all 0.3s ease; scroll-behavior: smooth; }
-        .control-panel { width: 100%; max-width: 1150px; background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 12px 35px rgba(0,0,0,0.08); margin-bottom: 40px; display: flex; flex-direction: column; gap: 25px; border: 1px solid #eef0f2; }
-        .stats-bar { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 10px; font-family: 'Amiri'; font-size: 15pt; border: 1px solid #e1e4e8; font-weight: bold; color: #2c3e50; }
-        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; background: #fafbfc; padding: 25px; border-radius: 12px; border: 1px solid #eef0f2; }
-        .setting-item { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        label { font-family: 'Aref Ruqaa'; color: #4a3f35; font-size: 14pt; font-weight: bold; }
-        input, select, textarea { width: 100%; height: 48px; padding: 10px 15px; font-family: 'Amiri', serif; font-size: 14pt; border: 1px solid #dcdde1; border-radius: 8px; outline: none; transition: all 0.2s; background: #fff; }
-        input:focus, select:focus, textarea:focus { border-color: var(--royal-gold); box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1); }
-        input[type="color"] { padding: 2px 5px; cursor: pointer; }
-        .file-upload-wrapper { display: flex; gap: 8px; height: 48px; }
-        .file-upload-wrapper input[type="text"] { flex: 1; height: 100%; }
-        .file-upload-wrapper button { height: 100%; padding: 0 20px; background: var(--royal-gold); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 16pt; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .file-upload-wrapper button:hover { background: #9a7008; }
+        /* ── THEME TRANSITION ───────────────────────────────── */
+        body.theme-switching,
+        body.theme-switching *:not(input):not(select):not(textarea):not(.page-wrapper):not(.page-wrapper *) {
+            transition:
+                background-color .45s cubic-bezier(.4,0,.2,1),
+                color            .35s cubic-bezier(.4,0,.2,1),
+                border-color     .35s cubic-bezier(.4,0,.2,1),
+                box-shadow       .35s cubic-bezier(.4,0,.2,1) !important;
+        }
 
-        .vault-box { background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #eef0f2; margin-top: 10px; }
-        .vault-list { max-height: 150px; overflow-y: auto; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px; }
-        .vault-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #fff; border: 1px solid #eee; border-radius: 6px; margin-bottom: 5px; font-family: 'Amiri'; }
-        .media-btn { background: #b8860b; color: #fff; border: none; padding: 5px 15px; border-radius: 20px; font-family: 'Amiri'; cursor: pointer; font-size: 14pt; margin: 5px 0; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .media-btn:hover { background: #9a7008; transform: translateY(-1px); }
+        /* ── THEME PICKER (info-field) ──────────────────────── */
+        .theme-swatches-row {
+            display:grid;
+            grid-template-columns: repeat(13, 28px);
+            gap:5px;
+            margin-top:5px;
+        }
+        .theme-swatch {
+            position:relative;
+            width:30px; height:30px;
+            border-radius:50%;
+            cursor:pointer;
+            border:2px solid transparent;
+            transition:transform .18s, border-color .18s, box-shadow .18s;
+            flex-shrink:0;
+            outline:none;
+        }
+        .theme-swatch:hover { transform:scale(1.15); box-shadow:0 0 0 3px rgba(255,255,255,.18); }
+        .theme-swatch.active {
+            border-color:var(--gold) !important;
+            box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--gold);
+            transform:scale(1.12);
+        }
+        .theme-swatch[title]::after {
+            content:attr(title);
+            position:absolute;
+            bottom:calc(100% + 6px); left:50%;
+            transform:translateX(-50%);
+            background:var(--surf2);
+            color:var(--text);
+            border:1px solid var(--gold-line);
+            border-radius:6px;
+            font-family:'Amiri'; font-size:9pt;
+            padding:3px 8px;
+            white-space:nowrap;
+            pointer-events:none;
+            opacity:0; transition:opacity .15s;
+            z-index:9999;
+        }
+        .theme-swatch:hover::after { opacity:1; }
 
-        textarea#mainText { height: 400px; padding: 20px; line-height: 1.8; white-space: pre-wrap; resize: vertical; }
-        
-        .btn-row { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
-        .btn { background-color: var(--royal-green); color: white; border: none; padding: 12px 25px; font-size: 14pt; font-family: 'Aref Ruqaa'; border-radius: 8px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); min-width: 140px; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-        .btn-focus { background-color: #2c3e50; } .btn-export { background-color: #1976d2; } .btn-import { background-color: #ef6c00; } .btn-clear { background-color: #d32f2f; } .btn-bg { background-color: #8e44ad; } .btn-interactive { background-color: #00838f; }
+        /* ── RESET ──────────────────────────────────────────── */
+        *,*::before,*::after {
+            margin:0; padding:0; box-sizing:border-box;
+            -webkit-print-color-adjust:exact !important;
+            print-color-adjust:exact !important;
+        }
+        @page { size:250mm 353mm; margin:0; }
+        ::-webkit-scrollbar       { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:var(--gold-line); border-radius:4px; }
+        html { scroll-behavior:smooth; }
+        body { font-family:'Amiri',serif; background:var(--bg); color:var(--text); overflow-x:hidden; min-height:100vh; }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(5px); }
-        .modal-content { background: #fff; padding: 40px; border-radius: 20px; text-align: center; max-width: 550px; border-top: 8px solid #b8860b; box-shadow: 0 20px 50px rgba(0,0,0,0.3); width: 90%; }
-        .modal-title { font-family: 'Aref Ruqaa'; color: #4a3f35; font-size: 24pt; margin-bottom: 15px; }
-        .modal-desc { font-family: 'Amiri'; font-size: 16pt; color: #666; margin-bottom: 25px; line-height: 1.6; }
-        .modal-buttons { display: flex; flex-direction: column; gap: 15px; }
-        .btn-modal { padding: 15px; font-size: 16pt; border-radius: 10px; font-family: 'Amiri'; cursor: pointer; border: none; font-weight: bold; transition: 0.2s; }
-        .btn-modal:hover { transform: translateY(-2px); }
-        .btn-original { background: #b8860b; color: white; } .btn-current { background: #6B8E23; color: white; } .btn-cancel { background: #d32f2f; color: white; margin-top: 10px; }
+        /* ══════════════════════════════════════════════════════
+           HEADER
+        ══════════════════════════════════════════════════════ */
+        .app-header {
+            position:sticky; top:0; z-index:200;
+            height:var(--hdr-h);
+            background:var(--surf1);
+            border-bottom:1px solid var(--gold-line);
+            box-shadow:0 3px 20px rgba(0,0,0,.45);
+            display:flex; align-items:center; gap:14px; padding:0 18px;
+        }
+        .brand { display:flex; align-items:center; gap:9px; flex-shrink:0; text-decoration:none; }
+        .brand-gem { font-size:22pt; color:var(--gold); animation:gem-pulse 3.5s ease-in-out infinite; line-height:1; }
+        @keyframes gem-pulse {
+            0%,100% { text-shadow:0 0 8px var(--gold); opacity:1; }
+            50%      { text-shadow:0 0 22px var(--gold),0 0 45px rgba(201,162,39,.25); opacity:.75; }
+        }
+        .brand-name { font-family:'Aref Ruqaa',serif; font-size:16pt; color:var(--gold); white-space:nowrap; letter-spacing:.4px; }
+        .hdr-stats  { display:flex; gap:7px; flex:1; justify-content:center; flex-wrap:wrap; }
+        .stat-chip  { background:var(--surf3); border:1px solid var(--gold-line); border-radius:99px; padding:3px 14px 3px 10px; display:flex; align-items:center; gap:7px; font-family:'Amiri'; font-size:11.5pt; cursor:default; transition:background .2s,border-color .2s; }
+        .stat-chip:hover { background:var(--gold-dim); border-color:var(--gold); }
+        .stat-lbl { color:var(--text-muted); font-size:9.5pt; }
+        .stat-val  { color:var(--gold); font-weight:bold; font-size:12.5pt; min-width:20px; text-align:center; }
 
-        .bg-list { max-height: 250px; overflow-y: auto; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .bg-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 8px; font-family: 'Amiri'; font-weight: bold; }
-        .bg-item img { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; }
+        /* ══════════════════════════════════════════════════════
+           MAIN CONTENT  (scrollable page area above the panel)
+        ══════════════════════════════════════════════════════ */
+        #main-content {
+            min-height:calc(100vh - var(--hdr-h));
+            padding-bottom:var(--panel-h);
+        }
 
-        body.focus-mode { background-color: #fcfcfc; padding: 0; }
-        body.focus-mode .control-panel { max-width: 100%; box-shadow: none; margin: 0; border-radius: 0; padding: 15px 50px; background: transparent; border: none; }
-        body.focus-mode .settings-grid, body.focus-mode .vault-box, body.focus-mode #book-container, body.focus-mode .stats-bar { display: none; }
-        body.focus-mode textarea#mainText { height: 85vh; font-size: 22pt; border: none; background: #fcfcfc; box-shadow: none; }
+        /* Focus-mode full-screen textarea */
+        #focusText {
+            position:fixed;
+            top:var(--hdr-h); left:0; right:0;
+            bottom:46px;          /* sit above the main-tabs row */
+            background:var(--surf1);
+            color:var(--text);
+            font-family:'Amiri',serif;
+            font-size:22pt; line-height:2.1;
+            padding:30px 60px;
+            border:none; outline:none; resize:none;
+            direction:rtl;
+            z-index:1400;
+            display:none;
+        }
+        #focusText::placeholder { color:var(--text-muted); }
 
-        #smart-panel { position: fixed; bottom: 0; left: 0; right: 0; max-height: 40vh; overflow-y: auto; background: #fdfdfd; border-top: 4px solid #b8860b; box-shadow: 0 -10px 25px rgba(0,0,0,0.15); z-index: 2000; padding: 20px 30px; display: none; font-family: 'Amiri', serif; }
-        .panel-header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 15px; }
-        .panel-title { font-family: 'Aref Ruqaa'; color: #6B8E23; font-size: 20pt; margin: 0; }
-        .close-btn { background: #d32f2f; color: white; border: none; padding: 5px 15px; font-size: 14pt; cursor: pointer; border-radius: 5px; }
-        .result-item { border-bottom: 1px solid #eee; padding: 12px 0; cursor: pointer; transition: background 0.3s; }
-        .result-item:hover { background: #f0f4f8; border-right: 4px solid #b8860b; padding-right: 10px; }
-        
-        .quran-grid { display: grid; grid-template-columns: 3fr 1fr 1fr; gap: 15px; align-items: center; }
-        .hadith-grid { display: grid; grid-template-columns: 3fr 1.5fr 1.5fr 1fr; gap: 15px; align-items: center; }
-        .grid-header { font-family: 'Aref Ruqaa'; font-size: 16pt; color: #4a3f35; font-weight: bold; border-bottom: 2px solid #b8860b; padding-bottom: 5px; margin-bottom: 10px; }
+        /* ── BOOK CONTAINER ─────────────────────────────────── */
+        #book-container { display:flex; flex-direction:column; gap:30px; width:250mm; margin:50px auto 70px; }
+        .page-wrapper   { width:250mm; height:353mm; position:relative; overflow:hidden; background-color:var(--global-page-bg)!important; page-break-after:always; box-shadow:0 10px 45px rgba(0,0,0,.55); box-sizing:border-box; }
+        .page-header    { position:absolute; width:100%; display:flex; justify-content:space-between; padding:0 35mm; font-size:14pt; color:#4a3f35; font-family:'Amiri'; font-weight:bold; z-index:10; }
+        .style-islamic .page-header { top:6mm; } .style-classic .page-header { top:5mm; } .style-floral .page-header { top:7mm; } .style-royal .page-header { top:8mm; } .style-minimal .page-header { top:5mm; } .style-clean .page-header { top:10mm; }
+        .content-body   { position:absolute; top:42mm; bottom:25mm; left:35mm; right:35mm; font-size:var(--global-font-size); line-height:2.2; z-index:2; overflow:hidden; }
+        .cover-page { background-size:cover; background-position:center; }
+        .cover-page .content-body { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+        .toc-link { text-decoration:none; color:inherit; display:flex; justify-content:space-between; width:100%; transition:color .2s; cursor:pointer; }
+        .toc-link:hover { color:#b8860b; background-color:rgba(184,134,11,.05); }
+        .media-btn { background:var(--royal-gold); color:#fff; border:none; padding:5px 15px; border-radius:20px; font-family:'Amiri'; cursor:pointer; font-size:14pt; margin:5px 0; transition:.2s; }
+        .media-btn:hover { background:#9a7008; transform:translateY(-1px); }
 
-        #book-container { display: flex; flex-direction: column; gap: 30px; width: 250mm; }
-        
-        .page-wrapper { width: 250mm; height: 353mm; position: relative; overflow: hidden; background-color: var(--global-page-bg) !important; page-break-after: always; box-shadow: 0 0 20px rgba(0,0,0,0.08); box-sizing: border-box; }
-        .page-header { position: absolute; width: 100%; display: flex; justify-content: space-between; padding: 0 35mm; font-size: 14pt; color: #4a3f35; font-family: 'Amiri'; font-weight: bold; z-index: 10; }
-        .style-islamic .page-header { top: 6mm; } .style-classic .page-header { top: 5mm; } .style-floral .page-header { top: 7mm; } .style-royal .page-header { top: 8mm; } .style-minimal .page-header { top: 5mm; } .style-clean .page-header { top: 10mm; }
-        .content-body { position: absolute; top: 42mm; bottom: 25mm; left: 35mm; right: 35mm; font-size: var(--global-font-size); line-height: 2.2; z-index: 2; overflow: hidden; }
-        .cover-page { background-size: cover; background-position: center; }
-        .cover-page .content-body { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .toc-link { text-decoration: none; color: inherit; display: flex; justify-content: space-between; width: 100%; transition: color 0.2s; cursor: pointer; }
-        .toc-link:hover { color: #b8860b; background-color: rgba(184, 134, 11, 0.05); }
+        /* ── SMART PANEL ────────────────────────────────────── */
+        #smart-panel {
+            position:fixed;
+            bottom:var(--panel-h); left:0; right:0;
+            max-height:38vh; overflow-y:auto;
+            background:var(--surf1);
+            border-top:3px solid var(--gold);
+            box-shadow:0 -12px 32px rgba(0,0,0,.45);
+            z-index:1300; padding:15px 24px;
+            display:none; font-family:'Amiri',serif;
+        }
+        #smart-panel.panel-hidden-offset { bottom:0; }
+        .panel-header-bar { display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed var(--gold-line); padding-bottom:10px; margin-bottom:12px; }
+        .panel-title { font-family:'Aref Ruqaa'; color:var(--green); font-size:17pt; margin:0; }
+        .close-btn  { background:rgba(192,57,43,.15); color:#e07070; border:1px solid rgba(192,57,43,.3); padding:4px 14px; font-size:11.5pt; cursor:pointer; border-radius:6px; transition:background .18s; }
+        .close-btn:hover { background:rgba(192,57,43,.28); }
+        .result-item { border-bottom:1px solid rgba(255,255,255,.05); padding:11px 0; cursor:pointer; transition:background .18s,border-right .18s; color:var(--text-dim); }
+        .result-item:hover { background:var(--gold-dim); border-right:3px solid var(--gold); padding-right:10px; color:var(--text); }
+        .quran-grid  { display:grid; grid-template-columns:3fr 1fr 1fr;         gap:15px; align-items:center; }
+        .hadith-grid { display:grid; grid-template-columns:3fr 1.5fr 1.5fr 1fr; gap:15px; align-items:center; }
+        .grid-header { font-family:'Aref Ruqaa'; font-size:13.5pt; color:var(--text-dim); border-bottom:1px solid var(--gold-line); padding-bottom:5px; margin-bottom:8px; }
 
-        @media print { 
-            body > *:not(#book-container) { display: none !important; } 
-            body { background: white; padding: 0; } 
-            #book-container { display: flex !important; gap: 0 !important; width: 100%; margin: 0; padding: 0; } 
-            .page-wrapper { margin: 0 !important; box-shadow: none !important; border: none !important; }
+        /* ══════════════════════════════════════════════════════
+           FLOATING PANEL
+        ══════════════════════════════════════════════════════ */
+        #floating-panel {
+            position:fixed; bottom:0; left:0; right:0;
+            height:var(--panel-h);
+            background:var(--surf1);
+            border-top:2px solid var(--gold-line);
+            box-shadow:0 -8px 40px rgba(0,0,0,.65);
+            z-index:1500;
+            display:flex; flex-direction:column;
+            transition:transform .3s var(--ease);
+        }
+        #floating-panel.fp-hidden { transform:translateY(100%); }
+
+        /* Hide button – top-right corner of panel */
+        #panel-hide-btn {
+            position:absolute; top:8px; right:12px;
+            background:linear-gradient(135deg, rgba(192,57,43,.22), rgba(150,40,30,.15));
+            border:1.5px solid rgba(200,70,60,.45);
+            color:#e07070;
+            height:32px; border-radius:9px;
+            padding:0 14px;
+            cursor:pointer; font-size:11pt;
+            font-family:'Amiri',serif;
+            display:flex; align-items:center; gap:6px;
+            white-space:nowrap;
+            z-index:10; transition:all .2s;
+            box-shadow:0 2px 8px rgba(192,57,43,.15);
+            letter-spacing:.3px;
+        }
+        #panel-hide-btn:hover {
+            background:linear-gradient(135deg, rgba(192,57,43,.38), rgba(150,40,30,.28));
+            border-color:rgba(200,70,60,.7);
+            color:#ff9898;
+            transform:translateY(-1px);
+            box-shadow:0 4px 14px rgba(192,57,43,.28);
+        }
+        #panel-hide-btn:active { transform:translateY(0); }
+
+        /* ── Main tabs row ────────────────────────────────── */
+        .fp-main-tabs {
+            display:flex; flex-shrink:0;
+            border-bottom:1px solid var(--gold-line);
+            height:46px;
+        }
+        .fp-main-tab {
+            flex:1; background:none;
+            border:none; border-bottom:2px solid transparent;
+            color:var(--text-dim);
+            font-family:'Aref Ruqaa',serif; font-size:12pt;
+            cursor:pointer; padding:0 8px;
+            transition:all .18s;
+        }
+        .fp-main-tab:hover  { color:var(--text); background:var(--gold-dim); }
+        .fp-main-tab.active { color:var(--gold); border-bottom-color:var(--gold); background:rgba(201,162,39,.1); }
+
+        /* ── Tab panels ───────────────────────────────────── */
+        .fp-panel { display:none; flex:1; overflow:hidden; flex-direction:column; }
+        .fp-panel.active { display:flex; }
+
+        /* ════════════════════════
+           TAB: BOOK INFO
+        ════════════════════════ */
+        #fp-tab-info {
+            flex-direction:row;
+            flex-wrap:nowrap;
+            overflow-x:auto;
+            overflow-y:hidden;
+            align-items:stretch;
+            padding:8px 12px;
+            gap:0;
+        }
+        .info-field {
+            display:flex; flex-direction:column; gap:4px;
+            flex-shrink:0; min-width:120px;
+            padding:0 10px;
+            border-left:1px solid var(--gold-line);
+        }
+        .info-field:first-child { padding-right:0; }
+        .info-field:last-child  { border-left:none; }
+        .info-field label { font-family:'Aref Ruqaa'; color:var(--text-muted); font-size:9.5pt; white-space:nowrap; }
+        .info-field input, .info-field select {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:6px; color:var(--text);
+            font-family:'Amiri'; font-size:12pt; padding:5px 8px;
+            outline:none; width:100%; transition:border-color .18s;
+        }
+        .info-field input:focus, .info-field select:focus { border-color:var(--gold); }
+        .info-field input[type="color"] { padding:2px 3px; height:34px; width:55px; cursor:pointer; }
+        .info-field input[type="number"] { width:72px; }
+        .info-color-row { display:flex; gap:5px; align-items:center; }
+        .info-color-row .color-code { width:72px!important; font-size:10.5pt!important; padding:5px 6px!important; }
+        .info-cover-row { display:flex; gap:5px; align-items:center; }
+        .info-cover-row input { flex:1; min-width:0; }
+        .info-icon-btn {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:6px; color:var(--text); font-size:14pt;
+            cursor:pointer; padding:4px 8px; flex-shrink:0;
+            transition:all .18s;
+        }
+        .info-icon-btn:hover { background:var(--gold-dim); border-color:var(--gold); }
+
+        /* ════════════════════════
+           TAB: WRITING
+        ════════════════════════ */
+        /* Writing panel uses flex-column */
+        #fp-tab-writing { overflow:hidden; }
+
+        /* Sub-tabs bar */
+        .fp-sub-tabs {
+            display:flex; flex-shrink:0;
+            border-bottom:1px solid var(--gold-line);
+            height:34px;
+        }
+        .fp-sub-tab {
+            flex:1; background:none;
+            border:none; border-bottom:2px solid transparent;
+            color:var(--text-dim);
+            font-family:'Amiri'; font-size:12pt;
+            cursor:pointer; transition:all .18s;
+        }
+        .fp-sub-tab:hover  { color:var(--text); background:rgba(255,255,255,.04); }
+        .fp-sub-tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+
+        /* Feature requirements area */
+        #feature-reqs-area {
+            display:none; flex-shrink:0;
+            border-top:1px solid var(--gold);
+            border-bottom:1px solid var(--gold);
+            background:var(--surf2);
+            padding:8px 12px 6px;
+        }
+        .reqs-fields-row {
+            display:flex; gap:10px; align-items:flex-end;
+            flex-wrap:nowrap; overflow-x:auto;
+            padding-bottom:6px;
+        }
+        .req-field { display:flex; flex-direction:column; gap:3px; flex-shrink:0; min-width:110px; }
+        .req-field label { font-family:'Aref Ruqaa'; color:var(--text-muted); font-size:9pt; white-space:nowrap; }
+        .req-field input, .req-field select, .req-field textarea {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:6px; color:var(--text);
+            font-family:'Amiri'; font-size:12pt; padding:4px 7px;
+            outline:none; width:100%; transition:border-color .18s;
+        }
+        .req-field input[type="color"]    { height:32px; padding:2px 3px; width:54px; }
+        .req-field input[type="checkbox"] { width:auto; height:auto; padding:0; accent-color:var(--gold); }
+        .req-field textarea { resize:none; height:54px; line-height:1.6; }
+        .req-field input:focus, .req-field select:focus, .req-field textarea:focus { border-color:var(--gold); }
+        .reqs-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:4px; }
+        .req-btn { padding:5px 16px; border-radius:7px; font-family:'Amiri'; font-size:12pt; cursor:pointer; border:none; transition:all .18s; }
+        .req-btn-confirm { background:linear-gradient(135deg,#4e7c5f,#3a5e47); color:#fff; }
+        .req-btn-confirm:hover { filter:brightness(1.12); }
+        .req-btn-cancel { background:rgba(192,57,43,.13); color:#e07070; border:1px solid rgba(192,57,43,.3)!important; }
+        .req-btn-cancel:hover { background:rgba(192,57,43,.26); }
+
+        /* Writing sub-panels */
+        .writing-sub-panel { display:none; flex-shrink:0; overflow-x:auto; align-items:center; padding:5px 10px; gap:7px; border-bottom:1px solid rgba(255,255,255,.04); }
+        .writing-sub-panel.active { display:flex; }
+
+        /* Feature buttons */
+        .feat-btn {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:8px; color:var(--text);
+            font-family:'Amiri'; font-size:11.5pt;
+            padding:5px 12px; cursor:pointer;
+            white-space:nowrap; flex-shrink:0;
+            transition:all .18s;
+        }
+        .feat-btn:hover, .feat-btn.feat-active { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); }
+
+        /* Quick-settings buttons */
+        .qs-btn {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:8px; color:var(--text);
+            font-family:'Amiri'; font-size:12pt;
+            padding:6px 14px; cursor:pointer;
+            white-space:nowrap; flex-shrink:0;
+            transition:all .18s;
+        }
+        .qs-btn:hover { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); }
+
+        /* Main textarea */
+        #mainText {
+            flex:1;
+            background:var(--surf1);
+            border:none; border-top:1px solid rgba(255,255,255,.04);
+            color:var(--text); font-family:'Amiri',serif;
+            font-size:16pt; line-height:2;
+            padding:12px 22px; resize:none; outline:none;
+            direction:rtl; min-height:60px;
+            transition:box-shadow .18s;
+        }
+        #mainText:focus { box-shadow:inset 0 2px 8px rgba(201,162,39,.07); }
+        #mainText::placeholder { color:var(--text-muted); line-height:1.8; }
+
+        /* ════════════════════════
+           TAB: OTHER SETTINGS
+        ════════════════════════ */
+        #fp-tab-other {
+            padding:12px 16px;
+            display:none;
+            flex-wrap:wrap;
+            gap:9px;
+            align-content:flex-start;
+            overflow-y:auto;
+        }
+        #fp-tab-other.active { display:flex; }
+        .other-btn {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:9px; color:var(--text);
+            font-family:'Aref Ruqaa'; font-size:12.5pt;
+            padding:9px 18px; cursor:pointer;
+            display:flex; align-items:center; gap:6px;
+            transition:all .18s;
+        }
+        .other-btn:hover { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); transform:translateY(-1px); }
+        .other-btn-home:hover   { background:rgba(78,124,95,.15);  border-color:var(--green); color:#88d4a8; }
+        .other-btn-exp:hover    { background:rgba(25,118,210,.11); border-color:var(--blue);  color:#80c4e0; }
+        .other-btn-delete:hover { background:rgba(192,57,43,.13);  border-color:var(--red);   color:#e08080; }
+
+        /* Vault section inside other tab */
+        .vault-section { width:100%; border-top:1px solid var(--gold-line); padding-top:10px; margin-top:2px; }
+        .vault-section-title { font-family:'Aref Ruqaa'; color:var(--gold); font-size:12pt; margin-bottom:8px; }
+        .vault-hint { font-family:'Amiri'; font-size:11pt; color:var(--text-muted); line-height:1.55; background:var(--surf3); border-radius:8px; padding:8px 10px; border-right:3px solid var(--gold); }
+        .vault-hint code { background:var(--gold-dim); color:var(--gold); border-radius:4px; padding:1px 5px; font-family:monospace; font-size:10pt; }
+        .vault-list { display:flex; flex-direction:column; gap:5px; max-height:130px; overflow-y:auto; margin-top:6px; }
+        .vault-item { display:flex; justify-content:space-between; align-items:center; padding:7px 11px; background:var(--surf2); border:1px solid rgba(255,255,255,.05); border-radius:8px; font-family:'Amiri'; font-size:12pt; color:var(--text-dim); }
+        .vault-item button { background:none; border:none; color:#e07070; cursor:pointer; font-size:13pt; opacity:.65; transition:opacity .15s; width:auto; height:auto; padding:0 3px; }
+        .vault-item button:hover { opacity:1; }
+
+        /* ══════════════════════════════════════════════════════
+           FLOATING TOGGLE BUTTON
+        ══════════════════════════════════════════════════════ */
+        #floating-toggle {
+            position:fixed; bottom:24px; left:24px;
+            width:54px; height:54px;
+            background:var(--surf2);
+            border:2px solid var(--gold);
+            border-radius:50%;
+            color:var(--gold); font-size:22pt;
+            display:none; align-items:center; justify-content:center;
+            cursor:grab; z-index:1600;
+            box-shadow:0 4px 24px rgba(0,0,0,.55), 0 0 0 4px var(--gold-dim);
+            user-select:none; touch-action:none;
+            animation:float-pulse 2.5s ease-in-out infinite;
+        }
+        #floating-toggle.ft-visible { display:flex; }
+        @keyframes float-pulse {
+            0%,100% { box-shadow:0 4px 24px rgba(0,0,0,.55),0 0 0 4px var(--gold-dim); }
+            50%      { box-shadow:0 4px 32px rgba(0,0,0,.65),0 0 0 8px rgba(201,162,39,.09); }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           GENERIC FORM HELPERS  (modals reuse these)
+        ══════════════════════════════════════════════════════ */
+        input, select, textarea {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
+            border-radius:8px; color:var(--text);
+            font-family:'Amiri',serif; font-size:13pt;
+            padding:7px 11px; outline:none;
+            transition:border-color .18s, box-shadow .18s;
+        }
+        input:focus, select:focus, textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-dim); }
+        input[type="color"]  { padding:2px 4px; height:40px; cursor:pointer; }
+        input[type="number"] { -moz-appearance:textfield; }
+        select option { background:var(--surf2); }
+        label { font-family:'Aref Ruqaa',serif; color:var(--text-muted); font-size:10.5pt; }
+        .field { display:flex; flex-direction:column; gap:5px; }
+        .input-row { display:flex; gap:6px; align-items:stretch; }
+        .input-row input { flex:1; min-width:0; }
+        .icon-btn { background:var(--surf3); border:1px solid rgba(255,255,255,.07); border-radius:8px; color:var(--text); font-size:15pt; cursor:pointer; padding:0 11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .18s; }
+        .icon-btn:hover { background:var(--gold-dim); border-color:var(--gold); }
+        .icon-btn.dark { background:var(--surf2); border-color:var(--gold-line); }
+        .icon-btn.dark:hover { background:rgba(201,162,39,.22); border-color:var(--gold); }
+        .btn { background:var(--royal-green); color:white; border:none; padding:10px 18px; font-size:13pt; font-family:'Aref Ruqaa'; border-radius:8px; cursor:pointer; transition:filter .18s,transform .18s; }
+        .btn:hover { filter:brightness(1.15); transform:translateY(-1px); }
+        .btn-clear { background:var(--red); }
+
+        /* ══════════════════════════════════════════════════════
+           MODALS
+        ══════════════════════════════════════════════════════ */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:3000; backdrop-filter:blur(9px); }
+        .modal-content { background:var(--surf2); padding:34px; border-radius:16px; text-align:center; max-width:520px; width:93%; border-top:5px solid var(--gold); box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 0 1px var(--gold-line); animation:modal-in .25s cubic-bezier(.34,1.56,.64,1) forwards; }
+        @keyframes modal-in { from { transform:scale(.92) translateY(14px); opacity:0; } to { transform:none; opacity:1; } }
+        .modal-title   { font-family:'Aref Ruqaa'; color:var(--gold); font-size:21pt; margin-bottom:11px; }
+        .modal-desc    { font-family:'Amiri'; font-size:14pt; color:var(--text-dim); margin-bottom:22px; line-height:1.6; }
+        .modal-buttons { display:flex; flex-direction:column; gap:10px; }
+        .btn-modal     { padding:12px; font-size:14pt; border-radius:10px; font-family:'Amiri'; cursor:pointer; border:none; font-weight:bold; transition:transform .18s,filter .18s; }
+        .btn-modal:hover { transform:translateY(-2px); filter:brightness(1.1); }
+        .btn-original  { background:linear-gradient(135deg,#c9a227,#a07d10); color:#fff; }
+        .btn-current   { background:linear-gradient(135deg,#4e7c5f,#3a5e47);  color:#fff; }
+        .btn-cancel    { background:rgba(192,57,43,.15); color:#e07070; border:1px solid rgba(192,57,43,.3)!important; margin-top:4px; }
+        .btn-cancel:hover { background:rgba(192,57,43,.28); }
+        .bg-list { max-height:210px; overflow-y:auto; margin-top:14px; border-top:1px solid var(--gold-line); padding-top:12px; display:flex; flex-direction:column; gap:8px; }
+        .bg-item { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:var(--surf3); border:1px solid rgba(255,255,255,.05); border-radius:8px; font-family:'Amiri'; color:var(--text-dim); }
+        .bg-item img { width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid var(--gold-line); }
+        #confirmModal > div { background:var(--surf2); padding:28px; border-radius:16px; width:90%; max-width:400px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.5); border-top:4px solid var(--gold); }
+        #confirmModal h3 { color:var(--text); font-family:'Aref Ruqaa'; margin-bottom:11px; font-size:17pt; }
+        #confirmModal p  { color:var(--text-muted); font-family:'Amiri'; margin-bottom:20px; font-size:13pt; }
+
+        /* ── Focus mode ─────────────────────────────────────── */
+        body.focus-mode #book-container  { display:none; }
+        body.focus-mode #focusText       { display:block; }
+        body.focus-mode #main-content    { padding-bottom:46px; }
+        body.focus-mode #smart-panel     { bottom:46px; }
+        body.focus-mode #vaultInputRow   { display:none !important; }
+        body.focus-mode #mainText        { display:none !important; }
+
+        /* ── Day / Night Toggle ─────────────────────────────── */
+        .day-night-toggle {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--surf3);
+            border:1px solid var(--gold-line);
+            border-radius:20px;
+            color:var(--text);
+            font-family:'Amiri',serif; font-size:10pt;
+            padding:4px 12px;
+            cursor:pointer;
+            margin-bottom:5px;
+            transition:all .18s;
+            user-select:none;
+        }
+        .day-night-toggle:hover {
+            background:var(--gold-dim);
+            border-color:var(--gold);
+            color:var(--gold);
+        }
+        .day-night-toggle .dn-icon { font-size:12pt; line-height:1; }
+        .day-night-toggle .dn-label { font-size:9.5pt; color:var(--text-dim); }
+
+        /* ── PRINT ──────────────────────────────────────────── */
+        @media print {
+            body > *:not(#book-container) { display:none !important; }
+            body { background:white; padding:0; }
+            #book-container { display:flex !important; gap:0 !important; width:100%; margin:0; padding:0; }
+            .page-wrapper   { margin:0 !important; box-shadow:none !important; border:none !important; }
         }
     </style>
 </head>
 <body>
 
-    <div class="control-panel">
-        <div class="stats-bar">
-            <div>الكلمات: <span id="stat-words">0</span></div>
-            <div>الحروف: <span id="stat-chars">0</span></div>
-            <div>العناوين: <span id="stat-headers">0</span></div>
+<!-- ════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════ -->
+<header class="app-header">
+    <div class="brand">
+        <span class="brand-gem">◈</span>
+        <span class="brand-name">محرّر الكتب الملكي</span>
+    </div>
+    <div class="hdr-stats">
+        <div class="stat-chip"><span class="stat-lbl">كلمات</span><span  class="stat-val" id="stat-words">0</span></div>
+        <div class="stat-chip"><span class="stat-lbl">حروف</span><span   class="stat-val" id="stat-chars">0</span></div>
+        <div class="stat-chip"><span class="stat-lbl">عناوين</span><span class="stat-val" id="stat-headers">0</span></div>
+    </div>
+</header>
+
+<!-- ════════════════════════════════════════════════════
+     MAIN SCROLLABLE CONTENT
+════════════════════════════════════════════════════ -->
+<div id="main-content">
+    <!-- Focus-mode full-screen textarea -->
+    <textarea id="focusText"
+        placeholder="وضع التركيز – اكتب بحرية..."
+        oninput="syncFocusToMain()">
+    </textarea>
+    <!-- Book preview -->
+    <div id="book-container"></div>
+</div>
+
+<!-- Smart search results panel -->
+<div id="smart-panel"></div>
+
+<!-- ════════════════════════════════════════════════════
+     FLOATING PANEL
+════════════════════════════════════════════════════ -->
+<div id="floating-panel">
+
+    <!-- Hide button (top-left) -->
+    <button id="panel-hide-btn" onclick="hideFloatingPanel()" title="إخفاء اللوحة">▼ إخفاء اللوحة</button>
+
+    <!-- ── Main tabs row ──────────────────────────────── -->
+    <div class="fp-main-tabs">
+        <button class="fp-main-tab active" onclick="switchFPTab('info',this)">📖 معلومات الكتاب</button>
+        <button class="fp-main-tab"        onclick="switchFPTab('writing',this)">✏️ الكتابة</button>
+        <button class="fp-main-tab"        onclick="switchFPTab('other',this)">⚙️ إعدادات أخرى</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         TAB: معلومات الكتاب
+    ══════════════════════════════════════════════════ -->
+    <div id="fp-tab-info" class="fp-panel active">
+
+        <div class="info-field" style="min-width:165px;">
+            <label>عنوان الكتاب</label>
+            <input type="text" id="cTitle" oninput="autoSaveAndBuild()" placeholder="﴿عنوان الكتاب﴾">
         </div>
 
-        <div class="settings-grid">
-            <div class="setting-item"><label>عنوان الكتاب</label><input type="text" id="cTitle" oninput="autoSaveAndBuild()" placeholder="﴿عنوان الكتاب﴾"></div>
-            <div class="setting-item"><label>اسم المؤلف</label><input type="text" id="cAuthor" oninput="autoSaveAndBuild()" placeholder="المؤلف"></div>
-            <div class="setting-item"><label>تاريخ التأليف</label><input type="text" id="cDate" oninput="autoSaveAndBuild()" placeholder="1447هـ"></div>
-            
-            <div class="setting-item">
-                <label>صورة الغلاف</label>
-                <div class="file-upload-wrapper">
-                    <input type="text" id="cCoverImg" oninput="autoSaveAndBuild()" placeholder="رابط خارجي...">
-                    <button onclick="document.getElementById('coverFileInput').click()" title="اختر صورة من الجهاز">📁</button>
-                    <input type="file" id="coverFileInput" accept="image/*" style="display:none" onchange="handleCoverUpload(event)">
-                </div>
-            </div>
-
-            <div class="setting-item"><label>كود اللون</label><input type="text" id="colorCodeInput" oninput="syncPickerFromCode(this.value)" placeholder="FFFDD0"></div>
-            <div class="setting-item"><label>لون الورق</label><input type="color" id="globalBgPicker" oninput="syncCodeFromPicker(this.value)"></div>
-            <div class="setting-item">
-                <label>نمط الزخرفة</label>
-                <select id="pageStyle" onchange="autoSaveAndBuild()">
-                    <option value="style-islamic">زخرفة إسلامية</option>
-                    <option value="style-classic">إطار كلاسيكي</option>
-                    <option value="style-floral">زخرفة نباتية</option>
-                    <option value="style-royal">إطار ملكي</option>
-                    <option value="style-minimal">زخرفة هادئة</option>
-                    <option value="style-clean">بدون زخرفة</option>
-                </select>
-            </div>
-            <div class="setting-item"><label>حجم الخط</label><input type="number" id="cFontSize" value="20" oninput="autoSaveAndBuild()"></div>
+        <div class="info-field" style="min-width:140px;">
+            <label>اسم المؤلف</label>
+            <input type="text" id="cAuthor" oninput="autoSaveAndBuild()" placeholder="المؤلف">
         </div>
 
-        <div class="vault-box">
-            <label>🔐 خزنة الوسائط (صور، فيديو، صوت) - <span style="color:#6B8E23; font-size:11pt;">مدمجة بقاعدة بيانات IndexedDB المتطورة</span></label>
-            <p style="font-family:'Amiri'; color:#666; font-size:12pt; margin-bottom:10px;">أدخل رمزاً مخصصاً، ثم ارفع الملف المُراد تشفيره. استخدم الصيغة <b>{وسائط: الرمز}</b> داخل المحرر لاستدعائه.</p>
-            <div class="file-upload-wrapper" style="max-width: 600px;">
-                <input type="text" id="mediaKeyInput" placeholder="اكتب رمزاً هنا (مثال: مقطع1)...">
+        <div class="info-field" style="min-width:110px;">
+            <label>تاريخ التأليف</label>
+            <input type="text" id="cDate" oninput="autoSaveAndBuild()" placeholder="1447هـ">
+        </div>
+
+        <div class="info-field" style="min-width:145px;">
+            <label>لون الورق</label>
+            <div class="info-color-row">
+                <input type="color" id="globalBgPicker" oninput="syncCodeFromPicker(this.value)">
+                <input type="text"  id="colorCodeInput" class="color-code" oninput="syncPickerFromCode(this.value)" placeholder="FFFDD0">
+            </div>
+        </div>
+
+        <div class="info-field" style="min-width:155px;">
+            <label>نمط الزخرفة</label>
+            <select id="pageStyle" onchange="autoSaveAndBuild()">
+                <option value="style-islamic">زخرفة إسلامية</option>
+                <option value="style-classic">إطار كلاسيكي</option>
+                <option value="style-floral">زخرفة نباتية</option>
+                <option value="style-royal">إطار ملكي</option>
+                <option value="style-minimal">زخرفة هادئة</option>
+                <option value="style-clean">بدون زخرفة</option>
+            </select>
+        </div>
+
+        <div class="info-field" style="min-width:90px;">
+            <label>حجم الخط (pt)</label>
+            <input type="number" id="cFontSize" value="20" oninput="autoSaveAndBuild()">
+        </div>
+
+        <div class="info-field" style="min-width:435px;">
+            <label>🎨 سمة المحرر</label>
+            <button class="day-night-toggle" id="dayNightToggle" onclick="toggleDayNight()" title="تبديل بين الوضع الليلي والنهاري">
+                <span class="dn-icon" id="dayNightIcon">🌙</span>
+                <span class="dn-label" id="dayNightLabel">ليلي</span>
+            </button>
+            <div class="theme-swatches-row" id="themeSwatch"></div>
+        </div>
+
+        <div class="info-field" style="min-width:210px;">
+            <label>صورة الغلاف</label>
+            <div class="info-cover-row">
+                <input type="text" id="cCoverImg" oninput="autoSaveAndBuild()" placeholder="رابط أو اختر ملفاً...">
+                <button class="info-icon-btn" onclick="document.getElementById('coverFileInput').click()" title="اختر من الجهاز">📁</button>
+                <input type="file" id="coverFileInput" accept="image/*" style="display:none" onchange="handleCoverUpload(event)">
+            </div>
+        </div>
+
+    </div><!-- /fp-tab-info -->
+
+    <!-- ══════════════════════════════════════════════════
+         TAB: الكتابة
+    ══════════════════════════════════════════════════ -->
+    <div id="fp-tab-writing" class="fp-panel">
+
+        <!-- Sub-tabs -->
+        <div class="fp-sub-tabs">
+            <button class="fp-sub-tab active" onclick="switchWritingTab('features',this)">الميزات</button>
+            <button class="fp-sub-tab"        onclick="switchWritingTab('quicksettings',this)">إعدادات سريعة</button>
+        </div>
+
+        <!-- Feature requirements area (hidden until a feature is selected) -->
+        <div id="feature-reqs-area">
+            <div id="feature-reqs-content" class="reqs-fields-row"></div>
+            <div class="reqs-actions">
+                <button class="req-btn req-btn-confirm" onclick="confirmFeature()">✔ تأكيد</button>
+                <button class="req-btn req-btn-cancel"  onclick="cancelFeature()">✖ إلغاء</button>
+            </div>
+        </div>
+
+        <!-- Sub-panel: الميزات -->
+        <div id="writing-features" class="writing-sub-panel active">
+            <button class="feat-btn" onclick="openFeature('quote',this)">🗣 الاقتباس المميز</button>
+            <button class="feat-btn" onclick="openFeature('quran',this)">﴿﴾ البحث عن الآيات</button>
+            <button class="feat-btn" onclick="openFeature('hadith',this)">« » البحث في الأحاديث</button>
+            <button class="feat-btn" onclick="openFeature('media',this)">📦 استدعاء الوسائط</button>
+            <button class="feat-btn" onclick="openFeature('format',this)">🖋 تنسيق النصوص</button>
+            <button class="feat-btn" onclick="openFeature('footnote',this)">📝 الحواشي</button>
+            <button class="feat-btn" onclick="openFeature('misc',this)">✨ ميزات أخرى</button>
+        </div>
+
+        <!-- Sub-panel: إعدادات سريعة -->
+        <div id="writing-quicksettings" class="writing-sub-panel">
+            <button class="qs-btn" id="saveCloudBtn" onclick="saveToDrive()">☁️ حفظ في درايف</button>
+            <button class="qs-btn" id="btnFocus"     onclick="toggleFocusMode()">🎯 وضع التركيز</button>
+            <button class="qs-btn"                   onclick="openBgModal()">🖼️ خلفيات الصفحات</button>
+            <button class="qs-btn"                   onclick="buildBook()">🔄 تحديث المعاينة</button>
+        </div>
+
+        <!-- Main textarea -->
+        <textarea id="mainText"
+            placeholder="اكتب محتوى كتابك هنا...&#10;&#10;• استخدم # في بداية السطر لفصل جديد&#10;• ﴿ ... ﴾  للبحث التلقائي في القرآن الكريم&#10;• « ... »  للتخريج التلقائي من السنة النبوية"
+            oninput="autoSaveAndBuild()"
+            onkeyup="checkSmartBrackets(event)">
+        </textarea>
+
+    </div><!-- /fp-tab-writing -->
+
+    <!-- ══════════════════════════════════════════════════
+         TAB: إعدادات أخرى
+    ══════════════════════════════════════════════════ -->
+    <div id="fp-tab-other" class="fp-panel">
+
+        <button class="other-btn other-btn-home"   onclick="handleBackAction()">🏠 الرئيسية</button>
+        <button class="other-btn other-btn-exp"    onclick="exportBook()">💾 تصدير كملف rbook</button>
+        <button class="other-btn"                  onclick="exportInteractiveBook()">📱 تصدير كتاب تفاعلي</button>
+        <button class="other-btn"                  onclick="document.getElementById('importFile').click()">📂 استيراد ملف</button>
+        <input  type="file" id="importFile" accept=".rbook" style="display:none" onchange="handleFileSelect(event)">
+        <button class="other-btn"                  onclick="downloadPDF()">🖨️ طباعة PDF</button>
+        <button class="other-btn other-btn-delete" onclick="startNewBook()">🗑️ حذف كل شيء (عمل جديد)</button>
+
+        <!-- Vault mini-section -->
+        <div class="vault-section">
+            <div class="vault-section-title">🔐 خزنة الوسائط</div>
+            <p class="vault-hint">أدخل رمزاً ثم ارفع الملف. استخدم <code>{وسائط: الرمز}</code> داخل المحرر لاستدعائه.</p>
+            <div class="input-row" style="margin-top:8px;" id="vaultInputRow">
+                <input type="text" id="mediaKeyInput" placeholder="رمز الملف (مثال: مقطع1)">
+                <button class="icon-btn dark" onclick="document.getElementById('mediaFileInput').click()" title="تشفير وحفظ">📥</button>
                 <input type="file" id="mediaFileInput" style="display:none" onchange="addToMediaVault(event)">
-                <button onclick="document.getElementById('mediaFileInput').click()" style="background:#2c3e50; font-family:'Aref Ruqaa';">تشفير وحفظ 📥</button>
             </div>
             <div class="vault-list" id="vaultList"></div>
         </div>
-        
-        <textarea id="mainText" placeholder="اكتب محتوى كتابك هنا..." oninput="autoSaveAndBuild()" onkeyup="checkSmartBrackets(event)"></textarea>
-        
-        <div class="btn-row">
-            <button class="btn" style="background:#2c3e50" onclick="handleBackAction()">الرئيسية 🏠</button>
-            <button id="saveCloudBtn" class="btn" style="background:#27ae60" onclick="saveToDrive()">حفظ في درايف ☁️</button>
-            <button class="btn btn-focus" id="btnFocus" onclick="toggleFocusMode()">وضع التركيز 🎯</button>
-            <button class="btn btn-bg" onclick="openBgModal()">خلفيات الصفحات 🖼️</button>
-            <button class="btn" onclick="buildBook()">تحديث المعاينة 🔄</button>
-            <button class="btn btn-export" onclick="exportBook()">تصدير كملف (rbook) 💾</button>
-            <button class="btn btn-interactive" onclick="exportInteractiveBook()">تصدير تطبيق قراءة تفاعلي 📱</button>
-            <input type="file" id="importFile" accept=".rbook" style="display:none" onchange="handleFileSelect(event)">
-            <button class="btn btn-import" onclick="document.getElementById('importFile').click()">استيراد ملف 📂</button>
-            <button class="btn btn-clear" onclick="startNewBook()">عمل جديد 🗑️</button>
-            <button class="btn" style="background:#4a3f35" onclick="downloadPDF()">طباعة PDF ⚡</button>
-        </div>
-        
-    </div>
 
-    <div id="bgModal" class="modal-overlay">
-        <div class="modal-content" style="border-top-color:#8e44ad;">
-            <h2 class="modal-title" style="color:#8e44ad;">إدارة خلفيات الصفحات المخصصة</h2>
-            <div class="setting-item" style="margin-bottom: 15px;">
-                <label>رقم الصفحة المستهدفة</label>
-                <input type="number" id="bgPageNum" placeholder="مثال: 2" min="1">
-            </div>
-            <div class="setting-item" style="margin-bottom: 15px;">
-                <label>صورة الخلفية</label>
-                <div class="file-upload-wrapper">
-                    <input type="text" id="bgLinkInput" placeholder="رابط صورة خارجية...">
-                    <button onclick="document.getElementById('bgFileInput').click()" title="رفع من الجهاز">📁</button>
-                    <input type="file" id="bgFileInput" accept="image/*" style="display:none" onchange="handleBgUpload(event)">
-                </div>
-            </div>
-            <button class="btn" style="width:100%; background:#8e44ad;" onclick="addBgFromLink()">إضافة الخلفية ✔</button>
-            <div class="bg-list" id="bgList"></div>
-            <button class="btn btn-clear" style="width:100%; margin-top:15px;" onclick="closeBgModal()">إغلاق وتطبيق ✖</button>
-        </div>
-    </div>
+    </div><!-- /fp-tab-other -->
 
-    <div id="importModal" class="modal-overlay">
-        <div class="modal-content">
-            <h2 class="modal-title">كيف تود استيراد الكتاب؟</h2>
-            <p class="modal-desc">لقد وجدنا أكواد تنسيق مدمجة داخل هذا الملف، هل تريد تطبيقها أم تفضل استخدام أحدث أكواد الموقع الحالية؟</p>
-            <div class="modal-buttons">
-                <button class="btn-modal btn-original" onclick="applyImport(true)">استيراد بالأكواد الأصلية للملف 📦</button>
-                <button class="btn-modal btn-current" onclick="applyImport(false)">استيراد بأكواد الموقع الحالية 🌐</button>
-                <button class="btn-modal btn-cancel" onclick="closeImportModal()">إلغاء الأمر ✖</button>
+</div><!-- /floating-panel -->
+
+<!-- Floating toggle button (shown when panel is hidden) -->
+<div id="floating-toggle" onclick="handleToggleClick(event)">◈</div>
+
+<!-- ════════════════════════════════════════════════════
+     MODALS (unchanged)
+════════════════════════════════════════════════════ -->
+
+<!-- BG Modal -->
+<div id="bgModal" class="modal-overlay">
+    <div class="modal-content" style="border-top-color:#8e44ad;">
+        <h2 class="modal-title" style="color:#c9a0d8;">🖼️ خلفيات الصفحات</h2>
+        <div class="field" style="margin-bottom:13px; text-align:right;">
+            <label>رقم الصفحة المستهدفة</label>
+            <input type="number" id="bgPageNum" placeholder="مثال: 2" min="1">
+        </div>
+        <div class="field" style="margin-bottom:13px; text-align:right;">
+            <label>صورة الخلفية</label>
+            <div class="input-row">
+                <input type="text" id="bgLinkInput" placeholder="رابط صورة خارجية...">
+                <button class="icon-btn" onclick="document.getElementById('bgFileInput').click()" title="رفع من الجهاز">📁</button>
+                <input type="file" id="bgFileInput" accept="image/*" style="display:none" onchange="handleBgUpload(event)">
             </div>
         </div>
+        <button class="btn" style="width:100%;background:linear-gradient(135deg,#8e44ad,#6c3483);" onclick="addBgFromLink()">إضافة الخلفية ✔</button>
+        <div class="bg-list" id="bgList"></div>
+        <button class="btn btn-clear" style="width:100%;margin-top:11px;" onclick="closeBgModal()">إغلاق وتطبيق ✖</button>
     </div>
+</div>
 
-    <div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:white; padding:25px; border-radius:10px; width:90%; max-width:400px; text-align:center; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-            <h3 style="color:#2c3e50; margin-bottom:15px;">تنبيه: توجد تغييرات غير محفوظة</h3>
-            <p style="color:#7f8c8d; margin-bottom:20px;">هل تريد حفظ التغييرات في درايف قبل المغادرة؟</p>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <button class="btn" style="background:#27ae60; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;" onclick="saveAndExit()">حفظ ورجوع</button>
-                <button class="btn" style="background:#e74c3c; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;" onclick="exitWithoutSaving()">رجوع دون حفظ</button>
-                <button class="btn" style="background:#95a5a6; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;" onclick="closeConfirmModal()">إلغاء</button>
-            </div>
+<!-- Import Modal -->
+<div id="importModal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 class="modal-title">كيف تود استيراد الكتاب؟</h2>
+        <p class="modal-desc">وجدنا أكواد تنسيق مدمجة داخل هذا الملف — هل تريد تطبيقها أم تفضل أحدث أكواد الموقع؟</p>
+        <div class="modal-buttons">
+            <button class="btn-modal btn-original" onclick="applyImport(true)">📦 استيراد بالأكواد الأصلية للملف</button>
+            <button class="btn-modal btn-current"  onclick="applyImport(false)">🌐 استيراد بأكواد الموقع الحالية</button>
+            <button class="btn-modal btn-cancel"   onclick="closeImportModal()">✖ إلغاء</button>
         </div>
     </div>
+</div>
 
-    <div id="smart-panel"></div>
-    <div id="book-container"></div>
+<!-- Confirm Modal -->
+<div id="confirmModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;justify-content:center;align-items:center;backdrop-filter:blur(9px);">
+    <div>
+        <h3>تنبيه: توجد تغييرات غير محفوظة</h3>
+        <p>هل تريد حفظ التغييرات في درايف قبل المغادرة؟</p>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+            <button class="btn" style="background:linear-gradient(135deg,#27ae60,#1e8449);" onclick="saveAndExit()">☁️ حفظ ورجوع</button>
+            <button class="btn" style="background:rgba(192,57,43,.18);color:#e07070;border:1px solid rgba(192,57,43,.3);" onclick="exitWithoutSaving()">رجوع دون حفظ</button>
+            <button class="btn" style="background:var(--surf3);color:var(--text-muted);" onclick="closeConfirmModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
 
-<script>    // --- المتغيرات العامة المحدثة ---
-    let indexPage = "index.html"
-    let lastSavedData = ""; 
-    let mediaVault = {};
+<!-- ════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════ -->
+<script>
+
+    /* ══════════════════════════════════════════════════════
+       0.  THEME SYSTEM  — السِمات اللونية للمحرر
+    ══════════════════════════════════════════════════════ */
+
+    const royalThemes = {
+
+        /* 1 ── الكلاسيكي الذهبي */
+        classic: {
+            name:'الكلاسيكي الذهبي',
+            swatch:'linear-gradient(135deg,#0d0c09 50%,#c9a227 50%)',
+            vars:{
+                '--bg':'#0d0c09','--surf1':'#181510','--surf2':'#21200f','--surf3':'#2c291a',
+                '--royal-gold':'#b8860b','--royal-green':'#6B8E23',
+                '--gold':'#c9a227','--gold-dim':'rgba(201,162,39,.18)','--gold-line':'rgba(201,162,39,.28)',
+                '--text':'#ede8d5','--text-dim':'#a09070','--text-muted':'#6b5f48'
+            },
+            dayVars:{
+                '--bg':'#faf8f0','--surf1':'#f5f1e4','--surf2':'#ede8d0','--surf3':'#e5deba',
+                '--text':'#2a2310','--text-dim':'#5c4f30','--text-muted':'#8a7855'
+            }
+        },
+
+        /* 2 ── المظلم الفخم */
+        dark: {
+            name:'المظلم الفخم',
+            swatch:'linear-gradient(135deg,#121212 50%,#ffd700 50%)',
+            vars:{
+                '--bg':'#0a0a0a','--surf1':'#151515','--surf2':'#1e1e1e','--surf3':'#252525',
+                '--royal-gold':'#ffd700','--royal-green':'#2e7d32',
+                '--gold':'#ffd700','--gold-dim':'rgba(255,215,0,.15)','--gold-line':'rgba(255,215,0,.22)',
+                '--text':'#f0f0f0','--text-dim':'#b0b0b0','--text-muted':'#707070'
+            },
+            dayVars:{
+                '--bg':'#fafafa','--surf1':'#f2f2f2','--surf2':'#e8e8e8','--surf3':'#dcdcdc',
+                '--text':'#1a1a1a','--text-dim':'#4a4a4a','--text-muted':'#7a7a7a'
+            }
+        },
+
+        /* 3 ── المخطوطات */
+        sepia: {
+            name:'المخطوطات',
+            swatch:'linear-gradient(135deg,#3e2723 50%,#d4a76a 50%)',
+            vars:{
+                '--bg':'#2c1e14','--surf1':'#3a2416','--surf2':'#4a301e','--surf3':'#5c3c26',
+                '--royal-gold':'#c4873a','--royal-green':'#558b2f',
+                '--gold':'#d4a76a','--gold-dim':'rgba(212,167,106,.18)','--gold-line':'rgba(212,167,106,.3)',
+                '--text':'#f5e6d0','--text-dim':'#c8a882','--text-muted':'#8a6a4a'
+            },
+            dayVars:{
+                '--bg':'#fdf6ec','--surf1':'#f5e9d0','--surf2':'#ecdbb0','--surf3':'#e4cc98',
+                '--text':'#2c1e14','--text-dim':'#5c3c26','--text-muted':'#8a6a4a'
+            }
+        },
+
+        /* 4 ── الزمردي */
+        emerald: {
+            name:'الزمردي',
+            swatch:'linear-gradient(135deg,#0a2f1d 50%,#2ecc71 50%)',
+            vars:{
+                '--bg':'#071a0f','--surf1':'#0d2a19','--surf2':'#133d25','--surf3':'#1a5233',
+                '--royal-gold':'#d4af37','--royal-green':'#27ae60',
+                '--gold':'#2ecc71','--gold-dim':'rgba(46,204,113,.15)','--gold-line':'rgba(46,204,113,.25)',
+                '--text':'#d5f5e3','--text-dim':'#82c99b','--text-muted':'#3d8b60'
+            },
+            dayVars:{
+                '--bg':'#f0fdf4','--surf1':'#dcfce7','--surf2':'#c4f5d5','--surf3':'#aaeec0',
+                '--text':'#071a0f','--text-dim':'#1a5233','--text-muted':'#27ae60'
+            }
+        },
+
+        /* 5 ── السماوي */
+        azure: {
+            name:'السماوي',
+            swatch:'linear-gradient(135deg,#0a1628 50%,#3498db 50%)',
+            vars:{
+                '--bg':'#060d1a','--surf1':'#0d1b2e','--surf2':'#132841','--surf3':'#1a3554',
+                '--royal-gold':'#3498db','--royal-green':'#1abc9c',
+                '--gold':'#5dade2','--gold-dim':'rgba(93,173,226,.15)','--gold-line':'rgba(93,173,226,.25)',
+                '--text':'#d6eaf8','--text-dim':'#85c1e9','--text-muted':'#2e86c1'
+            },
+            dayVars:{
+                '--bg':'#eff8ff','--surf1':'#dbeefa','--surf2':'#c5e4f5','--surf3':'#aed8f0',
+                '--text':'#06111e','--text-dim':'#1a3554','--text-muted':'#2e86c1'
+            }
+        },
+
+        /* 6 ── الوردي الملكي */
+        rose: {
+            name:'الوردي الملكي',
+            swatch:'linear-gradient(135deg,#2d0c18 50%,#e91e8c 50%)',
+            vars:{
+                '--bg':'#1a0810','--surf1':'#2a0d1a','--surf2':'#3a1226','--surf3':'#4d1a33',
+                '--royal-gold':'#e91e8c','--royal-green':'#9b59b6',
+                '--gold':'#f06292','--gold-dim':'rgba(240,98,146,.15)','--gold-line':'rgba(240,98,146,.25)',
+                '--text':'#fce4ec','--text-dim':'#f48fb1','--text-muted':'#c2185b'
+            },
+            dayVars:{
+                '--bg':'#fff0f5','--surf1':'#fce4ec','--surf2':'#f8ccd8','--surf3':'#f3b0c0',
+                '--text':'#1a0810','--text-dim':'#4d1a33','--text-muted':'#c2185b'
+            }
+        },
+
+        /* 7 ── الأميثيست */
+        amethyst: {
+            name:'الأميثيست',
+            swatch:'linear-gradient(135deg,#1a0a2e 50%,#9b59b6 50%)',
+            vars:{
+                '--bg':'#0e0618','--surf1':'#180f28','--surf2':'#221438','--surf3':'#2e1c4a',
+                '--royal-gold':'#9b59b6','--royal-green':'#8e44ad',
+                '--gold':'#af7ac5','--gold-dim':'rgba(175,122,197,.15)','--gold-line':'rgba(175,122,197,.25)',
+                '--text':'#f0e6ff','--text-dim':'#c39bd3','--text-muted':'#7d3c98'
+            },
+            dayVars:{
+                '--bg':'#faf5ff','--surf1':'#f2e6ff','--surf2':'#e8d4f8','--surf3':'#ddc2f0',
+                '--text':'#0e0618','--text-dim':'#2e1c4a','--text-muted':'#7d3c98'
+            }
+        },
+
+        /* 8 ── القرمزي */
+        crimson: {
+            name:'القرمزي',
+            swatch:'linear-gradient(135deg,#1a0508 50%,#c0392b 50%)',
+            vars:{
+                '--bg':'#100204','--surf1':'#1e0608','--surf2':'#2c0c10','--surf3':'#3a1218',
+                '--royal-gold':'#e74c3c','--royal-green':'#c0392b',
+                '--gold':'#e74c3c','--gold-dim':'rgba(231,76,60,.15)','--gold-line':'rgba(231,76,60,.25)',
+                '--text':'#fdecea','--text-dim':'#f1948a','--text-muted':'#a93226'
+            },
+            dayVars:{
+                '--bg':'#fff5f5','--surf1':'#fee2e0','--surf2':'#fdcac8','--surf3':'#fbb0ac',
+                '--text':'#100204','--text-dim':'#3a1218','--text-muted':'#a93226'
+            }
+        },
+
+        /* 9 ── منتصف الليل */
+        midnight: {
+            name:'منتصف الليل',
+            swatch:'linear-gradient(135deg,#020820 50%,#4169e1 50%)',
+            vars:{
+                '--bg':'#020510','--surf1':'#060d28','--surf2':'#0c1a3e','--surf3':'#142254',
+                '--royal-gold':'#d4af37','--royal-green':'#1e90ff',
+                '--gold':'#4169e1','--gold-dim':'rgba(65,105,225,.15)','--gold-line':'rgba(65,105,225,.25)',
+                '--text':'#e0e8ff','--text-dim':'#8fa8e8','--text-muted':'#3050a8'
+            },
+            dayVars:{
+                '--bg':'#f0f4ff','--surf1':'#dde8ff','--surf2':'#c8d8ff','--surf3':'#b0c8fc',
+                '--text':'#020510','--text-dim':'#142254','--text-muted':'#3050a8'
+            }
+        },
+
+        /* 10 ── الغابة */
+        forest: {
+            name:'الغابة',
+            swatch:'linear-gradient(135deg,#0a1f0a 50%,#228b22 50%)',
+            vars:{
+                '--bg':'#060e06','--surf1':'#0e1e0e','--surf2':'#162e16','--surf3':'#1e3e1e',
+                '--royal-gold':'#d4af37','--royal-green':'#228b22',
+                '--gold':'#55a630','--gold-dim':'rgba(85,166,48,.15)','--gold-line':'rgba(85,166,48,.25)',
+                '--text':'#d8f0d8','--text-dim':'#90c490','--text-muted':'#3a7a3a'
+            },
+            dayVars:{
+                '--bg':'#f0faf0','--surf1':'#dcf0dc','--surf2':'#c8e6c8','--surf3':'#b4dcb4',
+                '--text':'#060e06','--text-dim':'#1e3e1e','--text-muted':'#3a7a3a'
+            }
+        },
+
+        /* 11 ── النحاسي */
+        copper: {
+            name:'النحاسي',
+            swatch:'linear-gradient(135deg,#1a0e08 50%,#b87333 50%)',
+            vars:{
+                '--bg':'#110906','--surf1':'#1e100a','--surf2':'#2c1810','--surf3':'#3c2018',
+                '--royal-gold':'#b87333','--royal-green':'#8b6914',
+                '--gold':'#cd7f32','--gold-dim':'rgba(205,127,50,.18)','--gold-line':'rgba(205,127,50,.28)',
+                '--text':'#fdf0e0','--text-dim':'#d4a882','--text-muted':'#8a6040'
+            },
+            dayVars:{
+                '--bg':'#fdf5ec','--surf1':'#f5e6d2','--surf2':'#ecd6b8','--surf3':'#e0c8a0',
+                '--text':'#110906','--text-dim':'#3c2018','--text-muted':'#8a6040'
+            }
+        },
+
+        /* 12 ── الأوبسيديان */
+        obsidian: {
+            name:'الأوبسيديان الفضي',
+            swatch:'linear-gradient(135deg,#080808 50%,#c0c0c0 50%)',
+            vars:{
+                '--bg':'#050505','--surf1':'#0f0f0f','--surf2':'#181818','--surf3':'#222222',
+                '--royal-gold':'#a8a8a8','--royal-green':'#888888',
+                '--gold':'#c0c0c0','--gold-dim':'rgba(192,192,192,.15)','--gold-line':'rgba(192,192,192,.25)',
+                '--text':'#f0f0f0','--text-dim':'#b0b0b0','--text-muted':'#707070'
+            },
+            dayVars:{
+                '--bg':'#f8f8f8','--surf1':'#eeeeee','--surf2':'#e4e4e4','--surf3':'#d8d8d8',
+                '--text':'#0a0a0a','--text-dim':'#383838','--text-muted':'#686868'
+            }
+        },
+
+        /* 13 ── المحيطي */
+        ocean: {
+            name:'المحيطي',
+            swatch:'linear-gradient(135deg,#031520 50%,#00838f 50%)',
+            vars:{
+                '--bg':'#020d14','--surf1':'#061e28','--surf2':'#0c2e3c','--surf3':'#124050',
+                '--royal-gold':'#d4af37','--royal-green':'#00838f',
+                '--gold':'#00bcd4','--gold-dim':'rgba(0,188,212,.15)','--gold-line':'rgba(0,188,212,.25)',
+                '--text':'#e0f7fa','--text-dim':'#80deea','--text-muted':'#00838f'
+            },
+            dayVars:{
+                '--bg':'#f0fdff','--surf1':'#dcf8fc','--surf2':'#c0f0f8','--surf3':'#a0e8f5',
+                '--text':'#020d14','--text-dim':'#124050','--text-muted':'#00838f'
+            }
+        },
+
+        /* 14 ── برتقالي الغروب */
+        sunset: {
+            name:'برتقالي الغروب',
+            swatch:'linear-gradient(135deg,#1a0c06 50%,#ff6b35 50%)',
+            vars:{
+                '--bg':'#110806','--surf1':'#1e100a','--surf2':'#2c1810','--surf3':'#3c2010',
+                '--royal-gold':'#ff6b35','--royal-green':'#e65100',
+                '--gold':'#ff8c42','--gold-dim':'rgba(255,140,66,.15)','--gold-line':'rgba(255,140,66,.25)',
+                '--text':'#fff3e0','--text-dim':'#ffcc80','--text-muted':'#e65100'
+            },
+            dayVars:{
+                '--bg':'#fff8f0','--surf1':'#ffecdc','--surf2':'#ffe0c4','--surf3':'#ffd4ac',
+                '--text':'#110806','--text-dim':'#3c2010','--text-muted':'#e65100'
+            }
+        },
+
+        /* 15 ── البنفسجي */
+        violet: {
+            name:'البنفسجي',
+            swatch:'linear-gradient(135deg,#0e0820 50%,#7c3aed 50%)',
+            vars:{
+                '--bg':'#08061a','--surf1':'#110e28','--surf2':'#1a1538','--surf3':'#231d4a',
+                '--royal-gold':'#d4af37','--royal-green':'#7c3aed',
+                '--gold':'#8b5cf6','--gold-dim':'rgba(139,92,246,.15)','--gold-line':'rgba(139,92,246,.25)',
+                '--text':'#ede9fe','--text-dim':'#a78bfa','--text-muted':'#6d28d9'
+            },
+            dayVars:{
+                '--bg':'#f5f3ff','--surf1':'#ede9fe','--surf2':'#ddd6fe','--surf3':'#c4b5fd',
+                '--text':'#08061a','--text-dim':'#231d4a','--text-muted':'#6d28d9'
+            }
+        },
+
+        /* 16 ── الساكورا */
+        sakura: {
+            name:'الساكورا',
+            swatch:'linear-gradient(135deg,#200a14 50%,#ff80ab 50%)',
+            vars:{
+                '--bg':'#140610','--surf1':'#220c1c','--surf2':'#301228','--surf3':'#401834',
+                '--royal-gold':'#ff80ab','--royal-green':'#f48fb1',
+                '--gold':'#ff80ab','--gold-dim':'rgba(255,128,171,.15)','--gold-line':'rgba(255,128,171,.25)',
+                '--text':'#fce4f0','--text-dim':'#f8b8d4','--text-muted':'#c2185b'
+            },
+            dayVars:{
+                '--bg':'#fff8fc','--surf1':'#fce4f0','--surf2':'#f9cce4','--surf3':'#f5b0d4',
+                '--text':'#140610','--text-dim':'#401834','--text-muted':'#c2185b'
+            }
+        },
+
+        /* 17 ── الصحراوي */
+        desert: {
+            name:'الصحراوي',
+            swatch:'linear-gradient(135deg,#1e1608 50%,#d4ac0d 50%)',
+            vars:{
+                '--bg':'#140f06','--surf1':'#221a0c','--surf2':'#302516','--surf3':'#3e3020',
+                '--royal-gold':'#d4ac0d','--royal-green':'#a0892a',
+                '--gold':'#e8c320','--gold-dim':'rgba(232,195,32,.15)','--gold-line':'rgba(232,195,32,.25)',
+                '--text':'#faf0c8','--text-dim':'#d4c068','--text-muted':'#907830'
+            },
+            dayVars:{
+                '--bg':'#fffef0','--surf1':'#faf8dc','--surf2':'#f5f0c4','--surf3':'#ece8a8',
+                '--text':'#140f06','--text-dim':'#3e3020','--text-muted':'#907830'
+            }
+        },
+
+        /* 18 ── القطبي */
+        arctic: {
+            name:'القطبي الجليدي',
+            swatch:'linear-gradient(135deg,#060e18 50%,#90e0ef 50%)',
+            vars:{
+                '--bg':'#040a12','--surf1':'#0a1520','--surf2':'#102030','--surf3':'#162c40',
+                '--royal-gold':'#90e0ef','--royal-green':'#48cae4',
+                '--gold':'#90e0ef','--gold-dim':'rgba(144,224,239,.15)','--gold-line':'rgba(144,224,239,.25)',
+                '--text':'#e0f8ff','--text-dim':'#90d4e8','--text-muted':'#4090a8'
+            },
+            dayVars:{
+                '--bg':'#f0fdff','--surf1':'#dcf8ff','--surf2':'#c4f0ff','--surf3':'#a8e8ff',
+                '--text':'#040a12','--text-dim':'#162c40','--text-muted':'#4090a8'
+            }
+        },
+
+        /* 19 ── البرقوقي */
+        plum: {
+            name:'البرقوقي',
+            swatch:'linear-gradient(135deg,#1a0828 50%,#8b2fc9 50%)',
+            vars:{
+                '--bg':'#100618','--surf1':'#1c0c28','--surf2':'#281438','--surf3':'#341c48',
+                '--royal-gold':'#d4af37','--royal-green':'#8b2fc9',
+                '--gold':'#a855f7','--gold-dim':'rgba(168,85,247,.15)','--gold-line':'rgba(168,85,247,.25)',
+                '--text':'#f5e8ff','--text-dim':'#c084fc','--text-muted':'#7e22ce'
+            },
+            dayVars:{
+                '--bg':'#fdf4ff','--surf1':'#f5e8ff','--surf2':'#ead5ff','--surf3':'#ddbfff',
+                '--text':'#100618','--text-dim':'#341c48','--text-muted':'#7e22ce'
+            }
+        },
+
+        /* 20 ── الياقوتي */
+        ruby: {
+            name:'الياقوتي',
+            swatch:'linear-gradient(135deg,#1a0410 50%,#dc2626 50%)',
+            vars:{
+                '--bg':'#110210','--surf1':'#1e0818','--surf2':'#2c1020','--surf3':'#3c182c',
+                '--royal-gold':'#fbbf24','--royal-green':'#dc2626',
+                '--gold':'#ef4444','--gold-dim':'rgba(239,68,68,.15)','--gold-line':'rgba(239,68,68,.25)',
+                '--text':'#fff1f2','--text-dim':'#fca5a5','--text-muted':'#b91c1c'
+            },
+            dayVars:{
+                '--bg':'#fff5f5','--surf1':'#fee2e2','--surf2':'#fecaca','--surf3':'#fca5a5',
+                '--text':'#110210','--text-dim':'#3c182c','--text-muted':'#b91c1c'
+            }
+        },
+
+        /* 21 ── الرمادي الأزرق */
+        slate: {
+            name:'الرمادي الأزرق',
+            swatch:'linear-gradient(135deg,#0a1018 50%,#64748b 50%)',
+            vars:{
+                '--bg':'#070c12','--surf1':'#0f1820','--surf2':'#182430','--surf3':'#223040',
+                '--royal-gold':'#94a3b8','--royal-green':'#64748b',
+                '--gold':'#94a3b8','--gold-dim':'rgba(148,163,184,.15)','--gold-line':'rgba(148,163,184,.25)',
+                '--text':'#e2e8f0','--text-dim':'#94a3b8','--text-muted':'#475569'
+            },
+            dayVars:{
+                '--bg':'#f8fafc','--surf1':'#f1f5f9','--surf2':'#e2e8f0','--surf3':'#cbd5e1',
+                '--text':'#0f172a','--text-dim':'#334155','--text-muted':'#64748b'
+            }
+        },
+
+        /* 22 ── البرونزي */
+        bronze: {
+            name:'البرونزي',
+            swatch:'linear-gradient(135deg,#150e06 50%,#cd7f32 50%)',
+            vars:{
+                '--bg':'#0e0a06','--surf1':'#1a1008','--surf2':'#261810','--surf3':'#342018',
+                '--royal-gold':'#cd7f32','--royal-green':'#a0662a',
+                '--gold':'#d4922a','--gold-dim':'rgba(212,146,42,.18)','--gold-line':'rgba(212,146,42,.28)',
+                '--text':'#faf0e0','--text-dim':'#d4b888','--text-muted':'#8a6838'
+            },
+            dayVars:{
+                '--bg':'#fdfaf2','--surf1':'#f5ecd8','--surf2':'#ecdcc0','--surf3':'#e4cca8',
+                '--text':'#0e0a06','--text-dim':'#342018','--text-muted':'#8a6838'
+            }
+        },
+
+        /* 23 ── النيون */
+        neon: {
+            name:'النيون الإلكتروني',
+            swatch:'linear-gradient(135deg,#020802 50%,#00ff41 50%)',
+            vars:{
+                '--bg':'#010401','--surf1':'#040d04','--surf2':'#081808','--surf3':'#0c200c',
+                '--royal-gold':'#00ff41','--royal-green':'#00cc33',
+                '--gold':'#00ff41','--gold-dim':'rgba(0,255,65,.12)','--gold-line':'rgba(0,255,65,.2)',
+                '--text':'#e0ffe8','--text-dim':'#80ff9a','--text-muted':'#00aa2a'
+            },
+            dayVars:{
+                '--bg':'#f0fff4','--surf1':'#d8fde4','--surf2':'#c0fbd0','--surf3':'#a8f8bc',
+                '--text':'#010401','--text-dim':'#0c200c','--text-muted':'#00aa2a'
+            }
+        },
+
+        /* 24 ── الخشب الملكي */
+        mahogany: {
+            name:'الخشب الملكي',
+            swatch:'linear-gradient(135deg,#1e0c08 50%,#8b4513 50%)',
+            vars:{
+                '--bg':'#130804','--surf1':'#201008','--surf2':'#2e180c','--surf3':'#3c2012',
+                '--royal-gold':'#d4af37','--royal-green':'#8b4513',
+                '--gold':'#c4872c','--gold-dim':'rgba(196,135,44,.18)','--gold-line':'rgba(196,135,44,.28)',
+                '--text':'#faf2e8','--text-dim':'#d4b090','--text-muted':'#8a5c38'
+            },
+            dayVars:{
+                '--bg':'#fdf7f0','--surf1':'#f5e8d8','--surf2':'#ecdac0','--surf3':'#e4cca8',
+                '--text':'#130804','--text-dim':'#3c2012','--text-muted':'#8a5c38'
+            }
+        },
+
+        /* 25 ── اللافندر */
+        lavender: {
+            name:'اللافندر',
+            swatch:'linear-gradient(135deg,#140e22 50%,#b39ddb 50%)',
+            vars:{
+                '--bg':'#0e0a18','--surf1':'#181026','--surf2':'#221834','--surf3':'#2c2042',
+                '--royal-gold':'#b39ddb','--royal-green':'#9575cd',
+                '--gold':'#b39ddb','--gold-dim':'rgba(179,157,219,.15)','--gold-line':'rgba(179,157,219,.25)',
+                '--text':'#f0ecff','--text-dim':'#c5b8e8','--text-muted':'#7e6bb0'
+            },
+            dayVars:{
+                '--bg':'#f8f5ff','--surf1':'#ece8ff','--surf2':'#ddd8ff','--surf3':'#cec8ff',
+                '--text':'#0e0a18','--text-dim':'#2c2042','--text-muted':'#7e6bb0'
+            }
+        },
+
+        /* 26 ── الفيروزي */
+        turquoise: {
+            name:'الفيروزي',
+            swatch:'linear-gradient(135deg,#061618 50%,#1abc9c 50%)',
+            vars:{
+                '--bg':'#040e10','--surf1':'#091c1e','--surf2':'#0e2c2e','--surf3':'#143c3e',
+                '--royal-gold':'#d4af37','--royal-green':'#1abc9c',
+                '--gold':'#1abc9c','--gold-dim':'rgba(26,188,156,.15)','--gold-line':'rgba(26,188,156,.25)',
+                '--text':'#e0fdf8','--text-dim':'#7ee8d0','--text-muted':'#148a70'
+            },
+            dayVars:{
+                '--bg':'#f0fdfb','--surf1':'#d8fdf5','--surf2':'#c0fbee','--surf3':'#a8f8e6',
+                '--text':'#040e10','--text-dim':'#143c3e','--text-muted':'#148a70'
+            }
+        }
+
+    };
+
+    let activeTheme = 'classic';
+    let isDayMode   = false;
+
+    /** تطبيق متغيرات السمة — لا تؤثر على --global-page-bg أبدًا */
+    function applyThemeVars(themeName) {
+        const theme = royalThemes[themeName];
+        if (!theme) return;
+        const root = document.documentElement;
+        // طبّق المتغيرات الأساسية (بدون --global-page-bg)
+        for (let v in theme.vars) {
+            if (v === '--global-page-bg') continue;
+            root.style.setProperty(v, theme.vars[v]);
+        }
+        // طبّق متغيرات السطح حسب الوضع الليلي / النهاري
+        if (isDayMode && theme.dayVars) {
+            for (let v in theme.dayVars) {
+                root.style.setProperty(v, theme.dayVars[v]);
+            }
+        }
+    }
+
+    /** تبديل الوضع الليلي ↔ النهاري */
+    function toggleDayNight() {
+        isDayMode = !isDayMode;
+        const icon  = document.getElementById('dayNightIcon');
+        const label = document.getElementById('dayNightLabel');
+        if (isDayMode) {
+            if (icon)  icon.textContent  = '☀️';
+            if (label) label.textContent = 'نهاري';
+        } else {
+            if (icon)  icon.textContent  = '🌙';
+            if (label) label.textContent = 'ليلي';
+        }
+        document.body.classList.add('theme-switching');
+        applyThemeVars(activeTheme);
+        setTimeout(() => document.body.classList.remove('theme-switching'), 500);
+    }
+
+    /** تطبيق السمة اللونية على المحرر بالكامل — المعاينة لا تتغير */
+    function changeAppTheme(themeName, save = true) {
+        const theme = royalThemes[themeName];
+        if (!theme) return;
+        activeTheme = themeName;
+
+        // انتقال سلس
+        document.body.classList.add('theme-switching');
+        applyThemeVars(themeName);
+        setTimeout(() => document.body.classList.remove('theme-switching'), 500);
+
+        // تحديث مؤشر السمة النشطة
+        document.querySelectorAll('.theme-swatch').forEach(s => {
+            s.classList.toggle('active', s.dataset.theme === themeName);
+        });
+
+        // حفظ السمة
+        if (save) {
+            try {
+                let s = JSON.parse(localStorage.getItem('bookData') || '{}');
+                s.selectedTheme = themeName;
+                localStorage.setItem('bookData', JSON.stringify(s));
+            } catch(e) {}
+        }
+    }
+
+    /** بناء صف الألوان (swatches) في شريط معلومات الكتاب */
+    function renderThemeSwatches() {
+        const row = document.getElementById('themeSwatch');
+        if (!row) return;
+        row.innerHTML = Object.entries(royalThemes).map(([key, t]) => `
+            <button class="theme-swatch${key === activeTheme ? ' active' : ''}"
+                    data-theme="${key}"
+                    title="${t.name}"
+                    style="background:${t.swatch};"
+                    onclick="changeAppTheme('${key}')">
+            </button>`).join('');
+    }
+
+    /* ══════════════════════════════════════════════════════
+       I.  PANEL UI LOGIC
+    ══════════════════════════════════════════════════════ */
+
+    /** Switch between the three main tabs */
+    function switchFPTab(tabId, btn) {
+        document.querySelectorAll('.fp-main-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.fp-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('fp-tab-' + tabId).classList.add('active');
+    }
+
+    /** Switch between الميزات / إعدادات سريعة inside the Writing tab */
+    function switchWritingTab(tabId, btn) {
+        document.querySelectorAll('.fp-sub-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.writing-sub-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('writing-' + tabId).classList.add('active');
+        cancelFeature(true); // hide reqs without removing placeholder when just switching tabs
+    }
+
+    /** Hide the panel, show the floating button */
+    function hideFloatingPanel() {
+        document.getElementById('floating-panel').classList.add('fp-hidden');
+        document.getElementById('floating-toggle').classList.add('ft-visible');
+        // move smart-panel offset
+        document.getElementById('smart-panel').classList.add('panel-hidden-offset');
+    }
+
+    /** Show the panel, hide the floating button */
+    function showFloatingPanel() {
+        document.getElementById('floating-panel').classList.remove('fp-hidden');
+        document.getElementById('floating-toggle').classList.remove('ft-visible');
+        document.getElementById('smart-panel').classList.remove('panel-hidden-offset');
+    }
+
+    /* ── Draggable floating button ─────────────────────── */
+    (function () {
+        const btn = document.getElementById('floating-toggle');
+        let dragging = false, sx, sy, ox, oy;
+
+        function getPos() {
+            return {
+                left:   parseInt(btn.style.left   || '24', 10),
+                bottom: parseInt(btn.style.bottom || '24', 10)
+            };
+        }
+
+        /* Mouse */
+        btn.addEventListener('mousedown', e => {
+            dragging = false; sx = e.clientX; sy = e.clientY;
+            const p = getPos(); ox = p.left; oy = p.bottom;
+            const onMove = e => {
+                const dx = e.clientX - sx, dy = e.clientY - sy;
+                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) { dragging = true; btn.style.cursor = 'grabbing'; }
+                if (dragging) {
+                    btn.style.left   = Math.max(0, ox + dx) + 'px';
+                    btn.style.bottom = Math.max(0, oy - dy) + 'px';
+                }
+            };
+            const onUp = () => { btn.style.cursor = 'grab'; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+            e.preventDefault();
+        });
+
+        /* Touch */
+        btn.addEventListener('touchstart', e => {
+            dragging = false; const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+            const p = getPos(); ox = p.left; oy = p.bottom;
+        }, { passive: true });
+        btn.addEventListener('touchmove', e => {
+            const t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                dragging = true;
+                btn.style.left   = Math.max(0, ox + dx) + 'px';
+                btn.style.bottom = Math.max(0, oy - dy) + 'px';
+            }
+        }, { passive: true });
+    })();
+
+    function handleToggleClick(e) {
+        if (!window._ftDragging) showFloatingPanel();
+    }
+
+    /* ══════════════════════════════════════════════════════
+       II.  FEATURE SYSTEM
+    ══════════════════════════════════════════════════════ */
+
+    let activeFeature  = null;
+    const FP_HOLDER    = '[ميزة]';
+
+    const FEAT_REQS = {
+
+        quote: `
+            <div class="req-field" style="min-width:180px;">
+                <label>النص المقتبس</label>
+                <textarea id="rq-quote-text" rows="2" placeholder="النص المقتبس..."></textarea>
+            </div>
+            <div class="req-field" style="min-width:130px;">
+                <label>اسم المصدر</label>
+                <input type="text" id="rq-quote-source" placeholder="المصدر">
+            </div>
+            <div class="req-field" style="min-width:170px;">
+                <label>رابط الوثيقة <span style="opacity:.6">(اختياري)</span></label>
+                <input type="text" id="rq-quote-url" placeholder="https://...">
+            </div>
+            <div class="req-field" style="min-width:80px;">
+                <label>لون النص <span style="opacity:.6">(اختياري)</span></label>
+                <input type="color" id="rq-quote-color" value="#333333">
+            </div>
+            <div class="req-field" style="min-width:90px;">
+                <label>لون الخلفية <span style="opacity:.6">(اختياري)</span></label>
+                <input type="color" id="rq-quote-bg" value="#fffdd0">
+            </div>`,
+
+        quran: `
+            <div class="req-field" style="min-width:220px;">
+                <label>نص الآية أو جزء منها</label>
+                <input type="text" id="rq-quran-text" placeholder="أدخل نص الآية...">
+            </div>
+            <div class="req-field" style="min-width:130px;">
+                <label>اسم السورة <span style="opacity:.6">(اختياري)</span></label>
+                <input type="text" id="rq-quran-surah" placeholder="البقرة">
+            </div>
+            <div class="req-field" style="min-width:90px;">
+                <label>رقم الآية <span style="opacity:.6">(اختياري)</span></label>
+                <input type="number" id="rq-quran-ayah" placeholder="255">
+            </div>
+            <div class="req-field" style="min-width:140px; flex-direction:row; align-items:center; gap:12px; flex-wrap:wrap; padding-top:18px;">
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);">
+                    <input type="checkbox" id="rq-quran-verses" checked> الآيات
+                </label>
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);">
+                    <input type="checkbox" id="rq-quran-tafseer"> التفاسير
+                </label>
+            </div>`,
+
+        hadith: `
+            <div class="req-field" style="min-width:230px;">
+                <label>نص الحديث</label>
+                <textarea id="rq-hadith-text" rows="2" placeholder="أدخل نص الحديث..."></textarea>
+            </div>
+            <div class="req-field" style="min-width:140px;">
+                <label>اسم الراوي/المحدث <span style="opacity:.6">(اختياري)</span></label>
+                <input type="text" id="rq-hadith-narrator" placeholder="البخاري">
+            </div>
+            <div class="req-field" style="min-width:130px;">
+                <label>الكتاب <span style="opacity:.6">(اختياري)</span></label>
+                <input type="text" id="rq-hadith-book" placeholder="صحيح البخاري">
+            </div>
+            <div class="req-field" style="min-width:190px;">
+                <label>تحديد موقع البحث <span style="opacity:.6">(اختياري)</span></label>
+                <input type="text" id="rq-hadith-source" placeholder="رابط ملف أو موقع للبحث فيه">
+            </div>
+            <div class="req-field" style="min-width:100px; padding-top:18px;">
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);">
+                    <input type="checkbox" id="rq-hadith-nosearch"> لا تبحث
+                </label>
+            </div>`,
+
+        media: `
+            <div class="req-field" style="min-width:230px;">
+                <label>اختر من خزنة الوسائط</label>
+                <select id="rq-media-key">
+                    <option value="">-- اختر رمزاً --</option>
+                </select>
+            </div>`,
+
+        format: `
+            <div class="req-field" style="min-width:190px;">
+                <label>النص المراد تنسيقه</label>
+                <input type="text" id="rq-fmt-text" placeholder="النص هنا...">
+            </div>
+            <div class="req-field" style="min-width:85px;">
+                <label>لون النص <span style="opacity:.6">(اختياري)</span></label>
+                <input type="color" id="rq-fmt-color" value="#ede8d5">
+            </div>
+            <div class="req-field" style="min-width:190px; flex-direction:row; align-items:center; gap:10px; flex-wrap:wrap; padding-top:18px;">
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);"><input type="checkbox" id="rq-fmt-bold"> سميك</label>
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);"><input type="checkbox" id="rq-fmt-italic"> مائل</label>
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);"><input type="checkbox" id="rq-fmt-under"> خط أسفل</label>
+            </div>
+            <div class="req-field" style="min-width:150px;">
+                <label>الخط <span style="opacity:.6">(اختياري)</span></label>
+                <select id="rq-fmt-font">
+                    <option value="">-- الخط الافتراضي --</option>
+                    <option value="Amiri">Amiri</option>
+                    <option value="Aref Ruqaa">Aref Ruqaa</option>
+                </select>
+            </div>`,
+
+        footnote: `
+            <div class="req-field" style="min-width:320px;">
+                <label>نص الحاشية</label>
+                <input type="text" id="rq-fn-text" placeholder="أدخل نص الحاشية...">
+            </div>`,
+
+        misc: `
+            <div class="req-field" style="min-width:155px;">
+                <label>نوع الميزة</label>
+                <select id="rq-misc-type" onchange="updateMiscFields()">
+                    <option value="link">رابط</option>
+                    <option value="image">صورة</option>
+                    <option value="size">حجم النص</option>
+                </select>
+            </div>
+            <div id="rq-misc-dyn" style="display:contents;">
+                <div class="req-field" style="min-width:180px;"><label>النص</label><input type="text" id="rq-misc-text" placeholder="النص المرئي..."></div>
+                <div class="req-field" style="min-width:200px;"><label>الرابط</label><input type="text" id="rq-misc-val" placeholder="https://..."></div>
+            </div>`
+    };
+
+    function openFeature(featureId, btn) {
+        // Deactivate all feature buttons
+        document.querySelectorAll('.feat-btn').forEach(b => b.classList.remove('feat-active'));
+        btn.classList.add('feat-active');
+
+        // Insert placeholder at cursor
+        const ta    = document.getElementById('mainText');
+        const start = ta.selectionStart;
+        ta.value    = ta.value.substring(0, start) + FP_HOLDER + ta.value.substring(start);
+        ta.selectionStart = ta.selectionEnd = start + FP_HOLDER.length;
+
+        activeFeature = featureId;
+
+        // Render requirements
+        document.getElementById('feature-reqs-content').innerHTML = FEAT_REQS[featureId] || '';
+        document.getElementById('feature-reqs-area').style.display = 'block';
+
+        // Populate vault keys for media feature
+        if (featureId === 'media') {
+            const sel = document.getElementById('rq-media-key');
+            sel.innerHTML = '<option value="">-- اختر رمزاً --</option>';
+            for (let key in mediaVault) {
+                const t = mediaVault[key].type;
+                const icon = t === 'image' ? '🖼️' : t === 'video' ? '🎥' : '🎵';
+                sel.innerHTML += `<option value="${key}">${icon} ${key} (${t})</option>`;
+            }
+        }
+
+        // Switch to writing tab & features sub-tab if not already
+        const writingTab = document.querySelector('.fp-main-tab:nth-child(2)');
+        if (writingTab && !writingTab.classList.contains('active')) switchFPTab('writing', writingTab);
+    }
+
+    /** Dynamically update the misc feature fields based on type */
+    function updateMiscFields() {
+        const type = document.getElementById('rq-misc-type')?.value;
+        const dyn  = document.getElementById('rq-misc-dyn');
+        if (!dyn) return;
+        if (type === 'link') {
+            dyn.innerHTML = `
+                <div class="req-field" style="min-width:180px;"><label>النص</label><input type="text" id="rq-misc-text" placeholder="النص المرئي..."></div>
+                <div class="req-field" style="min-width:200px;"><label>الرابط</label><input type="text" id="rq-misc-val" placeholder="https://..."></div>`;
+        } else if (type === 'image') {
+            dyn.innerHTML = `
+                <div class="req-field" style="min-width:80px;"><label>الحجم <span style="opacity:.6">(اختياري)</span></label><input type="text" id="rq-misc-size" placeholder="100%"></div>
+                <div class="req-field" style="min-width:220px;"><label>رابط الصورة</label><input type="text" id="rq-misc-val" placeholder="https://..."></div>`;
+        } else {
+            dyn.innerHTML = `
+                <div class="req-field" style="min-width:180px;"><label>النص</label><input type="text" id="rq-misc-text" placeholder="النص..."></div>
+                <div class="req-field" style="min-width:100px;"><label>الحجم</label><input type="text" id="rq-misc-val" placeholder="24pt"></div>`;
+        }
+    }
+
+    /** Build the feature string from the filled requirements */
+    function buildFeatureString() {
+        const g = id => document.getElementById(id);
+        switch (activeFeature) {
+
+            case 'quote': {
+                const text   = g('rq-quote-text')?.value.trim()   || '';
+                const source = g('rq-quote-source')?.value.trim() || '';
+                const url    = g('rq-quote-url')?.value.trim()    || '';
+                const color  = g('rq-quote-color')?.value         || '';
+                const bg     = g('rq-quote-bg')?.value            || '';
+                if (!text) { alert('الرجاء إدخال النص المقتبس'); return null; }
+                let params = '';
+                if (url)                      params += `(وثيقة) ${url}`;
+                if (color && color !== '#333333') params += (params ? ', ' : '') + `(لون النص) ${color}`;
+                if (bg    && bg    !== '#fffdd0') params += (params ? ', ' : '') + `(لون الخلفية) ${bg}`;
+                return `[«${text}»]{${source}}[اقتباس:${params ? ' ' + params : ''}]`;
+            }
+
+            case 'quran': {
+                const text  = g('rq-quran-text')?.value.trim()  || '';
+                const surah = g('rq-quran-surah')?.value.trim() || '';
+                const ayah  = g('rq-quran-ayah')?.value.trim()  || '';
+                if (!text) { alert('الرجاء إدخال نص الآية'); return null; }
+                // Trigger existing search engine
+                fetchQuran(text);
+                const meta  = (surah || ayah) ? `[${surah}${ayah ? ': ' + ayah : ''}]` : '';
+                return `﴿${text}﴾${meta}`;
+            }
+
+            case 'hadith': {
+                const text     = g('rq-hadith-text')?.value.trim()     || '';
+                const narrator = g('rq-hadith-narrator')?.value.trim() || '';
+                const book     = g('rq-hadith-book')?.value.trim()     || '';
+                const srcUrl   = g('rq-hadith-source')?.value.trim()   || '';
+                const noSearch = g('rq-hadith-nosearch')?.checked      || false;
+                if (!text) { alert('الرجاء إدخال نص الحديث'); return null; }
+                const ref  = [book, narrator].filter(Boolean).join('/');
+                let   str  = `«${text}»${ref ? '[' + ref + ']' : ''}`;
+                if (srcUrl) str += `\n({"المصدر"}[${srcUrl}])`;
+                if (!noSearch) fetchHadith(text);
+                return str;
+            }
+
+            case 'media': {
+                const key = g('rq-media-key')?.value || '';
+                if (!key) { alert('الرجاء اختيار رمز وسائط'); return null; }
+                return `{وسائط: ${key}}`;
+            }
+
+            case 'format': {
+                const text  = g('rq-fmt-text')?.value.trim() || '';
+                const color = g('rq-fmt-color')?.value       || '';
+                const bold  = g('rq-fmt-bold')?.checked;
+                const itl   = g('rq-fmt-italic')?.checked;
+                const uline = g('rq-fmt-under')?.checked;
+                const font  = g('rq-fmt-font')?.value        || '';
+                if (!text) { alert('الرجاء إدخال النص'); return null; }
+                let params = '';
+                if (color && color !== '#ede8d5') params += `(لون) ${color}`;
+                const marks = [bold && 'سميك', itl && 'مائل', uline && 'خط أسفل'].filter(Boolean).join('+');
+                if (marks) params += (params ? ', ' : '') + `(تمييز النص) ${marks}`;
+                if (font)  params += (params ? ', ' : '') + `(خط) ${font}`;
+                return `{${text}}[تنسيق:${params ? ' ' + params : ''}]`;
+            }
+
+            case 'footnote': {
+                const text = g('rq-fn-text')?.value.trim() || '';
+                if (!text) { alert('الرجاء إدخال نص الحاشية'); return null; }
+                return `((${text}))`;
+            }
+
+            case 'misc': {
+                const type = g('rq-misc-type')?.value || 'link';
+                const txt  = g('rq-misc-text')?.value.trim() || '';
+                const val  = g('rq-misc-val')?.value.trim()  || '';
+                if (type === 'link') {
+                    if (!txt || !val) { alert('الرجاء إدخال النص والرابط'); return null; }
+                    return `{${txt}}["رابط:" ${val}]`;
+                } else if (type === 'image') {
+                    if (!val) { alert('الرجاء إدخال رابط الصورة'); return null; }
+                    const size = g('rq-misc-size')?.value.trim() || '100%';
+                    return `{${size}}["صورة:" ${val}]`;
+                } else {
+                    if (!txt || !val) { alert('الرجاء إدخال النص والحجم'); return null; }
+                    return `{${txt}}["حجم:" ${val}]`;
+                }
+            }
+
+            default: return null;
+        }
+    }
+
+    /** Confirm: replace placeholder with built feature string */
+    function confirmFeature() {
+        if (!activeFeature) return;
+        const str = buildFeatureString();
+        if (str === null) return;                    // validation failed
+        const ta = document.getElementById('mainText');
+        ta.value = ta.value.replace(FP_HOLDER, str);
+        _resetFeature();
+        autoSaveAndBuild();
+    }
+
+    /** Cancel: remove placeholder & hide requirements */
+    function cancelFeature(silently) {
+        if (activeFeature && !silently) {
+            const ta = document.getElementById('mainText');
+            ta.value = ta.value.replace(FP_HOLDER, '');
+        }
+        _resetFeature();
+    }
+
+    function _resetFeature() {
+        activeFeature = null;
+        document.getElementById('feature-reqs-area').style.display = 'none';
+        document.getElementById('feature-reqs-content').innerHTML  = '';
+        document.querySelectorAll('.feat-btn').forEach(b => b.classList.remove('feat-active'));
+    }
+
+    /* ══════════════════════════════════════════════════════
+       III.  FOCUS MODE  (overrides original toggleFocusMode)
+    ══════════════════════════════════════════════════════ */
+
+    function toggleFocusMode() {
+        const isFocus = document.body.classList.toggle('focus-mode');
+        const btn     = document.getElementById('btnFocus');
+        if (isFocus) {
+            document.getElementById('focusText').value = document.getElementById('mainText').value;
+            document.getElementById('focusText').focus();
+            if (btn) btn.innerText = '❌ إلغاء التركيز';
+        } else {
+            document.getElementById('mainText').value = document.getElementById('focusText').value;
+            document.getElementById('mainText').focus();
+            if (btn) btn.innerText = '🎯 وضع التركيز';
+            autoSaveAndBuild();
+        }
+    }
+
+    /** Keep mainText in sync while typing in focusText */
+    function syncFocusToMain() {
+        document.getElementById('mainText').value = document.getElementById('focusText').value;
+        autoSaveAndBuild();
+    }
+
+    /* ══════════════════════════════════════════════════════
+       IV.  ORIGINAL APPLICATION LOGIC  (unchanged from v1)
+    ══════════════════════════════════════════════════════ */
+
+    let lastSavedData = "";
+    let mediaVault    = {};
     let customPageBackgrounds = {};
-    let currentBookId = null; 
+    let currentBookId = null;
     let uploadedBookData = null;
-    let searchTimer; 
-    let searchResultsList = [];
-    
-    // إضافات جديدة لدعم الميزات الملكية
-    let currentBookCategories = []; // مصفوفة لتخزين تصنيفات الكتاب الحالي
-    let bookHighlights = []; // مصفوفة لتخزين الاقتباسات المميزة
-    let customCardImage = null; // لتخزين شفرة (Base64) لصورة البطاقة المخصصة
-
-    const DB_NAME = 'RoyalBookDB';
+    let searchTimer; let searchResultsList = [];
+    const DB_NAME    = 'RoyalBookDB';
     const VAULT_STORE = 'mediaVaultStore';
 
-    // --- 1. المزامنة والتحقق من التغييرات (نسخة مطورة) ---
+    // --- 1. المزامنة والتحقق من التغييرات ---
     function getCurrentBookObject() {
         return {
-            id: currentBookId || 'book_' + Date.now(),
-            title: document.getElementById('cTitle').value,
-            author: document.getElementById('cAuthor').value,
-            date: document.getElementById('cDate').value,
-            text: document.getElementById('mainText').value,
-            color: document.getElementById('globalBgPicker').value,
-            style: document.getElementById('pageStyle').value,
-            size: document.getElementById('cFontSize').value,
-            cover: document.getElementById('cCoverImg').value,
-            
-            // الميزات الجديدة التي سنقوم بمزامنتها
-            categories: currentBookCategories, // حفظ التصنيفات (مزامنة سحابية)
-            highlights: bookHighlights, // حفظ الاقتباسات المميزة
-            cardImage: customCardImage, // حفظ صورة البطاقة (سواء كانت غلاف أو صورة خارجية مشفرة)
-            
+            id:       currentBookId || 'book_' + Date.now(),
+            title:    document.getElementById('cTitle').value,
+            author:   document.getElementById('cAuthor').value,
+            date:     document.getElementById('cDate').value,
+            text:     document.getElementById('mainText').value,
+            color:    document.getElementById('globalBgPicker').value,
+            style:    document.getElementById('pageStyle').value,
+            size:     document.getElementById('cFontSize').value,
+            cover:    document.getElementById('cCoverImg').value,
             customBgs: customPageBackgrounds,
             updatedAt: Date.now()
         };
     }
 
-    function isDataChanged() {
-        return JSON.stringify(getCurrentBookObject()) !== lastSavedData;
-    }
+    function isDataChanged() { return JSON.stringify(getCurrentBookObject()) !== lastSavedData; }
 
     function handleBackAction() {
         if (isDataChanged()) document.getElementById('confirmModal').style.display = 'flex';
-        else window.location.href = indexPage;
+        else window.location.href = 'index.html';
     }
-
     function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
-    function exitWithoutSaving() { window.location.href = indexPage; }
+    function exitWithoutSaving() { window.location.href = 'index.html'; }
 
-    async function saveAndExit() {
-        await saveToDrive(); 
-        window.location.href = indexPage;
-    }
-
-    // ============================================================
-    // [جديد] جلب بيانات كتاب محدد من السحابة
-    // يُرجع كائن البيانات إن نجح، أو null إن فشل
-    // ============================================================
-    async function fetchFromCloud(bookId, userId) {
-        if (!bookId || !userId) return null;
-        try {
-            const cleanBookId = (bookId || '').replace(/^book_/i, '');
-            const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "get_book",
-                    userId: userId,
-                    bookId: cleanBookId
-                })
-            });
-            const result = await response.json();
-            if (result.success && result.bookData) {
-                return result.bookData;
-            }
-            return null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    // ============================================================
-    // [جديد] حذف كتاب من السحابة
-    // يُرجع true إن نجح، أو false إن فشل
-    // ============================================================
-    async function deleteFromCloud(bookId, userId) {
-        if (!bookId || !userId) return false;
-        try {
-            const cleanBookId = (bookId || '').replace(/^book_/i, '');
-            const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "delete_book",
-                    userId: userId,
-                    bookId: cleanBookId
-                })
-            });
-            const result = await response.json();
-            return result.success === true;
-        } catch (e) {
-            return false;
-        }
-    }
+    async function saveAndExit() { await saveToDrive(); window.location.href = 'index.html'; }
 
     async function saveToDrive() {
         const bookData = getCurrentBookObject();
-        currentBookId = bookData.id; 
+        currentBookId  = bookData.id;
         const btn = document.getElementById('saveCloudBtn');
-        if(btn) { btn.innerText = "جاري الحفظ...⏳"; btn.disabled = true; }
-
-        // الحفظ المحلي دائماً (أولاً وبغض النظر عن حالة الاتصال)
+        if (btn) { btn.innerText = "جاري الحفظ...⏳"; btn.disabled = true; }
         localStorage.setItem('bookData', JSON.stringify(bookData));
         updateGlobalBooksList(bookData);
-        localStorage.setItem('pending_sync_book', JSON.stringify(bookData)); 
-        
-        // [معدّل] محاولة الحفظ السحابي فقط عند الاتصال بالإنترنت
-        if (!navigator.onLine) {
-            if(btn) { btn.innerText = "حفظ محلي 💾"; btn.disabled = false; }
-            alert("تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
-            return false;
-        }
-
+        localStorage.setItem('pending_sync_book', JSON.stringify(bookData));
         try {
-            // تنظيف bookId من أي prefix مزدوج (book_book_ → book_)
-            const cleanBookId = (bookData.id || '').replace(/^book_/i, '');
-            // جلب اسم التصنيف الأول إن وُجد
-            const catName = (currentBookCategories && currentBookCategories.length > 0)
-                ? currentBookCategories[0] : "عام";
-
+            if (!navigator.onLine) throw new Error("Offline");
             const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({
-                    action: "save_book",
-                    userId: currentUser.id,
-                    userName: currentUser.username,
-                    bookId: cleanBookId,
-                    bookData: bookData,
-                    categoryName: catName
-                })
+                body: JSON.stringify({ action:"save_book", userId:currentUser.id, userName:currentUser.username, bookId:bookData.id, bookData:bookData, categoryName:"عام" })
             });
-
             const result = await response.json();
             if (result.success) {
                 lastSavedData = JSON.stringify(bookData);
-                localStorage.removeItem('pending_sync_book'); 
+                localStorage.removeItem('pending_sync_book');
                 alert("تم الحفظ في درايف بنجاح ✅");
-                if(btn) { btn.innerText = "حفظ في درايف ☁️"; btn.disabled = false; }
+                if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
                 return true;
-            } else {
-                throw new Error("Cloud save returned failure");
             }
         } catch (error) {
-            // فشل السحابة → البيانات محفوظة محلياً بالفعل
             alert("تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
-            if(btn) { btn.innerText = "حفظ محلي 💾"; btn.disabled = false; }
+            if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
             return false;
         }
     }
 
     function autoSaveAndBuild() {
         const bookData = getCurrentBookObject();
-        currentBookId = bookData.id; 
-        
-        document.getElementById('stat-words').innerText = bookData.text.trim() ? bookData.text.trim().split(/\s+/).length : 0;
-        document.getElementById('stat-chars').innerText = bookData.text.length;
+        currentBookId  = bookData.id;
+        document.getElementById('stat-words').innerText   = bookData.text.trim() ? bookData.text.trim().split(/\s+/).length : 0;
+        document.getElementById('stat-chars').innerText   = bookData.text.length;
         document.getElementById('stat-headers').innerText = (bookData.text.match(/^# /gm) || []).length;
-        
         localStorage.setItem('bookData', JSON.stringify(bookData));
-        updateGlobalBooksList(bookData); 
+        updateGlobalBooksList(bookData);
         buildBook();
     }
 
     function updateGlobalBooksList(book) {
         let allBooks = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
         let index = allBooks.findIndex(b => b.id === book.id);
-        if (index !== -1) {
-            // نصون الحقول التي تُدار من index.html ولا علاقة للمحرر بها مباشرة
-            const preserved = {
-                isFavorite: allBooks[index].isFavorite,
-                // cardImage: نأخذها من book (المحرر) إن وُجدت، وإلا نحتفظ بما في القائمة
-                cardImage: book.cardImage || allBooks[index].cardImage,
-            };
-            allBooks[index] = { ...allBooks[index], ...book, ...preserved };
-        } else {
-            allBooks.push(book);
-        }
+        if (index !== -1) allBooks[index] = { ...allBooks[index], ...book };
+        else allBooks.push(book);
         localStorage.setItem('royal_books_list', JSON.stringify(allBooks));
     }
 
-    // --- 2. إدارة قاعدة البيانات والخزنة ---
+    // --- 2. قاعدة البيانات والخزنة ---
     function initDB(callback) {
         let req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-            let db = e.target.result;
-            if (!db.objectStoreNames.contains(VAULT_STORE)) db.createObjectStore(VAULT_STORE);
-        };
+        req.onupgradeneeded = (e) => { let db = e.target.result; if (!db.objectStoreNames.contains(VAULT_STORE)) db.createObjectStore(VAULT_STORE); };
         req.onsuccess = (e) => callback(e.target.result);
     }
-
     function saveVaultToDB() {
-        initDB(db => {
-            let tx = db.transaction(VAULT_STORE, 'readwrite');
-            tx.objectStore(VAULT_STORE).put(mediaVault, 'currentVault');
-        });
+        initDB(db => { let tx = db.transaction(VAULT_STORE,'readwrite'); tx.objectStore(VAULT_STORE).put(mediaVault,'currentVault'); });
     }
-
     function loadVaultFromDB(callback) {
-        initDB(db => {
-            let tx = db.transaction(VAULT_STORE, 'readonly');
-            let req = tx.objectStore(VAULT_STORE).get('currentVault');
-            req.onsuccess = () => callback(req.result || {});
-        });
+        initDB(db => { let tx = db.transaction(VAULT_STORE,'readonly'); let req = tx.objectStore(VAULT_STORE).get('currentVault'); req.onsuccess = () => callback(req.result || {}); });
     }
-
     function addToMediaVault(event) {
         let key = document.getElementById('mediaKeyInput').value.trim();
-        if(!key) return alert("الرجاء كتابة رمز للملف أولاً.");
+        if (!key) return alert("الرجاء كتابة رمز للملف أولاً.");
         let file = event.target.files[0]; if (!file) return;
         let reader = new FileReader();
         reader.onload = function(e) {
@@ -466,35 +1832,34 @@
         };
         reader.readAsDataURL(file); event.target.value = '';
     }
-
     function removeMedia(key) { delete mediaVault[key]; saveVaultToDB(); renderVaultList(); autoSaveAndBuild(); }
-
     function renderVaultList() {
         let html = '';
-        for(let key in mediaVault) {
+        for (let key in mediaVault) {
             let icon = mediaVault[key].type === 'image' ? '🖼️' : mediaVault[key].type === 'video' ? '🎥' : '🎵';
-            html += `<div class="vault-item"><span>${icon} الرمز: <b>${key}</b></span> <button onclick="removeMedia('${key}')" style="color:red; border:none; background:none; cursor:pointer;">حذف ✖</button></div>`;
+            html += `<div class="vault-item"><span>${icon} <b>${key}</b></span><button onclick="removeMedia('${key}')">✖</button></div>`;
         }
-        document.getElementById('vaultList').innerHTML = html || "<div style='color:#888; text-align:center;'>الخزنة فارغة</div>";
+        document.getElementById('vaultList').innerHTML = html || "<div style='color:#888;text-align:center;padding:6px 0;'>الخزنة فارغة</div>";
     }
 
-    // --- 3. استيراد وتصدير وإنشاء ---
-
-    // [معدّل] حذف البيانات محلياً وسحابياً إن كان متصلاً
-    async function startNewBook() {
+    // --- 3. استيراد وتصدير ---
+    function startNewBook() {
         if (confirm("تنبيه: سيتم مسح العمل الحالي بالكامل. تأكد من الحفظ.")) {
-
-            // [جديد] حذف من السحابة إن كان متصلاً وتوفّر معرف الكتاب والمستخدم
-            if (navigator.onLine && currentBookId && typeof currentUser !== 'undefined' && currentUser) {
-                await deleteFromCloud(currentBookId, currentUser.id);
-            }
-
-            // الحذف المحلي (دائماً)
             localStorage.removeItem('bookData');
             mediaVault = {}; saveVaultToDB(); currentBookId = null;
-            document.getElementById('mainText').value = ""; document.getElementById('cTitle').value = ""; document.getElementById('cAuthor').value = ""; document.getElementById('cDate').value = ""; document.getElementById('cCoverImg').value = "";
-            document.getElementById('cFontSize').value = 20; document.getElementById('globalBgPicker').value = "#FFFDD0"; document.getElementById('colorCodeInput').value = "FFFDD0"; document.getElementById('pageStyle').value = "style-islamic";
-            customPageBackgrounds = {}; updateGlobalColor("#FFFDD0"); renderVaultList(); autoSaveAndBuild(); hidePanel(); document.getElementById('mainText').focus();
+            document.getElementById('mainText').value   = "";
+            document.getElementById('focusText').value  = "";
+            document.getElementById('cTitle').value     = "";
+            document.getElementById('cAuthor').value    = "";
+            document.getElementById('cDate').value      = "";
+            document.getElementById('cCoverImg').value  = "";
+            document.getElementById('cFontSize').value  = 20;
+            document.getElementById('globalBgPicker').value = "#FFFDD0";
+            document.getElementById('colorCodeInput').value = "FFFDD0";
+            document.getElementById('pageStyle').value  = "style-islamic";
+            customPageBackgrounds = {};
+            updateGlobalColor("#FFFDD0"); renderVaultList(); autoSaveAndBuild();
+            document.getElementById('mainText').focus();
         }
     }
 
@@ -503,47 +1868,49 @@
         let engineState = {};
         for (let f in RoyalFeatures) { engineState[f] = { css: RoyalFeatures[f].css, execute: RoyalFeatures[f].execute.toString() }; }
         let exportPayload = { metadata: getCurrentBookObject(), engineVersion: engineState, vault: mediaVault };
-        let blob = new Blob([JSON.stringify(exportPayload, null, 2)], {type: "application/json"});
+        let blob = new Blob([JSON.stringify(exportPayload, null, 2)], {type:"application/json"});
         let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url;
         a.download = (document.getElementById('cTitle').value || 'كتاب_ملكي') + '.rbook';
         a.click(); URL.revokeObjectURL(url);
     }
 
     function handleFileSelect(e) {
-        let file = e.target.files[0]; if(!file) return;
+        let file = e.target.files[0]; if (!file) return;
         let reader = new FileReader();
         reader.onload = function(evt) {
             try {
                 uploadedBookData = JSON.parse(evt.target.result);
-                if(uploadedBookData.engineVersion) { document.getElementById('importModal').style.display = 'flex'; } 
+                if (uploadedBookData.engineVersion) { document.getElementById('importModal').style.display = 'flex'; }
                 else { applyImport(false); }
             } catch(err) { alert("ملف غير مدعوم أو تالف."); }
         };
-        reader.readAsText(file); document.getElementById('importFile').value = ''; 
+        reader.readAsText(file); document.getElementById('importFile').value = '';
     }
 
     function closeImportModal() { document.getElementById('importModal').style.display = 'none'; uploadedBookData = null; }
 
     function applyImport(useOriginalEngine) {
         document.getElementById('importModal').style.display = 'none';
-        if(!uploadedBookData || !uploadedBookData.metadata) return;
-
+        if (!uploadedBookData || !uploadedBookData.metadata) return;
         let s = uploadedBookData.metadata;
         currentBookId = s.id || 'book_' + Date.now();
-        document.getElementById('mainText').value = s.t || s.text || ""; document.getElementById('cTitle').value = s.title || ""; document.getElementById('cAuthor').value = s.author || ""; document.getElementById('cDate').value = s.date || ""; document.getElementById('cCoverImg').value = s.cover || "";
-        document.getElementById('cFontSize').value = s.size || 20; document.getElementById('globalBgPicker').value = s.color || s.bgColor || "#FFFDD0"; document.getElementById('pageStyle').value = s.style || "style-islamic";
-        
-        customPageBackgrounds = s.customBgs || {}; 
+        document.getElementById('mainText').value  = s.t || s.text || "";
+        document.getElementById('focusText').value = s.t || s.text || "";
+        document.getElementById('cTitle').value    = s.title  || "";
+        document.getElementById('cAuthor').value   = s.author || "";
+        document.getElementById('cDate').value     = s.date   || "";
+        document.getElementById('cCoverImg').value = s.cover  || "";
+        document.getElementById('cFontSize').value = s.size   || 20;
+        document.getElementById('globalBgPicker').value = s.color || s.bgColor || "#FFFDD0";
+        document.getElementById('pageStyle').value = s.style  || "style-islamic";
+        customPageBackgrounds = s.customBgs || {};
         mediaVault = uploadedBookData.vault || s.vault || {};
-        // استعادة cardImage عند الاستيراد (مستقل عن الغلاف)
-        customCardImage = s.cardImage || null;
         saveVaultToDB(); updateGlobalColor(document.getElementById('globalBgPicker').value);
-
-        if(useOriginalEngine && uploadedBookData.engineVersion) {
-            for(let f in uploadedBookData.engineVersion) { RoyalFeatures[f] = { css: uploadedBookData.engineVersion[f].css, execute: new Function('return ' + uploadedBookData.engineVersion[f].execute)() }; }
+        if (useOriginalEngine && uploadedBookData.engineVersion) {
+            for (let f in uploadedBookData.engineVersion) { RoyalFeatures[f] = { css: uploadedBookData.engineVersion[f].css, execute: new Function('return ' + uploadedBookData.engineVersion[f].execute)() }; }
             injectDynamicStyles(RoyalFeatures);
         } else {
-            for(let f in currentSiteFeatures) { RoyalFeatures[f] = { css: currentSiteFeatures[f].css, execute: new Function('return ' + currentSiteFeatures[f].execute)() }; }
+            for (let f in currentSiteFeatures) { RoyalFeatures[f] = { css: currentSiteFeatures[f].css, execute: new Function('return ' + currentSiteFeatures[f].execute)() }; }
             injectDynamicStyles(RoyalFeatures);
         }
         renderVaultList(); autoSaveAndBuild();
@@ -552,14 +1919,14 @@
     // --- 4. معالجة النصوص والأقواس الذكية ---
     function checkSmartBrackets(e) {
         const val = e.target.value; const pos = e.target.selectionStart;
-        let lastQ = val.lastIndexOf('﴿', pos - 1); let nextQ = val.indexOf('﴾', pos);
-        let lastH = val.lastIndexOf('«', pos - 1); let nextH = val.indexOf('»', pos);
+        let lastQ = val.lastIndexOf('﴿', pos-1); let nextQ = val.indexOf('﴾', pos);
+        let lastH = val.lastIndexOf('«', pos-1);  let nextH = val.indexOf('»', pos);
         clearTimeout(searchTimer);
         if (lastQ !== -1 && nextQ !== -1 && pos <= nextQ) {
-            let query = val.substring(lastQ + 1, nextQ).trim();
+            let query = val.substring(lastQ+1, nextQ).trim();
             if (query.length > 2) { showPanelMessage("جاري البحث في المصحف..."); searchTimer = setTimeout(() => fetchQuran(query), 800); }
         } else if (lastH !== -1 && nextH !== -1 && pos <= nextH) {
-            let query = val.substring(lastH + 1, nextH).trim();
+            let query = val.substring(lastH+1, nextH).trim();
             if (query.length > 3) { showPanelMessage("جاري التخريج من الدرر السنية..."); searchTimer = setTimeout(() => fetchHadith(query), 800); }
         } else { hidePanel(); }
     }
@@ -567,128 +1934,123 @@
     async function fetchQuran(query) {
         try { let res = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(query)}/all/quran-simple-clean`); let data = await res.json(); if(data.data.matches) renderQuran(data.data.matches); } catch(e) { showPanelMessage("خطأ في الاتصال بمحرك البحث."); }
     }
-
     async function fetchHadith(query) {
-        try { let url = `https://dorar.net/dorara/hadith/search?q=${encodeURIComponent(query)}`; let res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`); let data = await res.json(); let doc = new DOMParser().parseFromString(data.contents, 'text/html'); let items = doc.querySelectorAll('.hadith-info'); if(items.length > 0) renderHadith(items); else showPanelMessage("لم يتم العثور على أحاديث."); } catch(e) { showPanelMessage("فشل الاتصال بموسوعة الحديث."); }
+        try { let url = `https://dorar.net/dorara/hadith/search?q=${encodeURIComponent(query)}`; let res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`); let data = await res.json(); let doc = new DOMParser().parseFromString(data.contents,'text/html'); let items = doc.querySelectorAll('.hadith-info'); if(items.length > 0) renderHadith(items); else showPanelMessage("لم يتم العثور على أحاديث."); } catch(e) { showPanelMessage("فشل الاتصال بموسوعة الحديث."); }
     }
 
     function renderQuran(matches) {
         searchResultsList = []; let h = `<div class="panel-header-bar"><h3 class="panel-title">نتائج القرآن الكريم</h3><button class="close-btn" onclick="hidePanel()">إغلاق ✖</button></div><div class="quran-grid grid-header"><div>الآية</div><div>السورة</div><div>رقم الآية</div></div>`;
-        matches.forEach((m, i) => { let meta = `[${m.surah.name}: ${toArabicNum(m.numberInSurah)}]`; searchResultsList.push(`﴿${m.text}﴾${meta}`); h += `<div class="result-item quran-grid" onclick="insertRes(${i}, 'q')"><div>${m.text}</div><div style="color:#6B8E23">${m.surah.name}</div><div>${toArabicNum(m.numberInSurah)}</div></div>`; });
+        matches.forEach((m,i) => { let meta = `[${m.surah.name}: ${toArabicNum(m.numberInSurah)}]`; searchResultsList.push(`﴿${m.text}﴾${meta}`); h += `<div class="result-item quran-grid" onclick="insertRes(${i},'q')"><div>${m.text}</div><div style="color:#6B8E23">${m.surah.name}</div><div>${toArabicNum(m.numberInSurah)}</div></div>`; });
         document.getElementById('smart-panel').innerHTML = h; document.getElementById('smart-panel').style.display = 'block';
     }
-
     function renderHadith(items) {
         searchResultsList = []; let h = `<div class="panel-header-bar"><h3 class="panel-title">نتائج السنة النبوية</h3><button class="close-btn" onclick="hidePanel()">إغلاق ✖</button></div><div class="hadith-grid grid-header"><div>المتن</div><div>المصدر</div><div>الحكم</div><div>النوع</div></div>`;
-        items.forEach((item, i) => {
-            if(i < 8) { let text = item.querySelector('.hadith')?.textContent.trim(); let info = item.querySelector('.info')?.textContent.replace(/\s+/g, ' ').trim(); let src = info.match(/المصدر:\s*(.*?)\s*(?=الصفحة|$)/)?.[1] || "الدرر"; let rul = info.match(/خلاصة حكم المحدث:\s*(.*?)\s*(?=التخريج|$)/)?.[1] || "متوفر"; let meta = src.includes("البخاري") || src.includes("مسلم") ? `[${src}]` : `[${src}: ${rul}]`; searchResultsList.push(`«${text}»${meta}`); h += `<div class="result-item hadith-grid" onclick="insertRes(${i}, 'h')"><div>${text.substring(0,100)}...</div><div style="color:#0077be">${src}</div><div style="color:#d32f2f">${rul}</div><div>مرفوع</div></div>`; }
+        items.forEach((item,i) => {
+            if (i < 8) { let text = item.querySelector('.hadith')?.textContent.trim(); let info = item.querySelector('.info')?.textContent.replace(/\s+/g,' ').trim(); let src = info.match(/المصدر:\s*(.*?)\s*(?=الصفحة|$)/)?.[1]||"الدرر"; let rul = info.match(/خلاصة حكم المحدث:\s*(.*?)\s*(?=التخريج|$)/)?.[1]||"متوفر"; let meta = src.includes("البخاري")||src.includes("مسلم")?`[${src}]`:`[${src}: ${rul}]`; searchResultsList.push(`«${text}»${meta}`); h += `<div class="result-item hadith-grid" onclick="insertRes(${i},'h')"><div>${text.substring(0,100)}...</div><div style="color:#0077be">${src}</div><div style="color:#d32f2f">${rul}</div><div>مرفوع</div></div>`; }
         });
         document.getElementById('smart-panel').innerHTML = h; document.getElementById('smart-panel').style.display = 'block';
     }
 
-    function insertRes(index, type) { const el = document.getElementById('mainText'); const val = el.value; let start = val.lastIndexOf(type === 'q' ? '﴿' : '«'); let end = val.indexOf(type === 'q' ? '﴾' : '»', start); if(start !== -1) { el.value = val.substring(0, start) + searchResultsList[index] + val.substring(end + 1); hidePanel(); autoSaveAndBuild(); el.focus(); } }
-    function hidePanel() { document.getElementById('smart-panel').style.display = 'none'; }
-    function showPanelMessage(m) { document.getElementById('smart-panel').innerHTML = `<div class="panel-header-bar"><h3 class="panel-title" style="color:#888">${m}</h3><button class="close-btn" onclick="hidePanel()">إغلاق</button></div>`; document.getElementById('smart-panel').style.display = 'block'; }
-    function toArabicNum(n) { return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
-    function goToChapter(e, chapterId) { e.preventDefault(); const el = document.getElementById(chapterId); if (el) { const wrapper = el.closest('.page-wrapper'); if(wrapper) wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+    function insertRes(index, type) {
+        const el = document.getElementById('mainText'); const val = el.value;
+        let start = val.lastIndexOf(type==='q'?'﴿':'«');
+        let end   = val.indexOf(type==='q'?'﴾':'»', start);
+        if (start !== -1) { el.value = val.substring(0,start) + searchResultsList[index] + val.substring(end+1); hidePanel(); autoSaveAndBuild(); el.focus(); }
+    }
+    function hidePanel()              { document.getElementById('smart-panel').style.display = 'none'; }
+    function showPanelMessage(m)      { document.getElementById('smart-panel').innerHTML = `<div class="panel-header-bar"><h3 class="panel-title" style="color:#888">${m}</h3><button class="close-btn" onclick="hidePanel()">إغلاق</button></div>`; document.getElementById('smart-panel').style.display = 'block'; }
+    function toArabicNum(n)           { return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
+    function goToChapter(e, chapterId){ e.preventDefault(); const el = document.getElementById(chapterId); if(el){ const w = el.closest('.page-wrapper'); if(w) w.scrollIntoView({behavior:'smooth',block:'start'}); } }
 
     function processMediaKeys(text) {
         return text.replace(/\{وسائط:\s*(.*?)\}/g, (match, key) => {
             let media = mediaVault[key.trim()];
-            if(!media) return `<span style="color:red">[وسائط مفقودة: ${key}]</span>`;
-            if(media.type === 'image') return `<img src="${media.data}" style="max-width:100%; border-radius:8px; display:block; margin:10px auto;">`;
+            if (!media) return `<span style="color:red">[وسائط مفقودة: ${key}]</span>`;
+            if (media.type === 'image') return `<img src="${media.data}" style="max-width:100%;border-radius:8px;display:block;margin:10px auto;">`;
             let icon = media.type === 'video' ? '🎥' : '🎵';
-            return `<div style="text-align:center; padding:10px; border:1px dashed #ccc; border-radius:8px; margin:10px 0;"><button class="media-btn">${icon} تشغيل الوسائط: ${key} (متاحة في التطبيق التفاعلي)</button></div>`;
+            return `<div style="text-align:center;padding:10px;border:1px dashed #ccc;border-radius:8px;margin:10px 0;"><button class="media-btn">${icon} تشغيل الوسائط: ${key} (متاحة في التطبيق التفاعلي)</button></div>`;
         });
     }
 
     function applyStyles(text, footnoteList) {
-        if (!text) return ""; let res = text;
-        if(typeof RoyalFeatures !== 'undefined') { for (let feature in RoyalFeatures) { res = RoyalFeatures[feature].execute(res, footnoteList); } }
-        return processMediaKeys(res); 
+        if (!text) return "";
+        let res = text;
+        if (typeof RoyalFeatures !== 'undefined') { for (let feature in RoyalFeatures) { res = RoyalFeatures[feature].execute(res, footnoteList); } }
+        return processMediaKeys(res);
     }
 
-    // --- 5. بناء صفحات الكتاب للطباعة والعرض ---
+    // --- 5. بناء صفحات الكتاب ---
     function buildBook() {
         updateFontSize(document.getElementById('cFontSize').value);
         const container = document.getElementById('book-container'); container.innerHTML = '';
-        
-        const coverPageBody = createPage(container, false); 
+        const coverPageBody = createPage(container, false);
         coverPageBody.parentElement.classList.add('cover-page');
-        const img = document.getElementById('cCoverImg').value; 
-        if(img) coverPageBody.parentElement.style.backgroundImage = `url('${img}')`;
-        
-        coverPageBody.innerHTML = `<div style="width:100%; margin-top: -40mm;">
-            <div style="font-size:55pt; font-family:'Aref Ruqaa'; margin-bottom: 25mm; line-height:1.1;">${applyStyles(document.getElementById('cTitle').value, [])}</div>
-            <div style="font-size:30pt; margin-bottom: 15px; color: #4a3f35;">${applyStyles(document.getElementById('cAuthor').value, [])}</div>
-            <div style="font-size:20pt; color: #777;">${document.getElementById('cDate').value}</div>
+        const img = document.getElementById('cCoverImg').value;
+        if (img) coverPageBody.parentElement.style.backgroundImage = `url('${img}')`;
+        coverPageBody.innerHTML = `<div style="width:100%;margin-top:-40mm;">
+            <div style="font-size:55pt;font-family:'Aref Ruqaa';margin-bottom:25mm;line-height:1.1;">${applyStyles(document.getElementById('cTitle').value,[])}</div>
+            <div style="font-size:30pt;margin-bottom:15px;color:#4a3f35;">${applyStyles(document.getElementById('cAuthor').value,[])}</div>
+            <div style="font-size:20pt;color:#777;">${document.getElementById('cDate').value}</div>
         </div>`;
-
         let rawText = document.getElementById('mainText').value;
-        rawText = rawText.replace(/\[«([\s\S]+?)»\]\{([\s\S]*?)\}\[اقتباس:\s*([\s\S]*?)\]/g, m => m.replace(/\n/g, '<br>'));
-
+        rawText = rawText.replace(/\[«([\s\S]+?)»\]\{([\s\S]*?)\}\[اقتباس:\s*([\s\S]*?)\]/g, m => m.replace(/\n/g,'<br>'));
         const lines = rawText.split('\n');
         let currentBody = null; let currentFns = []; let tocItems = []; let chapterCounter = 0;
-
         lines.forEach(line => {
-            if (!line.trim() && !currentBody) return; 
-            if(line.startsWith('# ')) {
-                if(currentBody && currentFns.length > 0) printFns(currentBody, currentFns);
+            if (!line.trim() && !currentBody) return;
+            if (line.startsWith('# ')) {
+                if (currentBody && currentFns.length > 0) printFns(currentBody, currentFns);
                 currentFns = []; currentBody = createPage(container, true); chapterCounter++;
-                let hText = line.replace('# ', ''); tocItems.push({title: hText, ch: chapterCounter});
-                let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter; h.style.textAlign='center'; h.style.fontFamily="'Aref Ruqaa'"; h.style.marginBottom="10mm"; h.innerHTML = applyStyles(hText, []); currentBody.appendChild(h);
+                let hText = line.replace('# ',''); tocItems.push({title:hText, ch:chapterCounter});
+                let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter; h.style.textAlign='center'; h.style.fontFamily="'Aref Ruqaa'"; h.style.marginBottom='10mm'; h.innerHTML = applyStyles(hText,[]); currentBody.appendChild(h);
             } else {
                 if (!currentBody) currentBody = createPage(container, true);
-                let d = document.createElement('div'); d.style.whiteSpace = 'pre-wrap'; d.style.marginBottom = "5px"; 
+                let d = document.createElement('div'); d.style.whiteSpace='pre-wrap'; d.style.marginBottom='5px';
                 d.innerHTML = line.trim() === "" ? '&nbsp;' : applyStyles(line, currentFns);
                 currentBody.appendChild(d);
-                if(currentBody.scrollHeight > currentBody.clientHeight + 5) {
+                if (currentBody.scrollHeight > currentBody.clientHeight + 5) {
                     if (currentBody.childNodes.length > 1) { currentBody.removeChild(d); currentBody = createPage(container, true); currentBody.appendChild(d); } else { currentBody.style.overflow = "visible"; }
                 }
             }
         });
-
-        if(currentBody && currentFns.length > 0) printFns(currentBody, currentFns);
-
-        if(tocItems.length > 0) {
-            let p = createPage(container, true); let html = `<div class="toc-title">فهرس المحتويات</div>`;
-            tocItems.forEach(item => { html += `<div class="toc-item"><a href="#chapter-${item.ch}" onclick="goToChapter(event, 'chapter-${item.ch}')" class="toc-link"><span class="toc-text">${applyStyles(item.title, [])}</span><span class="toc-page">الفصل ${item.ch}</span></a></div>`; });
+        if (currentBody && currentFns.length > 0) printFns(currentBody, currentFns);
+        if (tocItems.length > 0) {
+            let p = createPage(container, true);
+            let html = `<div class="toc-title">فهرس المحتويات</div>`;
+            tocItems.forEach(item => { html += `<div class="toc-item"><a href="#chapter-${item.ch}" onclick="goToChapter(event,'chapter-${item.ch}')" class="toc-link"><span class="toc-text">${applyStyles(item.title,[])}</span><span class="toc-page">الفصل ${item.ch}</span></a></div>`; });
             p.innerHTML = html;
         }
-
         let allPages = document.querySelectorAll('.page-wrapper');
         for (let pNum in customPageBackgrounds) {
-            let index = parseInt(pNum) - 1; 
+            let index = parseInt(pNum) - 1;
             if (allPages[index]) {
-                allPages[index].classList.remove('style-islamic', 'style-classic', 'style-floral', 'style-royal', 'style-minimal');
+                allPages[index].classList.remove('style-islamic','style-classic','style-floral','style-royal','style-minimal');
                 allPages[index].classList.add('style-clean');
-                allPages[index].style.setProperty('background-image', `url('${customPageBackgrounds[pNum]}')`, 'important');
-                allPages[index].style.setProperty('background-size', 'cover', 'important');
-                allPages[index].style.setProperty('background-position', 'center', 'important');
-                allPages[index].style.setProperty('background-repeat', 'no-repeat', 'important');
+                allPages[index].style.setProperty('background-image',`url('${customPageBackgrounds[pNum]}')`, 'important');
+                allPages[index].style.setProperty('background-size','cover','important');
+                allPages[index].style.setProperty('background-position','center','important');
+                allPages[index].style.setProperty('background-repeat','no-repeat','important');
             }
         }
     }
 
     function createPage(c, hasHeader) {
         const w = document.createElement('div'); w.className = 'page-wrapper ' + document.getElementById('pageStyle').value;
-        if(hasHeader) w.innerHTML = `<div class="page-header"><span>${applyStyles(document.getElementById('cTitle').value, [])}</span><span>${document.getElementById('cDate').value}</span></div>`;
+        if (hasHeader) w.innerHTML = `<div class="page-header"><span>${applyStyles(document.getElementById('cTitle').value,[])}</span><span>${document.getElementById('cDate').value}</span></div>`;
         const b = document.createElement('div'); b.className = 'content-body'; w.appendChild(b); c.appendChild(w); return b;
     }
+    function printFns(body, fns) { let h = '<div class="footnotes-section">'; fns.forEach((f,i) => h += `<div>[${i+1}] ${applyStyles(f,[])}</div>`); body.innerHTML += h + '</div>'; }
 
-    function printFns(body, fns) { let h = '<div class="footnotes-section">'; fns.forEach((f, i) => h += `<div>[${i+1}] ${applyStyles(f, [])}</div>`); body.innerHTML += h + '</div>'; }
-
-    // --- 6. التصدير التفاعلي (HTML) والـ PDF وإدارة الواجهة ---
+    // --- 6. التصدير التفاعلي ---
     function exportInteractiveBook() {
         autoSaveAndBuild();
         let bookData = getCurrentBookObject();
-        let content = bookData.text;
-        if(!content.trim()) return alert("لا يوجد محتوى لتصديره!");
-
+        let content  = bookData.text;
+        if (!content.trim()) return alert("لا يوجد محتوى لتصديره!");
         let featuresStr = "const RoyalFeatures = {";
-        if(typeof RoyalFeatures !== 'undefined') { for(let f in RoyalFeatures) { featuresStr += `"${f}": { css: \`${RoyalFeatures[f].css}\`, execute: ${RoyalFeatures[f].execute.toString()} },`; } }
+        if (typeof RoyalFeatures !== 'undefined') { for (let f in RoyalFeatures) { featuresStr += `"${f}": { css: \`${RoyalFeatures[f].css}\`, execute: ${RoyalFeatures[f].execute.toString()} },`; } }
         featuresStr += "};";
-        let vaultDataStr = JSON.stringify(mediaVault); 
+        let vaultDataStr = JSON.stringify(mediaVault);
 
         let interactiveHTML = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -697,188 +2059,142 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${bookData.title || 'تطبيق القراءة'}</title>
     <style>
-        @font-face { font-family: 'Amiri'; src: url('fonts/Amiri-Regular.ttf') format('truetype'); }
-        @font-face { font-family: 'Aref Ruqaa'; src: url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); }
-        :root { --bg: ${bookData.color || '#FFFDD0'}; --text: #333; --accent: #b8860b; --nav-bg: #f8f9fa; --border: #e1e4e8; --btn-bg: #fff; }
-        body.dark-mode { --bg: #121212; --text: #e0e0e0; --accent: #d4af37; --nav-bg: #1e1e1e; --border: #333; --btn-bg: #2c2c2c; }
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; background-color: var(--bg); color: var(--text); font-family: 'Amiri', serif; transition: background-color 0.3s, color 0.3s; }
-        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--nav-bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .header-title { font-family: 'Aref Ruqaa'; font-size: 18pt; color: var(--accent); font-weight: bold; margin: 0 15px; text-align: center; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .nav-btn { background: var(--btn-bg); border: 1px solid var(--border); color: var(--text); font-family: 'Amiri'; font-size: 14pt; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; margin: 0 5px; }
-        .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-        .sidebar { position: fixed; right: -320px; width: 320px; top: 0; bottom: 0; background: var(--nav-bg); border-left: 1px solid var(--border); transition: right 0.3s ease; z-index: 200; overflow-y: auto; padding: 20px 0; box-shadow: -5px 0 15px rgba(0,0,0,0.1); }
-        .sidebar.open { right: 0; }
-        .sidebar-title { font-family: 'Aref Ruqaa'; font-size: 20pt; color: var(--accent); text-align: center; margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 15px; }
-        .toc-item { display: block; width: 100%; text-align: right; background: none; border: none; font-family: 'Amiri'; font-size: 15pt; padding: 12px 20px; cursor: pointer; color: var(--text); border-bottom: 1px solid var(--border); transition: 0.2s; }
-        .toc-item:hover, .toc-item.active { background: rgba(184, 134, 11, 0.1); color: var(--accent); border-right: 4px solid var(--accent); }
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(2px); }
-        .overlay.open { display: block; }
-        .reader-container { max-width: 900px; margin: 0 auto; padding: 40px 20px; min-height: 80vh; }
-        .chapter-content { font-size: ${bookData.size || 20}pt; line-height: 2.2; }
-        h1 { font-family: 'Aref Ruqaa'; color: var(--accent); text-align: center; margin-top: 40px; border-bottom: 2px dashed var(--border); padding-bottom: 20px; margin-bottom: 30px; font-size: 2em; }
-        .reader-cover { text-align: center; margin-bottom: 40px; padding-bottom: 40px; border-bottom: 2px solid var(--accent); }
-        .reader-cover img { max-width: 100%; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .reader-author { font-size: 1.2em; color: #888; margin-top: 15px; }
-        .bottom-nav { display: flex; justify-content: space-between; align-items: center; max-width: 900px; margin: 0 auto 50px auto; padding: 20px; border-top: 2px solid var(--border); }
-        .interactive-img { max-width: 100%; height: auto; border-radius: 12px; display: block; margin: 25px auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .media-btn { background: var(--accent); color: #fff; border: none; padding: 10px 25px; border-radius: 25px; font-family: 'Amiri'; cursor: pointer; font-size: 15pt; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 15px auto; display: inline-block; }
-        .media-btn:hover { filter: brightness(1.1); transform: scale(1.05); }
-        #mediaModal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 35pt; cursor: pointer; border: none; background: none; }
-        #mediaContainer { width: 95%; max-width: 800px; text-align: center; }
-        video, audio { width: 100%; border-radius: 10px; outline: none; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        @font-face { font-family:'Amiri';      src:url('fonts/Amiri-Regular.ttf')     format('truetype'); }
+        @font-face { font-family:'Aref Ruqaa'; src:url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); }
+        :root { --bg:${bookData.color||'#FFFDD0'}; --text:#333; --accent:#b8860b; --nav-bg:#f8f9fa; --border:#e1e4e8; --btn-bg:#fff; }
+        body.dark-mode { --bg:#121212; --text:#e0e0e0; --accent:#d4af37; --nav-bg:#1e1e1e; --border:#333; --btn-bg:#2c2c2c; }
+        *{box-sizing:border-box;} body{margin:0;padding:0;background-color:var(--bg);color:var(--text);font-family:'Amiri',serif;transition:background-color .3s,color .3s;}
+        header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+        .header-title{font-family:'Aref Ruqaa';font-size:18pt;color:var(--accent);font-weight:bold;margin:0 15px;text-align:center;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .nav-btn{background:var(--btn-bg);border:1px solid var(--border);color:var(--text);font-family:'Amiri';font-size:14pt;padding:8px 15px;border-radius:8px;cursor:pointer;transition:.2s;margin:0 5px;}
+        .nav-btn:hover{border-color:var(--accent);color:var(--accent);}
+        .sidebar{position:fixed;right:-320px;width:320px;top:0;bottom:0;background:var(--nav-bg);border-left:1px solid var(--border);transition:right .3s ease;z-index:200;overflow-y:auto;padding:20px 0;box-shadow:-5px 0 15px rgba(0,0,0,.1);}
+        .sidebar.open{right:0;} .sidebar-title{font-family:'Aref Ruqaa';font-size:20pt;color:var(--accent);text-align:center;margin-bottom:20px;border-bottom:1px dashed var(--border);padding-bottom:15px;}
+        .toc-item{display:block;width:100%;text-align:right;background:none;border:none;font-family:'Amiri';font-size:15pt;padding:12px 20px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);transition:.2s;}
+        .toc-item:hover,.toc-item.active{background:rgba(184,134,11,.1);color:var(--accent);border-right:4px solid var(--accent);}
+        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;backdrop-filter:blur(2px);} .overlay.open{display:block;}
+        .reader-container{max-width:900px;margin:0 auto;padding:40px 20px;min-height:80vh;}
+        .chapter-content{font-size:${bookData.size||20}pt;line-height:2.2;}
+        h1{font-family:'Aref Ruqaa';color:var(--accent);text-align:center;margin-top:40px;border-bottom:2px dashed var(--border);padding-bottom:20px;margin-bottom:30px;font-size:2em;}
+        .reader-cover{text-align:center;margin-bottom:40px;padding-bottom:40px;border-bottom:2px solid var(--accent);}
+        .reader-cover img{max-width:100%;border-radius:12px;margin-bottom:25px;box-shadow:0 10px 20px rgba(0,0,0,.1);}
+        .reader-author{font-size:1.2em;color:#888;margin-top:15px;}
+        .bottom-nav{display:flex;justify-content:space-between;align-items:center;max-width:900px;margin:0 auto 50px;padding:20px;border-top:2px solid var(--border);}
+        .interactive-img{max-width:100%;height:auto;border-radius:12px;display:block;margin:25px auto;box-shadow:0 5px 15px rgba(0,0,0,.1);}
+        .media-btn{background:var(--accent);color:#fff;border:none;padding:10px 25px;border-radius:25px;font-family:'Amiri';cursor:pointer;font-size:15pt;transition:.2s;box-shadow:0 4px 6px rgba(0,0,0,.2);margin:15px auto;display:inline-block;}
+        .media-btn:hover{filter:brightness(1.1);transform:scale(1.05);}
+        #mediaModal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;}
+        .close-modal{position:absolute;top:20px;right:30px;color:white;font-size:35pt;cursor:pointer;border:none;background:none;}
+        #mediaContainer{width:95%;max-width:800px;text-align:center;}
+        video,audio{width:100%;border-radius:10px;outline:none;box-shadow:0 10px 30px rgba(0,0,0,.5);}
         <style id="dynamic-styles"><\/style>
     </style>
 </head>
 <body>
     <header>
         <div><button class="nav-btn" onclick="toggleSidebar()">☰ الفهرس</button></div>
-        <div class="header-title">${bookData.title || 'كتاب تفاعلي'}</div>
+        <div class="header-title">${bookData.title||'كتاب تفاعلي'}</div>
         <div style="display:flex;">
             <button class="nav-btn" onclick="changeFontSize(2)">A+</button>
             <button class="nav-btn" onclick="changeFontSize(-2)">A-</button>
             <button class="nav-btn" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
         </div>
     </header>
-
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-title">فهرس المحتويات</div>
-        <div id="toc-container"></div>
-    </div>
+    <div class="sidebar" id="sidebar"><div class="sidebar-title">فهرس المحتويات</div><div id="toc-container"></div></div>
     <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
-
-    <div class="reader-container">
-        <div id="chapter-content" class="chapter-content">جاري التحميل...</div>
-    </div>
-
+    <div class="reader-container"><div id="chapter-content" class="chapter-content">جاري التحميل...</div></div>
     <div class="bottom-nav">
         <button class="nav-btn" id="btn-prev" onclick="navigateChapter(-1)">▶ الفصل السابق</button>
-        <span id="page-indicator" style="font-family:'Amiri'; font-size:14pt; color:var(--text); font-weight:bold;"></span>
+        <span id="page-indicator" style="font-family:'Amiri';font-size:14pt;color:var(--text);font-weight:bold;"></span>
         <button class="nav-btn" id="btn-next" onclick="navigateChapter(1)">الفصل التالي ◀</button>
     </div>
-
     <div id="mediaModal">
         <button class="close-modal" onclick="closeMedia()">✖</button>
         <div id="mediaContainer"></div>
     </div>
-
     <script>
         ${featuresStr}
         const vault = ${vaultDataStr};
-        const rawContent = \`${content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
-        const coverImg = \`${bookData.cover || ''}\`;
-        const bTitle = \`${bookData.title || ''}\`;
-        const bAuthor = \`${bookData.author || ''}\`;
-        const bDate = \`${bookData.date || ''}\`;
-        
-        let chapters = []; let currentChapterIndex = 0; let baseFontSize = ${bookData.size || 20};
-
+        const rawContent = \`${content.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$')}\`;
+        const coverImg = \`${bookData.cover||''}\`;
+        const bTitle = \`${bookData.title||''}\`;
+        const bAuthor = \`${bookData.author||''}\`;
+        const bDate = \`${bookData.date||''}\`;
+        let chapters = []; let currentChapterIndex = 0; let baseFontSize = ${bookData.size||20};
         function applyStyles(text, fns) {
             let res = text;
-            if(typeof RoyalFeatures !== 'undefined') { for(let f in RoyalFeatures) { res = RoyalFeatures[f].execute(res, fns); } }
+            if (typeof RoyalFeatures !== 'undefined') { for (let f in RoyalFeatures) { res = RoyalFeatures[f].execute(res, fns); } }
             res = res.replace(/\\{وسائط:\\s*(.*?)\\}/g, (match, key) => {
                 let media = vault[key.trim()];
-                if(!media) return '<span style="color:red">[وسائط مفقودة: '+key+']</span>';
-                if(media.type === 'image') return '<img src="'+media.data+'" class="interactive-img">';
-                let icon = media.type === 'video' ? '🎥 فيديو' : '🎵 صوت';
-                return '<div style="text-align:center; margin: 20px 0;"><button class="media-btn" onclick="playMedia(\\''+key.trim()+'\\')">'+icon+' | تشغيل: '+key+'</button></div>';
+                if (!media) return '<span style="color:red">[وسائط مفقودة: '+key+']</span>';
+                if (media.type==='image') return '<img src="'+media.data+'" class="interactive-img">';
+                let icon = media.type==='video' ? '🎥 فيديو' : '🎵 صوت';
+                return '<div style="text-align:center;margin:20px 0;"><button class="media-btn" onclick="playMedia(\\''+key.trim()+'\\')">'+icon+' | تشغيل: '+key+'</button></div>';
             });
             return res;
         }
-
-        let dynStyle = ""; if(typeof RoyalFeatures !== 'undefined') { for(let f in RoyalFeatures) { if(RoyalFeatures[f].css) dynStyle += RoyalFeatures[f].css + "\\n"; } }
-        document.head.innerHTML += "<style>" + dynStyle + "</style>";
-
+        let dynStyle=""; if(typeof RoyalFeatures!=='undefined'){for(let f in RoyalFeatures){if(RoyalFeatures[f].css) dynStyle+=RoyalFeatures[f].css+"\\n";}} document.head.innerHTML+="<style>"+dynStyle+"</style>";
         function buildBookData() {
-            let coverHtml = '<div class="reader-cover">'; if(coverImg) coverHtml += '<img src="' + coverImg + '">';
-            coverHtml += '<h1>' + applyStyles(bTitle, []) + '</h1>'; coverHtml += '<div class="reader-author">' + applyStyles(bAuthor, []) + ' <br><span style="font-size:0.8em; color:gray;">' + bDate + '</span></div></div>';
-            chapters.push({ title: "الغلاف ومعلومات الكتاب", html: coverHtml });
-
-            let lines = rawContent.split('\\n'); let currentFns = []; let currentHtml = ""; let currentTitle = "مقدمة"; let hasContent = false;
-
+            let coverHtml='<div class="reader-cover">'; if(coverImg) coverHtml+='<img src="'+coverImg+'">';
+            coverHtml+='<h1>'+applyStyles(bTitle,[])+'</h1><div class="reader-author">'+applyStyles(bAuthor,[])+' <br><span style="font-size:.8em;color:gray;">'+bDate+'</span></div></div>';
+            chapters.push({title:"الغلاف ومعلومات الكتاب",html:coverHtml});
+            let lines=rawContent.split('\\n'); let currentFns=[]; let currentHtml=""; let currentTitle="مقدمة"; let hasContent=false;
             lines.forEach(line => {
-                if(line.startsWith('# ')) {
-                    if(hasContent || currentHtml !== "") {
-                        if(currentFns.length > 0) {
-                            currentHtml += '<div style="border-top:1px solid var(--border); margin-top:40px; padding-top:15px; font-size:0.8em; color:gray;">';
-                            currentFns.forEach((f, i) => currentHtml += '<div style="margin-bottom:8px;">[' + (i+1) + '] ' + applyStyles(f, []) + '</div>'); currentHtml += '</div>'; currentFns = [];
-                        }
-                        chapters.push({ title: currentTitle, html: currentHtml });
+                if (line.startsWith('# ')) {
+                    if (hasContent||currentHtml!=="") {
+                        if (currentFns.length>0){currentHtml+='<div style="border-top:1px solid var(--border);margin-top:40px;padding-top:15px;font-size:.8em;color:gray;">';currentFns.forEach((f,i)=>currentHtml+='<div style="margin-bottom:8px;">[' +(i+1)+'] '+applyStyles(f,[])+' </div>');currentHtml+='</div>';currentFns=[];}
+                        chapters.push({title:currentTitle,html:currentHtml});
                     }
-                    currentTitle = line.replace('# ', '').trim(); currentHtml = '<h1>' + applyStyles(currentTitle, []) + '</h1>'; hasContent = true;
+                    currentTitle=line.replace('# ','').trim(); currentHtml='<h1>'+applyStyles(currentTitle,[])+'</h1>'; hasContent=true;
                 } else {
-                    if(line.trim() !== "") { currentHtml += '<div style="white-space: pre-wrap; margin-bottom:15px;">' + applyStyles(line, currentFns) + '</div>'; hasContent = true; } else if (hasContent) { currentHtml += '<br>'; }
+                    if(line.trim()!==""){currentHtml+='<div style="white-space:pre-wrap;margin-bottom:15px;">'+applyStyles(line,currentFns)+'</div>';hasContent=true;}else if(hasContent){currentHtml+='<br>';}
                 }
             });
-
-            if(hasContent || currentHtml !== "") {
-                if(currentFns.length > 0) { currentHtml += '<div style="border-top:1px solid var(--border); margin-top:40px; padding-top:15px; font-size:0.8em; color:gray;">'; currentFns.forEach((f, i) => currentHtml += '<div style="margin-bottom:8px;">[' + (i+1) + '] ' + applyStyles(f, []) + '</div>'); currentHtml += '</div>'; }
-                chapters.push({ title: currentTitle, html: currentHtml });
-            }
+            if(hasContent||currentHtml!==""){if(currentFns.length>0){currentHtml+='<div style="border-top:1px solid var(--border);margin-top:40px;padding-top:15px;font-size:.8em;color:gray;">';currentFns.forEach((f,i)=>currentHtml+='<div style="margin-bottom:8px;">[' +(i+1)+'] '+applyStyles(f,[])+' </div>');currentHtml+='</div>';}chapters.push({title:currentTitle,html:currentHtml});}
         }
-
-        function renderTOC() { let tocContainer = document.getElementById('toc-container'); let html = ''; chapters.forEach((ch, i) => { html += '<button class="toc-item" onclick="goToChapter('+i+')">'+ch.title+'</button>'; }); tocContainer.innerHTML = html; }
-
-        function goToChapter(index) {
-            currentChapterIndex = index; document.getElementById('chapter-content').innerHTML = chapters[index].html;
-            document.querySelectorAll('.toc-item').forEach((btn, i) => { btn.className = 'toc-item' + (i === index ? ' active' : ''); });
-            document.getElementById('btn-prev').style.visibility = index === 0 ? 'hidden' : 'visible'; document.getElementById('btn-next').style.visibility = index === chapters.length - 1 ? 'hidden' : 'visible';
-            document.getElementById('page-indicator').innerText = (index + 1) + " / " + chapters.length;
-            window.scrollTo({ top: 0, behavior: 'smooth' }); toggleSidebar(true);
-        }
-
-        function navigateChapter(dir) { let newIndex = currentChapterIndex + dir; if(newIndex >= 0 && newIndex < chapters.length) goToChapter(newIndex); }
-        function toggleSidebar(forceClose = false) { let sidebar = document.getElementById('sidebar'); let overlay = document.getElementById('overlay'); if(forceClose || sidebar.classList.contains('open')) { sidebar.classList.remove('open'); overlay.classList.remove('open'); } else { sidebar.classList.add('open'); overlay.classList.add('open'); } }
-        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
-        function changeFontSize(amount) { baseFontSize += amount; if(baseFontSize < 12) baseFontSize = 12; if(baseFontSize > 40) baseFontSize = 40; document.getElementById('chapter-content').style.fontSize = baseFontSize + 'pt'; }
-
-        function playMedia(key) {
-            let media = vault[key]; if(!media) return; let container = document.getElementById('mediaContainer');
-            if(media.type === 'video') { container.innerHTML = '<video controls autoplay><source src="' + media.data + '"></video>'; } else if(media.type === 'audio') { container.innerHTML = '<audio controls autoplay><source src="' + media.data + '"></audio>'; }
-            document.getElementById('mediaModal').style.display = 'flex';
-        }
-
-        function closeMedia() { document.getElementById('mediaContainer').innerHTML = ''; document.getElementById('mediaModal').style.display = 'none'; }
-
+        function renderTOC(){let t=document.getElementById('toc-container');let h='';chapters.forEach((ch,i)=>{h+='<button class="toc-item" onclick="goToChapter('+i+')">'+ch.title+'</button>';});t.innerHTML=h;}
+        function goToChapter(index){currentChapterIndex=index;document.getElementById('chapter-content').innerHTML=chapters[index].html;document.querySelectorAll('.toc-item').forEach((btn,i)=>{btn.className='toc-item'+(i===index?' active':'');});document.getElementById('btn-prev').style.visibility=index===0?'hidden':'visible';document.getElementById('btn-next').style.visibility=index===chapters.length-1?'hidden':'visible';document.getElementById('page-indicator').innerText=(index+1)+" / "+chapters.length;window.scrollTo({top:0,behavior:'smooth'});toggleSidebar(true);}
+        function navigateChapter(dir){let n=currentChapterIndex+dir;if(n>=0&&n<chapters.length)goToChapter(n);}
+        function toggleSidebar(forceClose=false){let s=document.getElementById('sidebar');let o=document.getElementById('overlay');if(forceClose||s.classList.contains('open')){s.classList.remove('open');o.classList.remove('open');}else{s.classList.add('open');o.classList.add('open');}}
+        function toggleDarkMode(){document.body.classList.toggle('dark-mode');}
+        function changeFontSize(amount){baseFontSize+=amount;if(baseFontSize<12)baseFontSize=12;if(baseFontSize>40)baseFontSize=40;document.getElementById('chapter-content').style.fontSize=baseFontSize+'pt';}
+        function playMedia(key){let media=vault[key];if(!media)return;let c=document.getElementById('mediaContainer');if(media.type==='video'){c.innerHTML='<video controls autoplay><source src="'+media.data+'"></video>';}else if(media.type==='audio'){c.innerHTML='<audio controls autoplay><source src="'+media.data+'"></audio>';}document.getElementById('mediaModal').style.display='flex';}
+        function closeMedia(){document.getElementById('mediaContainer').innerHTML='';document.getElementById('mediaModal').style.display='none';}
         buildBookData(); renderTOC(); goToChapter(0);
-        
     <\/script>
 </body>
 </html>`;
 
-        let blob = new Blob([interactiveHTML], {type: "text/html;charset=utf-8"});
-        let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url;
-        a.download = (bookData.title || 'تطبيق_الكتاب') + '.html'; a.click(); URL.revokeObjectURL(url);
+        let blob = new Blob([interactiveHTML], {type:"text/html;charset=utf-8"});
+        let url  = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url;
+        a.download = (bookData.title||'تطبيق_الكتاب') + '.html'; a.click(); URL.revokeObjectURL(url);
     }
 
     function downloadPDF() { window.print(); }
-    function toggleFocusMode() { document.body.classList.toggle('focus-mode'); document.getElementById('btnFocus').innerText = document.body.classList.contains('focus-mode') ? "إلغاء التركيز ❌" : "وضع التركيز 🎯"; }
-    function openBgModal() { document.getElementById('bgModal').style.display = 'flex'; renderBgList(); }
+
+    function openBgModal()  { document.getElementById('bgModal').style.display = 'flex'; renderBgList(); }
     function closeBgModal() { document.getElementById('bgModal').style.display = 'none'; autoSaveAndBuild(); }
-    
+
     function handleBgUpload(event) {
         let pageNum = document.getElementById('bgPageNum').value;
         if (!pageNum) return alert("الرجاء إدخال رقم الصفحة أولاً.");
         let file = event.target.files[0]; if (!file) return;
-        let reader = new FileReader(); reader.onload = function(e) { customPageBackgrounds[pageNum] = e.target.result; renderBgList(); }; reader.readAsDataURL(file); event.target.value = ''; 
+        let reader = new FileReader();
+        reader.onload = function(e) { customPageBackgrounds[pageNum] = e.target.result; renderBgList(); };
+        reader.readAsDataURL(file); event.target.value = '';
     }
-
     function addBgFromLink() {
         let pageNum = document.getElementById('bgPageNum').value; let link = document.getElementById('bgLinkInput').value;
         if (!pageNum || !link) return alert("الرجاء إدخال رقم الصفحة والرابط.");
         customPageBackgrounds[pageNum] = link; renderBgList(); document.getElementById('bgLinkInput').value = '';
     }
-
     function removeBg(pageNum) { delete customPageBackgrounds[pageNum]; renderBgList(); }
-
     function renderBgList() {
         let html = '';
         for (let p in customPageBackgrounds) {
-            let imgPreview = customPageBackgrounds[p].startsWith('data:image') ? customPageBackgrounds[p] : customPageBackgrounds[p];
-            html += `<div class="bg-item"><div style="display:flex; align-items:center; gap:10px;"><img src="${imgPreview}" alt="خلفية"><span>الصفحة: ${p}</span></div><button onclick="removeBg('${p}')" style="color:#d32f2f; border:none; background:none; cursor:pointer; font-size:14pt;">حذف ✖</button></div>`;
+            html += `<div class="bg-item"><div style="display:flex;align-items:center;gap:10px;"><img src="${customPageBackgrounds[p]}" alt="خلفية"><span>الصفحة: ${p}</span></div><button onclick="removeBg('${p}')" style="color:#d32f2f;border:none;background:none;cursor:pointer;font-size:14pt;">✖</button></div>`;
         }
-        document.getElementById('bgList').innerHTML = html || "<div style='text-align:center; color:#888; padding: 10px;'>لا توجد خلفيات مخصصة</div>";
+        document.getElementById('bgList').innerHTML = html || "<div style='text-align:center;color:#888;padding:10px;'>لا توجد خلفيات مخصصة</div>";
     }
 
     function handleCoverUpload(e) {
@@ -887,70 +2203,50 @@
         reader.onload = (ev) => { document.getElementById('cCoverImg').value = ev.target.result; autoSaveAndBuild(); };
         reader.readAsDataURL(file);
     }
-    
-    function syncCodeFromPicker(c) { document.getElementById('colorCodeInput').value = c.replace('#', ''); updateGlobalColor(c); autoSaveAndBuild(); }
-    function syncPickerFromCode(c) { let fc = c.startsWith('#') ? c : `#${c}`; try{ document.getElementById('globalBgPicker').value=fc; updateGlobalColor(fc); autoSaveAndBuild(); }catch(e){} }
+
+    function syncCodeFromPicker(c) { document.getElementById('colorCodeInput').value = c.replace('#',''); updateGlobalColor(c); autoSaveAndBuild(); }
+    function syncPickerFromCode(c) { let fc = c.startsWith('#') ? c : `#${c}`; try { document.getElementById('globalBgPicker').value = fc; updateGlobalColor(fc); autoSaveAndBuild(); } catch(e) {} }
     function updateGlobalColor(c) { document.documentElement.style.setProperty('--global-page-bg', c); }
-    function updateFontSize(s) { document.documentElement.style.setProperty('--global-font-size', s + 'pt'); }
+    function updateFontSize(s)    { document.documentElement.style.setProperty('--global-font-size', s + 'pt'); }
 
     // --- 7. التشغيل الأولي ---
-    // [معدّل] السحابة أولاً إن كان متصلاً، وإلا فالمحلي
     window.onload = () => {
-        loadVaultFromDB(async (vaultData) => {
+        loadVaultFromDB((vaultData) => {
             mediaVault = vaultData;
-            let localData = JSON.parse(localStorage.getItem('bookData') || '{}');
-            let s = localData; // البيانات الافتراضية من المحلي
-
-            // [جديد] محاولة جلب البيانات من السحابة إن كان المستخدم متصلاً
-            if (
-                navigator.onLine &&
-                localData.id &&
-                typeof currentUser !== 'undefined' &&
-                currentUser
-            ) {
-                const cloudData = await fetchFromCloud(localData.id, currentUser.id);
-                if (cloudData) {
-                    // نفضّل بيانات السحابة إن كانت أحدث أو متساوية في التوقيت
-                    const cloudTime = cloudData.updatedAt || 0;
-                    const localTime = localData.updatedAt || 0;
-                    if (cloudTime >= localTime) {
-                        s = cloudData;
-                        // تحديث النسخة المحلية بأحدث بيانات من السحابة
-                        localStorage.setItem('bookData', JSON.stringify(cloudData));
-                        updateGlobalBooksList(cloudData);
-                    }
-                }
-            }
-
-            if(s.id) currentBookId = s.id; 
+            let s = JSON.parse(localStorage.getItem('bookData') || '{}');
+            if (s.id) currentBookId = s.id;
             renderVaultList();
-            
-            if(s.text !== undefined || s.title !== undefined) {
-                document.getElementById('mainText').value = s.text || s.t || "";
-                document.getElementById('cTitle').value = s.title || "";
-                document.getElementById('cAuthor').value = s.author || "";
-                document.getElementById('cDate').value = s.date || "";
-                document.getElementById('cCoverImg').value = s.cover || s.coverImg || "";
-                document.getElementById('cFontSize').value = s.size || s.fontSize || 20;
-                document.getElementById('pageStyle').value = s.style || "style-islamic";
-                let savedColor = s.color || s.bgColor || "#FFFDD0"; 
+            if (s.text !== undefined || s.title !== undefined) {
+                document.getElementById('mainText').value  = s.text || s.t || "";
+                document.getElementById('focusText').value = s.text || s.t || "";
+                document.getElementById('cTitle').value    = s.title  || "";
+                document.getElementById('cAuthor').value   = s.author || "";
+                document.getElementById('cDate').value     = s.date   || "";
+                document.getElementById('cCoverImg').value = s.cover  || s.coverImg || "";
+                document.getElementById('cFontSize').value = s.size   || s.fontSize || 20;
+                document.getElementById('pageStyle').value = s.style  || "style-islamic";
+                let savedColor = s.color || s.bgColor || "#FFFDD0";
                 if (!savedColor.startsWith('#')) savedColor = '#' + savedColor;
                 document.getElementById('globalBgPicker').value = savedColor;
-                document.getElementById('colorCodeInput').value = savedColor.replace('#', '');
+                document.getElementById('colorCodeInput').value  = savedColor.replace('#','');
                 updateGlobalColor(savedColor);
                 customPageBackgrounds = s.customBgs || {};
-                // استعادة الحقول المستقلة: صورة البطاقة وحالة المفضلة
-                // لا نضعها في cCoverImg لأن cardImage مستقلة تماماً عن غلاف الكتاب
-                customCardImage = s.cardImage || null;
-                // isFavorite تُحفظ في كائن الكتاب ولا تحتاج متغيراً منفصلاً في المحرر
+
+                // ── استرجاع السمة المحفوظة ──────────────────
+                if (s.selectedTheme && royalThemes[s.selectedTheme]) {
+                    activeTheme = s.selectedTheme;
+                    applyThemeVars(s.selectedTheme);
+                }
             }
+            // بناء swatches بعد تحميل البيانات
+            renderThemeSwatches();
             setTimeout(() => {
                 buildBook();
                 lastSavedData = JSON.stringify(getCurrentBookObject());
             }, 500);
         });
     };
-</script>
 
+</script>
 </body>
 </html>
