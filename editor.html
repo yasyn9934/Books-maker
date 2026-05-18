@@ -1291,6 +1291,8 @@
                 s.selectedTheme = themeName;
                 localStorage.setItem('bookData', JSON.stringify(s));
             } catch(e) {}
+            // [FIX] مزامنة السمة صامتاً إلى درايف
+            _scheduleColorSync();
         }
     }
 
@@ -1733,18 +1735,23 @@
 
     // --- 1. المزامنة والتحقق من التغييرات ---
     function getCurrentBookObject() {
+        // [FIX] أضفنا category و selectedTheme — كانا يضيعان عند الحفظ
+        const allBooks   = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
+        const existingEntry = allBooks.find(b => b.id === currentBookId);
         return {
-            id:       currentBookId || 'book_' + Date.now(),
-            title:    document.getElementById('cTitle').value,
-            author:   document.getElementById('cAuthor').value,
-            date:     document.getElementById('cDate').value,
-            text:     document.getElementById('mainText').value,
-            color:    document.getElementById('globalBgPicker').value,
-            style:    document.getElementById('pageStyle').value,
-            size:     document.getElementById('cFontSize').value,
-            cover:    document.getElementById('cCoverImg').value,
-            customBgs: customPageBackgrounds,
-            updatedAt: Date.now()
+            id:            currentBookId || 'book_' + Date.now(),
+            title:         document.getElementById('cTitle').value,
+            author:        document.getElementById('cAuthor').value,
+            date:          document.getElementById('cDate').value,
+            text:          document.getElementById('mainText').value,
+            color:         document.getElementById('globalBgPicker').value,
+            style:         document.getElementById('pageStyle').value,
+            size:          document.getElementById('cFontSize').value,
+            cover:         document.getElementById('cCoverImg').value,
+            customBgs:     customPageBackgrounds,
+            selectedTheme: activeTheme,   // [FIX] كان مفقوداً
+            category:      (existingEntry && existingEntry.category) ? existingEntry.category : "عام",
+            updatedAt:     Date.now()
         };
     }
 
@@ -1771,7 +1778,7 @@
             if (!navigator.onLine) throw new Error("Offline");
             const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action:"save_book", userId:currentUser.id, userName:currentUser.username, bookId:bookData.id, bookData:bookData, categoryName:"عام" })
+                body: JSON.stringify({ action:"save_book", userId:currentUser.id, userName:currentUser.username, bookId:bookData.id, bookData:bookData, categoryName: bookData.category || "عام" }) // [FIX]
             });
             const result = await response.json();
             if (result.success) {
@@ -2204,8 +2211,8 @@
         reader.readAsDataURL(file);
     }
 
-    function syncCodeFromPicker(c) { document.getElementById('colorCodeInput').value = c.replace('#',''); updateGlobalColor(c); autoSaveAndBuild(); }
-    function syncPickerFromCode(c) { let fc = c.startsWith('#') ? c : `#${c}`; try { document.getElementById('globalBgPicker').value = fc; updateGlobalColor(fc); autoSaveAndBuild(); } catch(e) {} }
+    function syncCodeFromPicker(c) { document.getElementById('colorCodeInput').value = c.replace('#',''); updateGlobalColor(c); autoSaveAndBuild(); _scheduleColorSync(); } // [FIX]
+    function syncPickerFromCode(c) { let fc = c.startsWith('#') ? c : `#${c}`; try { document.getElementById('globalBgPicker').value = fc; updateGlobalColor(fc); autoSaveAndBuild(); _scheduleColorSync(); } catch(e) {} } // [FIX]
     function updateGlobalColor(c) { document.documentElement.style.setProperty('--global-page-bg', c); }
     function updateFontSize(s)    { document.documentElement.style.setProperty('--global-font-size', s + 'pt'); }
 
@@ -2243,9 +2250,126 @@
             setTimeout(() => {
                 buildBook();
                 lastSavedData = JSON.stringify(getCurrentBookObject());
+                // [FIX] بعد تحميل النسخة المحلية — اجلب من درايف إن كان هناك اتصال
+                if (navigator.onLine && currentUser.role === 'member' && currentBookId) {
+                    _fetchAndSyncFromDrive(currentBookId);
+                }
             }, 500);
         });
     };
+
+    // ──────────────────────────────────────────────────────────────
+    // [FIX] جلب الكتاب من درايف ومقارنة الطوابع الزمنية
+    // ──────────────────────────────────────────────────────────────
+    async function _fetchAndSyncFromDrive(bookId) {
+        try {
+            const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "fetch_book", userId: currentUser.id, userName: currentUser.username, bookId: bookId })
+            });
+            const data = await res.json();
+            if (data.success && data.book) {
+                const localData  = JSON.parse(localStorage.getItem('bookData') || '{}');
+                const localTime  = localData.updatedAt || 0;
+                const driveTime  = data.book.updatedAt || 0;
+                if (driveTime > localTime) {
+                    // النسخة السحابية أحدث — طبّقها على الواجهة
+                    _applyBookData(data.book);
+                    console.log('[صانع الكتب] تم تحديث البيانات من درايف (أحدث من النسخة المحلية).');
+                }
+            }
+        } catch(e) { /* صامت — عدم الاتصال لا يُظهر خطأ */ }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // [FIX] تطبيق بيانات كتاب على الواجهة (دالة مشتركة)
+    // ──────────────────────────────────────────────────────────────
+    function _applyBookData(s) {
+        currentBookId = s.id;
+        document.getElementById('mainText').value  = s.text  || '';
+        document.getElementById('focusText').value = s.text  || '';
+        document.getElementById('cTitle').value    = s.title  || '';
+        document.getElementById('cAuthor').value   = s.author || '';
+        document.getElementById('cDate').value     = s.date   || '';
+        document.getElementById('cCoverImg').value = s.cover  || '';
+        document.getElementById('cFontSize').value = s.size   || 20;
+        document.getElementById('pageStyle').value = s.style  || 'style-islamic';
+        let savedColor = s.color || s.bgColor || '#FFFDD0';
+        if (!savedColor.startsWith('#')) savedColor = '#' + savedColor;
+        document.getElementById('globalBgPicker').value = savedColor;
+        document.getElementById('colorCodeInput').value  = savedColor.replace('#', '');
+        updateGlobalColor(savedColor);
+        customPageBackgrounds = s.customBgs || {};
+        if (s.selectedTheme && royalThemes[s.selectedTheme]) {
+            activeTheme = s.selectedTheme;
+            applyThemeVars(s.selectedTheme);
+            document.querySelectorAll('.theme-swatch').forEach(sw => {
+                sw.classList.toggle('active', sw.dataset.theme === s.selectedTheme);
+            });
+        }
+        localStorage.setItem('bookData', JSON.stringify(s));
+        buildBook();
+        lastSavedData = JSON.stringify(getCurrentBookObject());
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // [FIX] مراقبة الاتصال بالإنترنت داخل المحرر
+    // إعادة إرسال الكتاب المعلّق تلقائياً عند عودة الاتصال
+    // ──────────────────────────────────────────────────────────────
+    window.addEventListener('online', async () => {
+        const pendingRaw = localStorage.getItem('pending_sync_book');
+        if (!pendingRaw || currentUser.role !== 'member') return;
+        try {
+            const bookData = JSON.parse(pendingRaw);
+            const saveBtn = document.getElementById('saveCloudBtn');
+            if (saveBtn) saveBtn.innerText = '☁️ جاري الرفع...⏳';
+            const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action:       "save_book",
+                    userId:       currentUser.id,
+                    userName:     currentUser.username,
+                    bookId:       bookData.id,
+                    bookData:     bookData,
+                    categoryName: bookData.category || "عام"
+                })
+            });
+            const result = await res.json();
+            if (result.success) {
+                localStorage.removeItem('pending_sync_book');
+                lastSavedData = JSON.stringify(bookData);
+                if (saveBtn) saveBtn.innerText = '☁️ حفظ في درايف';
+                console.log('[صانع الكتب] تم رفع الكتاب المعلّق بنجاح بعد عودة الاتصال.');
+            }
+        } catch(e) { /* محاولة فاشلة — سيُعاد في المرة القادمة */ }
+    });
+
+    // ──────────────────────────────────────────────────────────────
+    // [FIX] مزامنة صامتة للألوان والسمة إلى درايف (مُأخَّرة 3 ثوانٍ)
+    // ──────────────────────────────────────────────────────────────
+    let _colorSyncTimer = null;
+    function _scheduleColorSync() {
+        if (currentUser.role !== 'member' || !navigator.onLine) return;
+        clearTimeout(_colorSyncTimer);
+        _colorSyncTimer = setTimeout(async () => {
+            try {
+                const bookData = getCurrentBookObject();
+                await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action:   "save_editor_settings",
+                        userId:   currentUser.id,
+                        userName: currentUser.username,
+                        settings: {
+                            pageColor:     bookData.color,
+                            selectedTheme: bookData.selectedTheme,
+                            lastBookId:    bookData.id
+                        }
+                    })
+                });
+            } catch(e) { /* صامت */ }
+        }, 3000);
+    }
 
 </script>
 </body>

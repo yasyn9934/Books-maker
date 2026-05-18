@@ -1,12 +1,12 @@
-// sw.js (الإصدار v4 المصحح والمستقر)
+// sw.js — الإصدار v5 (المُصحَّح والمحسَّن)
 
-const CACHE_NAME = 'royal-book-v3'; 
+const CACHE_NAME = 'royal-book-v5';
 
 const urlsToCache = [
-  
   'index.html',
   'editor.html',
   'login.html',
+  'offline-setup.html',
   'royal-features-interactive-fixed.html',
   'plugins.js',
   'auth.js',
@@ -21,47 +21,73 @@ const urlsToCache = [
   'fonts/ArefRuqaa-Bold.ttf'
 ];
 
-// أضف هذا الجزء في ملف sw.js تحت حدث الـ install
-
-self.addEventListener('activate', event => {
-    console.log('النظام الملكي v3 جاهز للعمل... 🚀');
-    event.waitUntil(clients.claim()); // هذا هو السطر السحري الذي سيحرك الشريط
-});
-
-// مرحلة التثبيت: حفظ الملفات بمرونة
+// ─── التثبيت: حفظ كل الملفات في الكاش ───────────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('جاري تأمين ملفات النظام أوف لاين... ⏳');
+      console.log('⏳ جاري تأمين ملفات النظام أوف لاين...');
       return Promise.all(
-        urlsToCache.map(url => {
-          return cache.add(url).catch(error => {
-            console.error('الملف غير موجود أو تعذر حفظه:', url);
-          });
-        })
+        urlsToCache.map(url =>
+          cache.add(url).catch(() => {
+            console.warn('⚠️ تعذّر حفظ الملف:', url);
+          })
+        )
       );
     }).then(() => self.skipWaiting())
   );
 });
 
-// استراتيجية جلب البيانات: الشبكة أولاً، ثم الكاش
-self.addEventListener('fetch', (event) => {
+// ─── التفعيل: حذف الكاش القديم وتسليم السيطرة فوراً ─────────────────────────
+self.addEventListener('activate', event => {
+  console.log('🚀 النظام الملكي v5 جاهز للعمل!');
+  event.waitUntil(
+    caches.keys().then(cacheNames =>
+      Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_NAME)   // كل كاش قديم غير الحالي
+          .map(name => {
+            console.log('🗑️ حذف كاش قديم:', name);
+            return caches.delete(name);
+          })
+      )
+    ).then(() => clients.claim())   // تسليم السيطرة لكل التبويبات المفتوحة فوراً
+  );
+});
+
+// ─── استراتيجية الجلب: شبكة أولاً + تحديث الكاش + فالباك أوف لاين ──────────
+self.addEventListener('fetch', event => {
+  const url = event.request.url;
+
+  // [FIX] تجاهل طلبات Google Apps Script — لا تُخزَّن أبداً في الكاش
+  if (url.includes('script.google.com')) return;
+
+  // [FIX] تجاهل طلبات chrome-extension أو غيرها من البروتوكولات غير http
+  if (!url.startsWith('http')) return;
+
   event.respondWith(
     fetch(event.request)
-      .then((networkResponse) => {
-        // إذا نجحت الشبكة، أرجع النتيجة فوراً
+      .then(networkResponse => {
+        // [FIX] إذا نجح الطلب من الشبكة، حدِّث الكاش بالنسخة الجديدة
         if (networkResponse && networkResponse.status === 200) {
-          return networkResponse;
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseToCache);
+          });
         }
         return networkResponse;
       })
       .catch(() => {
-        // إذا انقطعت الشبكة (catch)، ابحث في الكاش
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+        // الشبكة فشلت → ابحث في الكاش
+        return caches.match(event.request).then(cachedResponse => {
+          if (cachedResponse) return cachedResponse;
+
+          // [FIX] إذا كان طلب تنقل (صفحة HTML) وليس في الكاش → أرجع الصفحة الرئيسية
+          if (event.request.mode === 'navigate') {
+            return caches.match('index.html');
           }
-          // اختيارياً: يمكنك إرجاع صفحة أوف لاين هنا إذا لم يوجد كاش
+
+          // لا يوجد شيء — أرجع استجابة فارغة بدل الخطأ
+          return new Response('', { status: 204 });
         });
       })
   );

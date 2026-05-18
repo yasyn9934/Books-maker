@@ -1,32 +1,88 @@
 /**
- * auth.js - نظام إدارة المستخدمين والتحقق
+ * auth.js — نظام إدارة المستخدمين والمزامنة
+ * الإصدار المُصحَّح: v2
+ * الإصلاحات:
+ *   - [FIX] ختم updatedAt عند كل حفظ محلي للكتب والتصنيفات
+ *   - [FIX] مزامنة تلقائية عند فتح الصفحة (إذا كان متصلاً وعضواً)
+ *   - [FIX] منع تكرار المزامنة في نفس الجلسة
+ *   - [FIX] تحديث localStorage بالبيانات المدمجة الكاملة من السيرفر
  */
 
 const AUTH_CONFIG = {
-    // الرابط الخاص بك الذي نشرته مؤخراً
     SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzVIL8_9oYVEfAIvIlzcQjz9SV1SR2Fni0k2Euo__92mtERHfiPJHnoxQKSkvYM5lB6/exec",
-    GUEST_LIMIT: 1 
+    GUEST_LIMIT: 1
 };
 
 // قراءة حالة المستخدم من الذاكرة المحلية
-let currentUser = JSON.parse(localStorage.getItem('royal_user')) || { role: 'guest', id: 'guest_tmp', username: 'زائر' };
+let currentUser = JSON.parse(localStorage.getItem('royal_user')) || {
+    role: 'guest',
+    id: 'guest_tmp',
+    username: 'زائر'
+};
+
+// ─── [FIX] علم لمنع تكرار المزامنة في نفس الجلسة ─────────────────────────────
+let _syncInProgress = false;
+let _syncedThisSession = false;
+
+
+// ══════════════════════════════════════════════════════
+//  دوال الحفظ المحلي — تضمن دائماً وجود updatedAt
+// ══════════════════════════════════════════════════════
 
 /**
- * دالة التحقق من صلاحية إضافة كتب جديدة
+ * [FIX] احفظ كتاباً في localStorage مع ختم updatedAt تلقائياً.
+ * استخدم هذه الدالة في كل مكان تحفظ فيه كتاباً محلياً.
  */
+function saveBookLocally(book) {
+    book.updatedAt = Date.now();   // ختم الوقت دائماً
+    const books = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
+    const idx = books.findIndex(b => b.id === book.id);
+    if (idx > -1) books[idx] = book;
+    else books.push(book);
+    localStorage.setItem('royal_books_list', JSON.stringify(books));
+    return book;
+}
+
+/**
+ * [FIX] احفظ تصنيفاً في localStorage مع ختم updatedAt تلقائياً.
+ */
+function saveCategoryLocally(category) {
+    category.updatedAt = Date.now();
+    const cats = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
+    const idx = cats.findIndex(c => c.id === category.id);
+    if (idx > -1) cats[idx] = category;
+    else cats.push(category);
+    localStorage.setItem('royal_categories_list', JSON.stringify(cats));
+    return category;
+}
+
+/**
+ * [FIX] احذف كتاباً من localStorage.
+ */
+function deleteBookLocally(bookId) {
+    const books = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
+    localStorage.setItem('royal_books_list', JSON.stringify(books.filter(b => b.id !== bookId)));
+}
+
+
+// ══════════════════════════════════════════════════════
+//  التحقق من الصلاحيات
+// ══════════════════════════════════════════════════════
+
 function canAddMoreBooks() {
     const booksCount = JSON.parse(localStorage.getItem('royal_books_list') || '[]').length;
     if (currentUser.role === 'guest') {
         return booksCount < AUTH_CONFIG.GUEST_LIMIT;
     }
-    return true; // العضو المسجل له مساحة مفتوحة
+    return true;
 }
 
-/**
- * تسجيل الخروج
- */
+
+// ══════════════════════════════════════════════════════
+//  تسجيل الخروج
+// ══════════════════════════════════════════════════════
+
 function logoutUser() {
-    // [FIX] تحذير إن كان هناك كتاب معلّق لم يُرفع بعد
     const hasPending = !!localStorage.getItem('pending_sync_book');
     const msg = hasPending
         ? "تنبيه: لديك تغييرات لم تُحفظ في السحابة بعد. هل تريد الخروج وفقدانها؟"
@@ -35,56 +91,152 @@ function logoutUser() {
     if (confirm(msg)) {
         localStorage.removeItem('royal_user');
         localStorage.removeItem('royal_books_list');
-        localStorage.removeItem('pending_sync_book'); // [FIX] تنظيف الكتاب المعلّق أيضاً
+        localStorage.removeItem('royal_categories_list');
+        localStorage.removeItem('pending_sync_book');
+        localStorage.removeItem('pending_sync_categories');
+        localStorage.removeItem('hideSyncPrompt');
+        _syncedThisSession = false;
         window.location.href = 'index.html';
     }
 }
 
-// تحديث الواجهة عند تحميل أي صفحة
-document.addEventListener('DOMContentLoaded', () => {
+
+// ══════════════════════════════════════════════════════
+//  تحديث الواجهة
+// ══════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // تحديث عناصر الواجهة
     const userDisplay = document.getElementById('userDisplayName');
-    const authBtn = document.getElementById('authActionBtn');
-    
+    const authBtn     = document.getElementById('authActionBtn');
+
     if (userDisplay && authBtn) {
         if (currentUser.role === 'member') {
             userDisplay.innerText = `مرحباً، ${currentUser.username}`;
-            authBtn.innerText = "تسجيل الخروج";
-            authBtn.onclick = logoutUser;
+            authBtn.innerText  = "تسجيل الخروج";
+            authBtn.onclick    = logoutUser;
         } else {
             userDisplay.innerText = "أنت تتصفح كزائر";
-            authBtn.innerText = "تسجيل الدخول / فتح حساب";
-            authBtn.onclick = () => window.location.href = 'login.html';
+            authBtn.innerText  = "تسجيل الدخول / فتح حساب";
+            authBtn.onclick    = () => window.location.href = 'login.html';
         }
+    }
+
+    // [FIX] مزامنة تلقائية صامتة عند فتح الصفحة إذا كان العضو متصلاً
+    if (currentUser.role === 'member' && navigator.onLine && !_syncedThisSession) {
+        await autoSyncSilently();
     }
 });
 
-// مراقبة حالة الإنترنت
+
+// ══════════════════════════════════════════════════════
+//  [FIX] مزامنة صامتة تلقائية (بدون نوافذ منبثقة)
+// ══════════════════════════════════════════════════════
+
+async function autoSyncSilently() {
+    if (_syncInProgress || _syncedThisSession) return;
+    _syncInProgress = true;
+
+    const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
+    const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
+
+    try {
+        const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action:          "sync_library",
+                userId:          currentUser.id,
+                userName:        currentUser.username,
+                localBooks:      localBooks,
+                localCategories: localCategories
+            })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            // [FIX] حفظ البيانات المدمجة القادمة من السيرفر (تشمل ما في السحابة فقط)
+            if (Array.isArray(result.mergedBooks)) {
+                localStorage.setItem('royal_books_list', JSON.stringify(result.mergedBooks));
+            }
+            if (Array.isArray(result.mergedCategories)) {
+                localStorage.setItem('royal_categories_list', JSON.stringify(result.mergedCategories));
+            }
+            localStorage.removeItem('pending_sync_book');
+            localStorage.removeItem('pending_sync_categories');
+            _syncedThisSession = true;
+            console.log('✅ تمت المزامنة التلقائية بنجاح');
+
+            // تحديث الواجهة إذا كانت الدالة موجودة
+            if (typeof renderBooks === 'function') renderBooks();
+        }
+    } catch (error) {
+        console.warn('⚠️ فشلت المزامنة التلقائية، ستُعاد عند عودة الاتصال:', error);
+    } finally {
+        _syncInProgress = false;
+    }
+}
+
+
+// ══════════════════════════════════════════════════════
+//  مراقبة حالة الإنترنت
+// ══════════════════════════════════════════════════════
+
 window.addEventListener('online', () => {
-    // تحقق مما إذا كان المستخدم مسجلاً دخوله أصلاً
-    if (currentUser.role === 'member') {
+    if (currentUser.role !== 'member') return;
+
+    // [FIX] إذا لم تحصل مزامنة في هذه الجلسة بعد → مزامنة صامتة أولاً
+    if (!_syncedThisSession) {
+        autoSyncSilently().then(() => {
+            // بعد المزامنة الصامتة، اسأل عن المزامنة الكاملة
+            showSyncPrompt();
+        });
+    } else {
         showSyncPrompt();
     }
 });
 
+window.addEventListener('offline', () => {
+    console.log('📴 انقطع الاتصال — الموقع يعمل أوف لاين');
+});
+
+
+// ══════════════════════════════════════════════════════
+//  نافذة المزامنة (يدوية)
+// ══════════════════════════════════════════════════════
+
 function showSyncPrompt() {
-    // التحقق مما إذا كان المستخدم قد اختار "لا تظهر مجدداً"
     if (localStorage.getItem('hideSyncPrompt') === 'true') return;
-    // [FIX] منع تكرار النافذة لو ظهرت مسبقاً (offline/online متكرر)
-    if (document.getElementById('syncNotice')) return;
+    if (document.getElementById('syncNotice')) return;   // لا تكرار
 
     const syncDiv = document.createElement('div');
     syncDiv.id = 'syncNotice';
-    // [FIX] استبدال var(--css-variable) بقيم ثابتة — المتغيرات قد لا تكون معرّفة في كل الصفحات
-    syncDiv.style = "position:fixed; bottom:20px; left:20px; background:white; padding:20px; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:10001; border-right:5px solid #b8860b; direction:rtl;";
+    syncDiv.style.cssText = [
+        "position:fixed", "bottom:20px", "left:20px",
+        "background:white", "padding:20px", "border-radius:10px",
+        "box-shadow:0 5px 15px rgba(0,0,0,0.3)", "z-index:10001",
+        "border-right:5px solid #b8860b", "direction:rtl",
+        "max-width:320px", "font-family:Amiri,serif"
+    ].join(';');
+
     syncDiv.innerHTML = `
-        <p>أنت الآن متصل بالإنترنت، هل تريد مزامنة هذه النسخة ببياناتك على الموقع السحابي؟</p>
-        <button onclick="startSyncProcess()" style="background:#6B8E23; color:white; border:none; padding:5px 15px; cursor:pointer;">نعم، أريد المزامنة</button>
-        <button onclick="document.getElementById('syncNotice').remove()" style="background:#ccc; border:none; padding:5px 15px; cursor:pointer;">ليس الآن</button>
-        <br><br>
-        <label style="font-size:12px; color:#666;">
+        <p style="margin:0 0 12px">أنت الآن متصل بالإنترنت، هل تريد مزامنة بياناتك مع السحابة؟</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="startSyncProcess()"
+                style="background:#6B8E23;color:white;border:none;padding:6px 16px;border-radius:6px;cursor:pointer">
+                نعم، زامن الآن
+            </button>
+            <button onclick="document.getElementById('syncNotice').remove()"
+                style="background:#eee;border:none;padding:6px 16px;border-radius:6px;cursor:pointer">
+                ليس الآن
+            </button>
+        </div>
+        <label style="display:block;margin-top:12px;font-size:12px;color:#888;cursor:pointer">
             <input type="checkbox" id="noShowAgain"> لا تظهر هذه الرسالة مجدداً
         </label>
-        <button onclick="saveSyncPreference()" style="font-size:12px; background:none; border:1px solid #ddd; cursor:pointer;">حفظ التفضيل</button>
+        <button onclick="saveSyncPreference()"
+            style="margin-top:6px;font-size:11px;background:none;border:1px solid #ddd;border-radius:4px;padding:3px 10px;cursor:pointer">
+            حفظ التفضيل
+        </button>
     `;
     document.body.appendChild(syncDiv);
 }
@@ -93,41 +245,59 @@ function saveSyncPreference() {
     if (document.getElementById('noShowAgain').checked) {
         localStorage.setItem('hideSyncPrompt', 'true');
     }
-    document.getElementById('syncNotice').remove();
+    document.getElementById('syncNotice')?.remove();
 }
 
+
+// ══════════════════════════════════════════════════════
+//  [FIX] دالة المزامنة الكاملة (يدوية أو تلقائية)
+// ══════════════════════════════════════════════════════
+
 async function startSyncProcess() {
-    if (document.getElementById('syncNotice')) document.getElementById('syncNotice').innerText = "جاري المزامنة... انتظر قليلاً";
-    
-    const localBooks = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
-    const userId = currentUser.id;
+    if (_syncInProgress) return;
+    _syncInProgress = true;
+
+    const notice = document.getElementById('syncNotice');
+    if (notice) notice.innerHTML = '<p style="margin:0">⏳ جاري المزامنة...</p>';
+
+    const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
+    const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
 
     try {
         const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action: "sync_library",
-                userId: userId,
-                userName: currentUser.username, // ضروري لتسمية مجلد المستخدم بشكل صحيح
-                localBooks: localBooks // سنرسل النسخة المحلية كاملة ليقوم السيرفر بالمقارنة
+                action:          "sync_library",
+                userId:          currentUser.id,
+                userName:        currentUser.username,
+                localBooks:      localBooks,
+                localCategories: localCategories
             })
         });
-
         const result = await response.json();
 
         if (result.success) {
-            // تحديث المكتبة المحلية بالبيانات المدمجة القادمة من السيرفر
-            localStorage.setItem('royal_books_list', JSON.stringify(result.mergedBooks));
-            // [FIX] مسح الكتاب المعلّق الذي كان ينتظر الإرسال
+            // [FIX] حفظ النتيجة المدمجة — تشمل الكتب الموجودة في السحابة فقط أيضاً
+            if (Array.isArray(result.mergedBooks)) {
+                localStorage.setItem('royal_books_list', JSON.stringify(result.mergedBooks));
+            }
+            if (Array.isArray(result.mergedCategories)) {
+                localStorage.setItem('royal_categories_list', JSON.stringify(result.mergedCategories));
+            }
             localStorage.removeItem('pending_sync_book');
-            alert("تمت المزامنة بنجاح! تم تحديث الكتب السحابية وجلب الجديد منها.");
-            if (typeof renderBooks === "function") renderBooks(); // لتحديث الواجهة فوراً
+            localStorage.removeItem('pending_sync_categories');
+            _syncedThisSession = true;
+
+            alert("✅ تمت المزامنة بنجاح! تم تحديث الكتب والتصنيفات.");
+            if (typeof renderBooks === 'function') renderBooks();
+        } else {
+            alert("⚠️ حدث خطأ أثناء المزامنة. حاول مجدداً.");
         }
     } catch (error) {
         console.error("خطأ في المزامنة:", error);
-        alert("فشلت المزامنة، تأكد من جودة الاتصال.");
+        alert("❌ فشلت المزامنة، تأكد من جودة الاتصال.");
+    } finally {
+        _syncInProgress = false;
+        document.getElementById('syncNotice')?.remove();
     }
-
-    if (document.getElementById('syncNotice')) document.getElementById('syncNotice').remove();
 }
-
