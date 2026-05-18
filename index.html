@@ -1067,7 +1067,8 @@
         saveData();
     }
 
-    // 2. تحديث الواجهة والتشغيل الأولي
+    // [FIX] التشغيل الأولي — يعمل بعد DOMContentLoaded من auth.js (الذي يُطلق autoSyncSilently)
+    // renderBooks() هنا تعرض البيانات المحلية أولاً، وتُستدعى مجدداً من auth.js بعد المزامنة
     document.addEventListener('DOMContentLoaded', () => {
         injectPluginStyles();
         updateMainBtnText();
@@ -1076,44 +1077,51 @@
         syncPendingBooks();
     });
 
+    // [FIX] استخدام sync_library بدل حفظ فردي — يضمن الدمج الصحيح بين المحلي والسحابة
     async function syncPendingBooks() {
         if (!navigator.onLine || typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'member') return;
 
-        // مزامنة الكتاب المعلق
-        const pendingBook = localStorage.getItem('pending_sync_book');
-        if (pendingBook) {
-            try {
-                await fetch(AUTH_CONFIG.SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "save_book", userId: currentUser.id, bookData: JSON.parse(pendingBook) })
-                });
-                localStorage.removeItem('pending_sync_book');
-                console.log("تمت مزامنة الكتاب المعلق بنجاح");
-            } catch(e) {}
-        }
+        const hasPendingBook = !!localStorage.getItem('pending_sync_book');
+        const hasPendingCats = !!localStorage.getItem('pending_sync_categories');
+        if (!hasPendingBook && !hasPendingCats) return;
 
-        // مزامنة التصنيفات المعلقة
-        const pendingCats = localStorage.getItem('pending_sync_categories');
-        if (pendingCats) {
-            try {
-                await fetch(AUTH_CONFIG.SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "save_categories", userId: currentUser.id, categories: JSON.parse(pendingCats) })
-                });
+        try {
+            const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
+            const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
+            const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action:          'sync_library',
+                    userId:          currentUser.id,
+                    userName:        currentUser.username,
+                    localBooks,
+                    localCategories
+                })
+            });
+            const result = await res.json();
+            if (result.success) {
+                if (Array.isArray(result.mergedBooks)) {
+                    books = result.mergedBooks;
+                    localStorage.setItem('royal_books_list', JSON.stringify(books));
+                }
+                if (Array.isArray(result.mergedCategories)) {
+                    categories = result.mergedCategories;
+                    localStorage.setItem('royal_categories_list', JSON.stringify(categories));
+                }
+                localStorage.removeItem('pending_sync_book');
                 localStorage.removeItem('pending_sync_categories');
-                console.log("تمت مزامنة التصنيفات المعلقة بنجاح");
-            } catch(e) {}
+                renderBooks();
+                console.log('✅ تمت مزامنة البيانات المعلّقة بنجاح');
+            }
+        } catch(e) {
+            console.warn('⚠️ فشلت مزامنة البيانات المعلّقة:', e);
         }
     }
 
-    // 1. تحديث دالة الحفظ لتشمل السحابة فوراً (كتب + تصنيفات)
+    // [FIX] حفظ البيانات محلياً فقط — المزامنة تتم عبر auth.js
 function saveData() {
     localStorage.setItem('royal_books_list', JSON.stringify(books));
     localStorage.setItem('royal_categories_list', JSON.stringify(categories));
-    // استدعاء دالة المزامنة من auth.js إذا كان المستخدم مسجلاً
-    if (typeof syncWithCloud === "function") {
-        syncWithCloud();
-    }
 }
 
     function updateMainBtnText() {
@@ -1355,6 +1363,7 @@ function saveData() {
         book.categoryIds = selectedIds;
         // للتوافق مع الكود القديم
         if (selectedIds.length > 0) book.categoryId = selectedIds[0];
+        book.updatedAt = Date.now(); // [FIX] ختم وقت التعديل
 
         saveData();
         renderBooks();
@@ -1402,6 +1411,9 @@ function saveData() {
 
     // --- Render Books ---
     function renderBooks() {
+        // [FIX] إعادة قراءة البيانات من localStorage دائماً لضمان أحدث نسخة بعد المزامنة
+        books      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
+        categories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
         const container = document.getElementById('booksContainer');
         container.innerHTML = '';
 
@@ -1595,23 +1607,34 @@ function saveData() {
         syncBtn.style.pointerEvents = 'none';
 
         try {
-            const localBooks = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
+            // [FIX] إرسال الكتب والتصنيفات معاً لضمان مزامنة كاملة
+            const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
+            const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: 'sync_library',
-                    userId: currentUser.id,
-                    userName: currentUser.username,
-                    localBooks: localBooks
+                    action:          'sync_library',
+                    userId:          currentUser.id,
+                    userName:        currentUser.username,
+                    localBooks,
+                    localCategories
                 })
             });
             const result = await res.json();
-            if (result.success && Array.isArray(result.mergedBooks)) {
-                books = result.mergedBooks;
-                localStorage.setItem('royal_books_list', JSON.stringify(books));
+            if (result.success) {
+                if (Array.isArray(result.mergedBooks)) {
+                    books = result.mergedBooks;
+                    localStorage.setItem('royal_books_list', JSON.stringify(books));
+                }
+                // [FIX] تحديث التصنيفات من السحابة أيضاً
+                if (Array.isArray(result.mergedCategories)) {
+                    categories = result.mergedCategories;
+                    localStorage.setItem('royal_categories_list', JSON.stringify(categories));
+                }
+                localStorage.removeItem('pending_sync_book');
+                localStorage.removeItem('pending_sync_categories');
                 renderBooks();
                 updateMainBtnText();
-                localStorage.removeItem('pending_sync_book');
                 syncBtn.innerHTML = '<span>✅</span> &nbsp; تمت المزامنة بنجاح';
                 setTimeout(() => { syncBtn.innerHTML = origHTML; syncBtn.style.pointerEvents = ''; toggleFabModal(); }, 1500);
             } else {
