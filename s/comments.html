@@ -681,8 +681,10 @@ async function loadComments() {
 // =====================================================================
 // HELPERS
 // =====================================================================
-function uid()   { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null; }
-function uname() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : 'زائر'; }
+function uid()     { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null; }
+function uname()   { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : 'زائر'; }
+function uphoto()  { return (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.profilePhoto || '') : ''; }
+function uaccountName() { return (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.accountName || '') : ''; }
 
 function canSee(c) {
     if (!c.hidden) return true;
@@ -760,7 +762,10 @@ function buildCard(c, isReply) {
     // ---- Header ----
     let html = `<div class="cc-header">
         <div class="cc-author-row">
-            <div class="cc-avatar">${esc((c.authorName||'?')[0].toUpperCase())}</div>
+            <div class="cc-avatar">${c.authorPhoto
+                ? `<img src="${c.authorPhoto}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+                : esc((c.authorName||'?')[0].toUpperCase())
+            }</div>
             <div>
                 <div class="cc-author-name">${esc(c.authorName||'مجهول')}</div>
                 <div class="cc-time">${relTime(c.timestamp)}</div>
@@ -1174,6 +1179,7 @@ async function doSend() {
 
     const payload = {
         shareId, text, authorId: me, authorName: uname(),
+        authorPhoto: uphoto(), authorAccountName: uaccountName(),
         files: attachedFiles.map(f => ({ type: f.type, data: f.data, name: f.name }))
     };
 
