@@ -633,17 +633,32 @@ async function renderMyShares() {
   }
   grid.innerHTML = '<div class="section-loading">⏳ جاري تحميل المشاركات...</div>';
   try {
+    // [FIX] طلب واحد فقط بدلاً من طلب لكل كتاب — يحل مشكلة CORS وبطء التحميل
+    const res    = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
+      body: JSON.stringify({ action:'get_all_shares', userId:currentUser.id }) });
+    const result = await res.json();
+
+    if (!result.success) throw new Error(result.message);
+
+    const sharesByBook = result.sharesByBook || {};
+    const activeBooks  = books.filter(b => !b.isDeleted);
     const all = [];
-    for (const book of books.filter(b=>!b.isDeleted)) {
-      const res    = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
-        body: JSON.stringify({ action:'get_book_shares', userId:currentUser.id, bookId:book.id }) });
-      const result = await res.json();
-      if (result.success && result.shares.length) all.push({ book, shares:result.shares });
-    }
+
+    Object.keys(sharesByBook).forEach(bookId => {
+      const shares = sharesByBook[bookId];
+      if (!shares || !shares.length) return;
+      // ابحث عن الكتاب في القائمة المحلية
+      let book = activeBooks.find(b => b.id === bookId);
+      // إن لم يكن محلياً أنشئ كائناً بسيطاً من بيانات المشاركة
+      if (!book) book = { id: bookId, title: shares[0].bookTitle || 'كتاب', cardImage:'', cover:'' };
+      all.push({ book, shares });
+    });
+
     myShares = all;
     if (!all.length) { grid.innerHTML='<div class="empty-cat">📭 لم تشارك أي كتاب بعد</div>'; return; }
     grid.innerHTML = all.map(entry=>buildShareCard(entry)).join('');
-  } catch(_) {
+  } catch(e) {
+    console.error('renderMyShares:', e);
     grid.innerHTML = '<div class="empty-cat">⚠️ تعذر جلب المشاركات</div>';
   }
 }

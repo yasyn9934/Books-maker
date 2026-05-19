@@ -1,12 +1,14 @@
 // sw.js — الإصدار v5 (المُصحَّح والمحسَّن)
 
-const CACHE_NAME = 'royal-book-v5';
+const CACHE_NAME = 'royal-book-v6';
 
 const urlsToCache = [
   'index.html',
   'editor.html',
   'login.html',
   'offline-setup.html',
+  'profile.html',
+  'edit-account.html',
   'royal-features-interactive-fixed.html',
   'plugins.js',
   'auth.js',
