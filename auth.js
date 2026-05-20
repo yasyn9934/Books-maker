@@ -89,12 +89,15 @@ function logoutUser() {
         : "هل أنت متأكد من تسجيل الخروج؟";
 
     if (confirm(msg)) {
-        localStorage.removeItem('royal_user');
-        localStorage.removeItem('royal_books_list');
-        localStorage.removeItem('royal_categories_list');
-        localStorage.removeItem('pending_sync_book');
-        localStorage.removeItem('pending_sync_categories');
-        localStorage.removeItem('hideSyncPrompt');
+        // مسح كل البيانات الشخصية عند الخروج
+        const keysToRemove = [
+            'royal_user', 'royal_books_list', 'royal_categories_list',
+            'royal_notifications', 'royal_viewed_shares', 'royal_following',
+            'royal_posts', 'royal_docs', 'royal_deleted_books',
+            'royal_pending_profile_sync', 'royal_pending_posts_sync',
+            'pending_sync_book', 'pending_sync_categories', 'hideSyncPrompt'
+        ];
+        keysToRemove.forEach(k => localStorage.removeItem(k));
         _syncedThisSession = false;
         window.location.href = 'index.html';
     }
@@ -165,15 +168,59 @@ async function autoSyncSilently() {
             localStorage.removeItem('pending_sync_categories');
             _syncedThisSession = true;
             console.log('✅ تمت المزامنة التلقائية بنجاح');
-
-            // تحديث الواجهة إذا كانت الدالة موجودة
             if (typeof renderBooks === 'function') renderBooks();
         }
+
+        // مزامنة بيانات الملف الشخصي
+        await _syncProfileData();
+
+        // مزامنة الإشعارات
+        await _syncNotificationsFromCloud();
+
     } catch (error) {
-        console.warn('⚠️ فشلت المزامنة التلقائية، ستُعاد عند عودة الاتصال:', error);
+        console.warn('⚠️ فشلت المزامنة التلقائية:', error);
     } finally {
         _syncInProgress = false;
     }
+}
+
+// مزامنة بيانات الحساب من السحابة
+async function _syncProfileData() {
+    try {
+        const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'login_refresh', userId: currentUser.id })
+        });
+        const data = await res.json();
+        if (data.success && data.user) {
+            // حفظ البيانات المحدَّثة مع الحفاظ على session
+            const updated = Object.assign({}, currentUser, data.user);
+            localStorage.setItem('royal_user', JSON.stringify(updated));
+            currentUser = updated;
+            // تحديث بطاقة المستخدم إن وُجدت
+            if (typeof updateUserCard === 'function') updateUserCard();
+        }
+    } catch(_) {}
+}
+
+// جلب الإشعارات الجديدة من السحابة ودمجها
+async function _syncNotificationsFromCloud() {
+    try {
+        const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'get_notifications', userId: currentUser.id })
+        });
+        const data = await res.json();
+        if (!data.success) return;
+        const local    = JSON.parse(localStorage.getItem('royal_notifications') || '[]');
+        const localIds = new Set(local.map(n => n.id));
+        const fresh    = (data.notifications || []).filter(n => !localIds.has(n.id));
+        if (fresh.length) {
+            const merged = [...fresh, ...local].slice(0, 200);
+            localStorage.setItem('royal_notifications', JSON.stringify(merged));
+            if (typeof renderNotifBadge === 'function') renderNotifBadge();
+        }
+    } catch(_) {}
 }
 
 

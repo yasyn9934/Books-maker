@@ -14,7 +14,7 @@
       --shadow:0 8px 24px rgba(0,0,0,.08);
     }
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);min-height:100vh;}
+    body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);min-height:100vh;user-select:none;-webkit-user-select:none;}
 
     /* TOP BAR */
     .topbar{position:sticky;top:0;z-index:200;background:var(--card);
@@ -302,8 +302,22 @@
     /* ══════════ POST EDITOR OVERLAY ══════════ */
     .pe-overlay{
       position:fixed;inset:0;z-index:1000;display:none;flex-direction:column;
-      background:#f4f6f8;
+      background:#f4f6f8; overflow:hidden;
     }
+    /* responsive للشاشات الكبيرة: تظهر كنافذة وسطية */
+    @media(min-width:768px){
+      .pe-overlay{ align-items:center; justify-content:center; background:rgba(0,0,0,.5); }
+      .pe-inner{
+        width:min(720px,96vw); height:min(88vh,900px);
+        border-radius:16px; overflow:hidden;
+        display:flex; flex-direction:column;
+        background:#f4f6f8; box-shadow:0 20px 60px rgba(0,0,0,.4);
+      }
+    }
+    @media(max-width:767px){
+      .pe-inner{ display:flex; flex-direction:column; height:100%; width:100%; }
+    }
+    .pe-overlay.night .pe-inner{ background:#0a0a0a; }
     .pe-overlay.night{ background:#0a0a0a; color:#f0f0f0; }
     .pe-topbar{
       display:flex;align-items:center;justify-content:space-between;
@@ -385,6 +399,96 @@
       font-size:13pt;padding:0 2px;line-height:1;
     }
     .pe-att-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;}
+
+    /* معاينة slider للوسائط داخل المحرر */
+    .pe-preview-wrap{
+      display:flex;gap:8px;overflow-x:auto;padding:8px 0 4px;
+      scrollbar-width:thin;
+    }
+    .pe-preview-item{
+      position:relative;flex-shrink:0;border-radius:10px;overflow:hidden;
+      border:2px solid var(--border);background:#e9ecef;
+      width:110px;height:110px;cursor:pointer;
+    }
+    .pe-preview-item img,.pe-preview-item video{
+      width:100%;height:100%;object-fit:cover;
+    }
+    .pe-preview-item .pe-prev-remove{
+      position:absolute;top:3px;left:3px;background:rgba(0,0,0,.6);
+      color:#fff;border:none;border-radius:50%;width:22px;height:22px;
+      font-size:11pt;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    }
+    .pe-preview-audio{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:#1a1a2e;color:#fff;font-size:9pt;text-align:center;padding:4px;
+    }
+    .pe-preview-file{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      font-size:9pt;text-align:center;color:#555;padding:4px;word-break:break-all;
+    }
+    .pe-yt-preview{
+      width:100%;border-radius:10px;overflow:hidden;margin-top:8px;
+      aspect-ratio:16/9;
+    }
+    .pe-yt-preview iframe{ width:100%;height:100%;border:none; }
+
+    /* شريط الملفات دائماً فوق لوحة المفاتيح */
+    .pe-footer{ position:sticky;bottom:0; }
+
+    /* الزر العائم قابل للسحب */
+    .pe-float-btn{
+      position:absolute;  /* داخل pe-inner وليس fixed */
+      bottom:80px;left:20px;
+      touch-action:none;  /* يسمح بالسحب على اللمس */
+    }
+
+    /* ══════════ صور / slider / صوتيات ══════════ */
+    .post-imgs-grid{ display:flex;flex-wrap:wrap;gap:6px;margin-top:10px; }
+    .post-imgs-grid img{
+      border-radius:8px;object-fit:cover;cursor:pointer;
+      flex:1 1 calc(50% - 3px);max-height:220px;min-width:80px;
+    }
+    .post-imgs-grid[data-count="1"] img{ flex:1 1 100%;max-height:300px; }
+    .post-imgs-grid[data-count="3"] img:first-child{ flex:1 1 100%; }
+
+    /* gallery overlay */
+    .gallery-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;
+      display:none;align-items:center;justify-content:center;
+    }
+    .gallery-overlay.open{ display:flex; }
+    .gallery-img{ max-width:95vw;max-height:90vh;border-radius:8px;object-fit:contain; }
+    .gallery-arrow{
+      position:absolute;top:50%;transform:translateY(-50%);
+      background:rgba(255,255,255,.18);border:none;color:#fff;
+      font-size:22pt;cursor:pointer;padding:8px 14px;border-radius:10px;
+    }
+    .gallery-arrow.right{ right:10px; }
+    .gallery-arrow.left{ left:10px; }
+    .gallery-close{
+      position:absolute;top:14px;left:14px;background:rgba(255,255,255,.2);
+      border:none;color:#fff;font-size:18pt;cursor:pointer;
+      border-radius:50%;width:40px;height:40px;
+      display:flex;align-items:center;justify-content:center;
+    }
+
+    /* video slider */
+    .post-vid-slider{ position:relative;margin-top:10px; }
+    .post-vid-slider video{
+      width:100%;border-radius:10px;max-height:300px;display:none;
+    }
+    .post-vid-slider video.active{ display:block; }
+    .slider-arrows{
+      display:flex;justify-content:center;gap:12px;margin-top:6px;
+    }
+    .slider-arr{
+      background:var(--green);color:#fff;border:none;border-radius:8px;
+      padding:4px 14px;font-size:14pt;cursor:pointer;
+    }
+
+    /* post audios */
+    .post-audios{ display:flex;flex-direction:column;gap:6px;margin-top:10px; }
+    .post-media-audio{ width:100%; }
 
     /* ══════════ POSTS / DOCS FEED ══════════ */
     .post-card{
@@ -573,6 +677,9 @@
       <div class="profile-socials"  id="profileSocials"></div>
       <!-- زر تعديل الحساب (صاحب الحساب فقط) -->
       <button class="profile-edit-btn" id="editBtn" onclick="window.location.href='edit-account.html'">✏️ تعديل الحساب</button>
+      <button class="profile-edit-btn" id="tabVisBtn"
+        onclick="openTabVisibilityModal()"
+        style="display:none;background:#555;margin-right:8px">⚙️ إعدادات التبويبات</button>
       <!-- زر المتابعة (الزوار فقط) -->
       <button class="follow-btn" id="followBtn" onclick="toggleFollow()" style="display:none">➕ متابعة</button>
     </div>
@@ -594,6 +701,7 @@
 
 <!-- ══════════ POST EDITOR OVERLAY ══════════ -->
 <div class="pe-overlay" id="peOverlay">
+<div class="pe-inner" id="peInner">
   <div class="pe-topbar">
     <div style="display:flex;align-items:center;gap:10px">
       <button class="pe-btn pe-btn-cancel" onclick="closePostEditor()">إلغاء</button>
@@ -607,7 +715,7 @@
   </div>
   <div class="pe-body">
     <textarea class="pe-textarea" id="peTextarea"
-      placeholder="اكتب هنا..." oninput="onPeInput()"></textarea>
+      placeholder="اكتب هنا..." oninput="onPeInputEnhanced()"></textarea>
     <div class="pe-attachments" id="peAttachments"></div>
   </div>
   <div class="pe-footer">
@@ -618,13 +726,35 @@
       <button class="pe-attach-btn" id="peVideoBtn" onclick="triggerAttach('video')">🎥 فيديو</button>
       <button class="pe-attach-btn" id="pePdfBtn"   onclick="triggerAttach('pdf')">📄 ملف</button>
     </div>
-    <button class="pe-float-btn" id="peFloatBtn" onclick="togglePeBar()">📎</button>
+    <button class="pe-float-btn" id="peFloatBtn"
+      onclick="togglePeBar()"
+      onmousedown="startDragFloat(event)"
+      ontouchstart="startDragFloat(event)">📎</button>
     <div class="pe-char-count" id="peCharCount">0 / 5000</div>
   </div>
-</div>
-<input type="file" id="peFileInput" style="display:none" onchange="handlePeFile(event)">
+</div><!-- /pe-inner -->
+</div><!-- /pe-overlay end -->
+<input type="file" id="peFileInput" style="display:none" onchange="handlePeFileEnhanced(event)">
 
 <!-- ══════════ HIDE/VISIBILITY MODAL ══════════ -->
+<!-- ══ TAB VISIBILITY MODAL ══ -->
+<div class="modal-overlay" id="tabVisModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>إعدادات ظهور التبويبات</h3>
+      <button class="modal-close" onclick="closeModal('tabVisModal')">✕</button>
+    </div>
+    <p style="font-size:10.5pt;color:#888;margin-bottom:16px">
+      تحكم في من يمكنه رؤية تبويب المنشورات والوثائق في ملفك الشخصي.
+    </p>
+    <div id="tabVisBody"></div>
+    <button onclick="saveTabVisibility()"
+      style="width:100%;padding:11px;border-radius:10px;border:none;
+             background:var(--green);color:#fff;font-family:'Amiri',serif;
+             font-size:12pt;cursor:pointer;margin-top:12px">حفظ</button>
+  </div>
+</div>
+
 <div class="hide-modal-overlay" id="hideModalOverlay">
   <div class="hide-modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -655,6 +785,14 @@
 <div class="media-viewer-overlay" id="mediaViewerOverlay" onclick="closeMediaViewer()">
   <button class="media-viewer-close" onclick="closeMediaViewer()">✕</button>
   <div id="mediaViewerContent" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- gallery للصور -->
+<div class="gallery-overlay" id="galleryOverlay">
+  <button class="gallery-close" onclick="closeGallery()">✕</button>
+  <button class="gallery-arrow right" id="galleryRight" onclick="galleryNav(1)">&#8249;</button>
+  <img class="gallery-img" id="galleryImg" src="" alt="">
+  <button class="gallery-arrow left" id="galleryLeft" onclick="galleryNav(-1)">&#8250;</button>
 </div>
 
 <!-- SHARE INFO MODAL -->
@@ -1181,15 +1319,24 @@ function toggleNotifDropdown() {
 }
 
 function notifItemHtml(n) {
-  const thumb = thumbHtml(n,'notif-thumb');
-  const attHint = (n.attachments||[]).map(a=>`${ATT_ICON[a.type]||'📎'} ${a.name}`).join('  ');
+  const isSystem = !n.sender || !n.sender.id;
+  // الصورة المصغرة: صورة المرسل إن كان مستخدماً، وإلا أيقونة النوع
+  const thumbContent = (!isSystem && n.sender && n.sender.photo)
+    ? `<img src="${n.sender.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : (TYPE_ICON[n.type]||'📩');
+  // موجز المنشور بدل الرابط
+  const excerpt = n.postExcerpt
+    ? `<em style="color:#666;font-size:9.5pt">${n.postExcerpt.slice(0,60)}${n.postExcerpt.length>60?'…':''}</em>`
+    : (n.message||'');
+  const senderClick = (!isSystem && n.sender && n.sender.id)
+    ? `onclick="event.stopPropagation();window.location.href='profile.html?uid=${n.sender.id}'" style="cursor:pointer;text-decoration:underline dotted"`
+    : '';
   return `<div class="notif-item ${n.read?'':'unread'}" onclick="openNotifFromDrop('${n.id}')">
-    <div class="notif-thumb">${thumb}</div>
+    <div class="notif-thumb">${thumbContent}</div>
     <div class="notif-body">
       <div class="notif-type">${TYPE_LABEL[n.type]||'إشعار'}</div>
-      <div class="notif-sender">${n.sender?.name||'النظام'}</div>
-      <div class="notif-excerpt">${n.message||''}</div>
-      ${attHint?`<div class="notif-attach-hint">${attHint}</div>`:''}
+      <div class="notif-sender" ${senderClick}>${n.sender?.name||'النظام'}</div>
+      <div class="notif-excerpt">${excerpt}</div>
     </div>
     <div class="notif-time">${timeAgo(n.createdAt)}</div>
   </div>`;
@@ -1230,16 +1377,24 @@ function renderNotifPageList() {
   if (currentNotifTab!=='all') items = items.filter(n=>n.type===currentNotifTab);
   if (!items.length) { list.innerHTML='<div class="notif-empty">🔔 لا توجد إشعارات في هذه الفئة</div>'; return; }
   list.innerHTML = items.map(n => {
-    const thumb = thumbHtml(n,'notif-card-thumb');
-    const atts  = (n.attachments||[]).map(a=>`<div class="notif-attach-tag">${ATT_ICON[a.type]||'📎'} ${a.name}</div>`).join('');
+    const isSystem = !n.sender || !n.sender.id;
+    const thumbC   = (!isSystem && n.sender?.photo)
+      ? `<img src="${n.sender.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : (TYPE_ICON[n.type]||'📩');
+    const excerptC = n.postExcerpt
+      ? `<em style="color:#666;font-size:9.5pt">${n.postExcerpt.slice(0,80)}${n.postExcerpt.length>80?'…':''}</em>`
+      : (n.message||'');
+    const senderC  = (!isSystem && n.sender?.id)
+      ? `<span style="cursor:pointer;text-decoration:underline dotted"
+           onclick="event.stopPropagation();window.location.href='profile.html?uid=${n.sender.id}'">${n.sender.name}</span>`
+      : (n.sender?.name||'النظام');
     return `<div class="notif-card ${n.read?'':'unread'}" onclick="openNotifDetail('${n.id}')">
       <div class="notif-card-inner">
-        <div class="notif-card-thumb">${thumb}</div>
+        <div class="notif-card-thumb">${thumbC}</div>
         <div class="notif-card-content">
           <div class="notif-card-title">${n.title||TYPE_LABEL[n.type]||'إشعار'}</div>
-          <div class="notif-card-sender">${n.sender?.name||'النظام'} · ${TYPE_LABEL[n.type]||'إشعار'}</div>
-          <div class="notif-card-excerpt">${n.message||''}</div>
-          ${atts?`<div class="notif-card-attach">${atts}</div>`:''}
+          <div class="notif-card-sender">${senderC} · ${TYPE_LABEL[n.type]||'إشعار'}</div>
+          <div class="notif-card-excerpt">${excerptC}</div>
           <div class="notif-card-time">${timeAgo(n.createdAt)}</div>
         </div>
       </div>
@@ -1278,7 +1433,12 @@ function openNotifDetail(id) {
       <div class="notif-detail-msg">${n.message||''}</div>
       ${mediaHtml ? `<div class="notif-media-wrap">${mediaHtml}</div>` : ''}
       ${fileChips ? `<div class="notif-detail-files">${fileChips}</div>` : ''}
-      ${n.link ? `<a class="notif-detail-link" href="${n.link}" target="_blank" rel="noopener">🔗 ${n.link}</a>` : ''}
+      ${n.postId ? `<button onclick="goToNotifPost('${n.postId}','${n.sender?.id||''}')"
+        style="margin-top:12px;padding:10px 20px;border-radius:10px;border:none;
+               background:var(--green);color:#fff;font-family:'Amiri',serif;
+               font-size:11.5pt;cursor:pointer;width:100%">
+        📖 عرض المنشور</button>` : ''}
+    ${n.link && !n.postId ? `<a class="notif-detail-link" href="${n.link}" target="_blank" rel="noopener">🔗 ${n.link}</a>` : ''}
     </div>`;
   document.getElementById('notifDetail').style.display = 'flex';
 }
@@ -1286,6 +1446,23 @@ function openNotifDetail(id) {
 function closeNotifDetail() {
   document.getElementById('notifDetail').style.display = 'none';
   renderNotifPageList();
+}
+
+function goToNotifPost(postId, userId) {
+  document.getElementById('notifDetail').style.display  = 'none';
+  document.getElementById('notifPage').style.display    = 'none';
+  if (userId && userId !== (currentUser && currentUser.id)) {
+    window.location.href = 'profile.html?uid=' + userId + '&post=' + postId;
+  } else {
+    // المنشور لي — انتقل للتبويب المناسب وابحث عن المنشور
+    const isDoc = JSON.parse(localStorage.getItem('royal_docs')||'[]').some(p=>p.id===postId);
+    const tabBtn = document.querySelector('#mainTabsWrap .main-tab:nth-child('+(isDoc?4:3)+')');
+    if (tabBtn) tabBtn.click();
+    setTimeout(() => {
+      const el = document.getElementById('pc_'+postId);
+      if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+    }, 300);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1330,6 +1507,81 @@ function timeAgo(ts) {
   const h = Math.floor(m/60);
   if (h<24) return `منذ ${h} ساعة`;
   return `منذ ${Math.floor(h/24)} يوم`;
+}
+
+// ══════════════════════════════════════════════
+// إعدادات رؤية التبويبات
+// ══════════════════════════════════════════════
+const TAB_VIS_TABS = [
+  { key:'posts', label:'📝 المنشورات' },
+  { key:'docs',  label:'🏅 الوثائق والإنجازات' }
+];
+const TAB_VIS_OPTIONS = [
+  { mode:'all',      icon:'🌍', label:'الجميع' },
+  { mode:'specific', icon:'👥', label:'أشخاص محددون فقط' },
+  { mode:'exclude',  icon:'🚫', label:'الكل ما عدا محددين' },
+  { mode:'hidden',   icon:'🔒', label:'أنا فقط' },
+];
+
+function openTabVisibilityModal() {
+  const saved = JSON.parse(localStorage.getItem('royal_tab_visibility') || '{}');
+  const body  = document.getElementById('tabVisBody');
+  body.innerHTML = TAB_VIS_TABS.map(tab => {
+    const cur = saved[tab.key] || 'all';
+    return `<div style="margin-bottom:18px">
+      <div style="font-family:'Aref Ruqaa',serif;font-size:13pt;color:var(--green);margin-bottom:8px">${tab.label}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${TAB_VIS_OPTIONS.map(opt => `
+          <label style="display:flex;align-items:center;gap:6px;padding:7px 14px;
+            border:1.5px solid ${cur===opt.mode?'var(--green)':'var(--border)'};
+            border-radius:10px;cursor:pointer;transition:.2s;
+            background:${cur===opt.mode?'#edf7e0':'none'};font-size:11pt">
+            <input type="radio" name="tabvis_${tab.key}" value="${opt.mode}"
+              ${cur===opt.mode?'checked':''} style="accent-color:var(--green)">
+            ${opt.icon} ${opt.label}
+          </label>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  openModal('tabVisModal');
+}
+
+function saveTabVisibility() {
+  const saved = {};
+  TAB_VIS_TABS.forEach(tab => {
+    const sel = document.querySelector(`input[name="tabvis_${tab.key}"]:checked`);
+    saved[tab.key] = sel ? sel.value : 'all';
+  });
+  localStorage.setItem('royal_tab_visibility', JSON.stringify(saved));
+  closeModal('tabVisModal');
+  showToast('✅ تم حفظ إعدادات التبويبات');
+  // مزامنة للسحابة
+  if (navigator.onLine && currentUser && currentUser.role === 'member') {
+    fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
+      action: 'save_tab_visibility', userId: currentUser.id, visibility: saved
+    })}).catch(()=>{});
+  }
+}
+
+// إظهار زر إعدادات التبويبات للمالك فقط
+function showTabVisBtn() {
+  const btn = document.getElementById('tabVisBtn');
+  if (btn && _isOwner) btn.style.display = 'inline-flex';
+}
+
+// تحقق من رؤية تبويب ما للزائر
+function isTabVisible(tabKey) {
+  const vis = _visitorProfile && _visitorProfile.tabVisibility
+    ? _visitorProfile.tabVisibility
+    : JSON.parse(localStorage.getItem('royal_tab_visibility') || '{}');
+  const mode    = (vis[tabKey] || 'all');
+  const myId    = currentUser && currentUser.id || '';
+  const ownerId = _targetUid || '';
+  if (mode === 'all')      return true;
+  if (mode === 'hidden')   return myId === ownerId;
+  if (mode === 'specific') return (vis[tabKey+'_accounts']||[]).some(a => a.id === myId);
+  if (mode === 'exclude')  return !(vis[tabKey+'_accounts']||[]).some(a => a.id === myId);
+  return true;
 }
 
 // ══════════════════════════════════════════════
@@ -1386,6 +1638,40 @@ function togglePeBar() {
   const float = document.getElementById('peFloatBtn');
   bar.classList.toggle('hidden', !_peBarVisible);
   float.style.display = _peBarVisible ? 'none' : 'flex';
+}
+
+// سحب الزر العائم داخل pe-inner
+function startDragFloat(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('peFloatBtn');
+  const inner = document.getElementById('peInner') || document.getElementById('peOverlay');
+  const isTch = e.type === 'touchstart';
+  const startX = isTch ? e.touches[0].clientX : e.clientX;
+  const startY = isTch ? e.touches[0].clientY : e.clientY;
+  const origL  = btn.offsetLeft;
+  const origT  = btn.offsetTop;
+
+  function onMove(ev) {
+    const cx = isTch ? ev.touches[0].clientX : ev.clientX;
+    const cy = isTch ? ev.touches[0].clientY : ev.clientY;
+    const dx = cx - startX, dy = cy - startY;
+    const rect = inner.getBoundingClientRect();
+    const btnW = btn.offsetWidth, btnH = btn.offsetHeight;
+    const newL = Math.min(Math.max(0, origL + dx), rect.width  - btnW);
+    const newT = Math.min(Math.max(0, origT + dy), rect.height - btnH - 60); // 60 = ارتفاع footer
+    btn.style.left   = newL + 'px';
+    btn.style.top    = newT + 'px';
+    btn.style.bottom = 'auto';
+    btn.style.right  = 'auto';
+  }
+
+  function onEnd() {
+    window.removeEventListener(isTch?'touchmove':'mousemove', onMove);
+    window.removeEventListener(isTch?'touchend':'mouseup', onEnd);
+  }
+
+  window.addEventListener(isTch?'touchmove':'mousemove', onMove, { passive:false });
+  window.addEventListener(isTch?'touchend':'mouseup', onEnd);
 }
 
 function onPeInput() {
@@ -1537,17 +1823,31 @@ function buildPostCard(post, isOwner) {
   const name    = u ? (u.username || '—') : '—';
   const ts      = post.createdAt ? timeAgo(post.createdAt) : '';
 
-  // الوسائط
-  const mediaHtml = (post.attachments || []).map(a => {
-    if (a.type === 'image')
-      return `<img class="post-media-img" src="${a.data}" alt="${a.name}"
-               onclick="openMediaViewer('image','${a.data.replace(/'/g,"\'")}')">`;
-    if (a.type === 'video')
-      return `<video class="post-media-video" controls><source src="${a.data}"></video>`;
-    if (a.type === 'audio')
-      return `<audio class="post-media-audio" controls><source src="${a.data}"></audio>`;
-    return `<a class="post-file-chip" href="${a.data}" download="${a.name}">📎 ${a.name}</a>`;
-  }).join('');
+  // تجميع الوسائط حسب النوع
+  const atts   = post.attachments || [];
+  const images = atts.filter(a => a.type==='image');
+  const videos = atts.filter(a => a.type==='video');
+  const audios = atts.filter(a => a.type==='audio');
+  const files  = atts.filter(a => !['image','video','audio','youtube'].includes(a.type));
+  const ytbs   = atts.filter(a => a.type==='youtube');
+  const pid    = post.id;
+
+  const imgsHtml = images.length ? `<div class="post-imgs-grid" data-count="${images.length}">
+    ${images.map((a,i)=>`<img src="${a.src||a.data||''}" alt=""
+      onclick="openGallery('${pid}',${i})" loading="lazy">`).join('')}
+  </div>` : '';
+  const vidsHtml = videos.length ? buildSlider(videos,'video',pid) : '';
+  const audsHtml = audios.length
+    ? `<div class="post-audios">${audios.map(a=>`<audio class="post-media-audio" controls>
+        <source src="${a.src||a.data||''}"></audio>`).join('')}</div>` : '';
+  const filesHtml = files.map(a=>
+    `<a class="post-file-chip" href="${a.src||a.data||'#'}" download="${a.name}" target="_blank">📎 ${a.name}</a>`
+  ).join('');
+  const ytHtml = ytbs.map(a=>
+    `<div class="pe-yt-preview"><iframe src="https://www.youtube.com/embed/${a.ytId}"
+      allowfullscreen loading="lazy"></iframe></div>`
+  ).join('');
+  const mediaHtml = imgsHtml + vidsHtml + audsHtml + filesHtml + ytHtml;
 
   // الردود والتفاعلات
   const hearts = (post.reactions && post.reactions.heart) ? post.reactions.heart.length : 0;
@@ -1591,7 +1891,8 @@ function buildPostCard(post, isOwner) {
 
 function escHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/ /g,'<br>');
+    .replace(/"/g,'&quot;').replace(/
+/g,'<br>');
 }
 
 function openPostMenu(postId, type, isOwner, e) {
@@ -1665,6 +1966,205 @@ function sharePostLink(postId) {
 
 function openPostComments(postId) {
   showToast('💬 نظام التعليقات على المنشورات — قريباً');
+}
+
+// ══════════════════════════════════════════════
+// MEDIA HELPERS: slider + gallery + youtube
+// ══════════════════════════════════════════════
+
+// حدود الحجم حسب الدور
+function getFileSizeLimit() {
+  const tier = currentUser && currentUser.tier || 'basic';
+  return { basic:10, premium:50, elite:500, admin:Infinity }[tier] * 1024 * 1024;
+}
+
+function buildSlider(items, type, postId) {
+  if (!items.length) return '';
+  const tag = type === 'video' ? 'video' : 'audio';
+  const vids = items.map((a,i) =>
+    `<${tag} class="${i===0?'active':''}" controls ${i===0?'':'style="display:none"'}>
+      <source src="${a.src||a.data||''}"></${tag}>`
+  ).join('');
+  const arrows = items.length > 1
+    ? `<div class="slider-arrows">
+        <button class="slider-arr" onclick="sliderNav('${postId}',${type==='video'?''vid'':''aud''}, 1)">&#8249;</button>
+        <button class="slider-arr" onclick="sliderNav('${postId}',${type==='video'?''vid'':''aud''}, -1)">&#8250;</button>
+       </div>` : '';
+  return `<div class="post-vid-slider" id="slider_${postId}_${type}">${vids}${arrows}</div>`;
+}
+
+function sliderNav(postId, type, dir) {
+  const wrap  = document.getElementById('slider_' + postId + '_' + type);
+  if (!wrap) return;
+  const items = wrap.querySelectorAll(type==='vid'?'video':'audio');
+  let cur = [...items].findIndex(v => v.classList.contains('active'));
+  items[cur].classList.remove('active');
+  items[cur].style.display = 'none';
+  items[cur].pause();
+  cur = (cur + dir + items.length) % items.length;
+  items[cur].classList.add('active');
+  items[cur].style.display = '';
+}
+
+// gallery للصور
+let _galleryImages = [];
+let _galleryIdx    = 0;
+
+function openGallery(postId, idx) {
+  // جمع صور هذا المنشور
+  const allPosts = [
+    ...JSON.parse(localStorage.getItem('royal_posts')||'[]'),
+    ...JSON.parse(localStorage.getItem('royal_docs') ||'[]')
+  ];
+  const post = allPosts.find(p => p.id === postId);
+  if (!post) return;
+  _galleryImages = (post.attachments||[]).filter(a=>a.type==='image').map(a=>a.src||a.data||'');
+  if (!_galleryImages.length) return;
+  _galleryIdx = Math.min(idx, _galleryImages.length - 1);
+  _renderGallery();
+  document.getElementById('galleryOverlay').classList.add('open');
+}
+
+function _renderGallery() {
+  document.getElementById('galleryImg').src = _galleryImages[_galleryIdx];
+  document.getElementById('galleryRight').style.display = _galleryImages.length > 1 ? '' : 'none';
+  document.getElementById('galleryLeft').style.display  = _galleryImages.length > 1 ? '' : 'none';
+}
+
+function galleryNav(dir) {
+  _galleryIdx = (_galleryIdx + dir + _galleryImages.length) % _galleryImages.length;
+  _renderGallery();
+}
+
+function closeGallery() {
+  document.getElementById('galleryOverlay').classList.remove('open');
+}
+
+// الكشف عن رابط YouTube وتحويله
+function extractYoutubeId(url) {
+  const m = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// رفع الملفات الكبيرة (> 10MB الافتراضي) إلى GAS للحفظ في Drive
+async function uploadLargeFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async ev => {
+      try {
+        const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action:   'upload_file',
+            userId:   currentUser.id,
+            fileName: file.name,
+            mimeType: file.type,
+            data:     ev.target.result  // base64
+          })
+        });
+        const data = await res.json();
+        if (data.success) resolve(data.fileUrl);
+        else reject(new Error(data.message));
+      } catch(e) { reject(e); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// تحديث handlePeFile ليدعم الملفات الكبيرة + YouTube
+async function handlePeFileEnhanced(e) {
+  const file     = e.target.files[0];
+  if (!file) return;
+  const fileType = e.target.dataset.filetype || 'pdf';
+  const limit    = getFileSizeLimit();
+  const TEN_MB   = 10 * 1024 * 1024;
+
+  // تحقق الحد الأقصى
+  if (file.size > limit) {
+    showToast('⚠️ حجم الملف يتجاوز الحد المسموح به لحسابك'); return;
+  }
+
+  // تحقق حدود الوحدات
+  const counts = {};
+  _peAttachments.forEach(a => counts[a.type] = (counts[a.type]||0)+1);
+  if ((counts[fileType]||0) >= (PE_LIMITS[fileType]||6)) {
+    showToast(`⚠️ الحد الأقصى ${PE_LIMITS[fileType]||6} من نوع ${fileType}`); return;
+  }
+
+  const btn = document.getElementById('pe'+fileType[0].toUpperCase()+fileType.slice(1)+'Btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+  if (file.size > TEN_MB) {
+    // رفع للسحابة
+    showToast('⏳ جاري رفع الملف إلى السحابة...');
+    try {
+      const url = await uploadLargeFile(file);
+      _peAttachments.push({ type: fileType, src: url, name: file.name, size: file.size, isCloud: true });
+      renderPeAttachments();
+      renderPePreview();
+      updatePeAttachBtns();
+      showToast('✅ تم رفع الملف');
+    } catch(_err) {
+      showToast('⚠️ فشل رفع الملف: ' + _err.message);
+    }
+  } else {
+    // قراءة محلية
+    const reader = new FileReader();
+    reader.onload = ev => {
+      _peAttachments.push({ type: fileType, data: ev.target.result, name: file.name, size: file.size });
+      renderPeAttachments();
+      renderPePreview();
+      updatePeAttachBtns();
+    };
+    reader.readAsDataURL(file);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = ({image:'🖼️ صورة',audio:'🎵 صوت',video:'🎥 فيديو',pdf:'📄 ملف'})[fileType]||'📎'; }
+  e.target.value = '';
+}
+
+// معاينة الملفات أثناء الكتابة
+function renderPePreview() {
+  let wrap = document.getElementById('pePreviewWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'pePreviewWrap';
+    wrap.className = 'pe-preview-wrap';
+    document.getElementById('peAttachments').after(wrap);
+  }
+  wrap.innerHTML = _peAttachments.map((a, i) => {
+    const src = a.src || a.data || '';
+    if (a.type === 'image')
+      return `<div class="pe-preview-item"><img src="${src}" alt="">
+        <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
+    if (a.type === 'video')
+      return `<div class="pe-preview-item"><video src="${src}" style="width:100%;height:100%;object-fit:cover"></video>
+        <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
+    if (a.type === 'audio')
+      return `<div class="pe-preview-item pe-preview-audio">🎵<br>${a.name.slice(0,14)}
+        <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
+    if (a.type === 'youtube')
+      return `<div class="pe-preview-item"><img src="https://img.youtube.com/vi/${a.ytId}/mqdefault.jpg"
+        style="width:100%;height:100%;object-fit:cover"><button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
+    return `<div class="pe-preview-item pe-preview-file">📎<br>${a.name.slice(0,14)}
+      <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
+  }).join('');
+}
+
+// كشف YouTube عند اللصق في Textarea
+function onPeInputEnhanced() {
+  onPeInput();
+  const text = document.getElementById('peTextarea').value;
+  const lines = text.split('\n');
+  const last  = lines[lines.length - 1].trim();
+  const ytId  = extractYoutubeId(last);
+  if (ytId && !_peAttachments.find(a => a.ytId === ytId)) {
+    _peAttachments.push({ type:'youtube', ytId, name:'YouTube: '+ytId });
+    // احذف الرابط من النص
+    lines[lines.length-1] = '';
+    document.getElementById('peTextarea').value = lines.join('\n').trimEnd();
+    renderPePreview();
+    showToast('✅ تم إضافة فيديو YouTube');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1882,6 +2382,7 @@ async function initOwnerMode() {
   renderProfileCard(_isOwner);
   buildMainTabs('owner');
   renderBooksTab();
+  showTabVisBtn();
 }
 
 async function initVisitorMode() {
