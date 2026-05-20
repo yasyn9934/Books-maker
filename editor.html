@@ -555,6 +555,147 @@
             .page-wrapper   { margin:0 !important; box-shadow:none !important; border:none !important; }
         }
     </style>
+
+    <style id="qh-modal-styles">
+        /* ══════════════════════════════════════════════════
+           نوافذ البحث في القرآن والحديث
+        ══════════════════════════════════════════════════ */
+        @keyframes qh-modal-in { from { opacity:0; transform:translateY(-18px) scale(.97); } to { opacity:1; transform:none; } }
+        .qh-modal {
+            position:fixed; inset:0;
+            background:rgba(0,0,0,.92);
+            display:none; align-items:flex-start; justify-content:center;
+            z-index:4500; backdrop-filter:blur(14px);
+            padding:16px 10px 10px; overflow-y:auto;
+        }
+        .qh-modal.open { display:flex; }
+        .qh-box {
+            background:var(--surf1,#1e1e1e);
+            border:1px solid var(--gold-line,rgba(201,162,39,.3));
+            border-top:4px solid var(--gold,#c9a227);
+            border-radius:16px;
+            width:min(98vw, 920px);
+            display:flex; flex-direction:column;
+            box-shadow:0 30px 80px rgba(0,0,0,.75);
+            animation:qh-modal-in .25s cubic-bezier(.34,1.56,.64,1);
+            margin:auto;
+        }
+        .qh-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:13px 20px 11px;
+            border-bottom:1px solid var(--gold-line,rgba(201,162,39,.3)); flex-shrink:0;
+        }
+        .qh-title { font-family:'Aref Ruqaa',serif; font-size:17pt; color:var(--gold,#c9a227); }
+        .qh-close {
+            background:rgba(192,57,43,.18); color:#e07070;
+            border:1px solid rgba(192,57,43,.35); border-radius:8px;
+            padding:5px 14px; cursor:pointer; font-size:12.5pt;
+            font-family:'Amiri',serif; transition:all .18s;
+        }
+        .qh-close:hover { background:rgba(192,57,43,.32); color:#ff9898; }
+        .qh-tabs { display:flex; border-bottom:1px solid var(--gold-line,rgba(201,162,39,.3)); flex-shrink:0; }
+        .qh-tab {
+            flex:1; background:none; border:none;
+            border-bottom:2.5px solid transparent;
+            color:var(--text-dim,#888); font-family:'Aref Ruqaa',serif; font-size:12pt;
+            padding:9px 0; cursor:pointer; transition:all .18s;
+        }
+        .qh-tab:hover  { color:var(--text,#eee); background:var(--gold-dim,rgba(201,162,39,.08)); }
+        .qh-tab.active { color:var(--gold,#c9a227); border-bottom-color:var(--gold,#c9a227); background:rgba(201,162,39,.08); }
+        .qh-search-area {
+            padding:12px 18px; border-bottom:1px solid rgba(255,255,255,.05);
+            display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;
+            flex-shrink:0; background:var(--surf2,#262626);
+        }
+        .qh-field { display:flex; flex-direction:column; gap:4px; }
+        .qh-field label { font-family:'Aref Ruqaa',serif; font-size:9.5pt; color:var(--text-muted,#888); white-space:nowrap; }
+        .qh-field input, .qh-field select {
+            background:var(--surf3,#2e2e2e); border:1px solid rgba(255,255,255,.1);
+            border-radius:8px; color:var(--text,#eee); font-family:'Amiri',serif;
+            font-size:12pt; padding:7px 10px; outline:none; transition:border-color .18s;
+        }
+        .qh-field input:focus, .qh-field select:focus { border-color:var(--gold,#c9a227); }
+        .qh-field input[type="number"] { width:88px; }
+        .qh-search-btn {
+            background:linear-gradient(135deg,#4e7c5f,#3a5e47);
+            color:#fff; border:none; border-radius:10px;
+            padding:9px 20px; font-family:'Aref Ruqaa',serif; font-size:13pt;
+            cursor:pointer; transition:all .18s; white-space:nowrap; align-self:flex-end;
+        }
+        .qh-search-btn:hover { filter:brightness(1.12); transform:translateY(-1px); }
+        .qh-search-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+        .qh-filter-bar {
+            display:flex; gap:10px; align-items:center; padding:7px 18px;
+            border-bottom:1px solid rgba(255,255,255,.04);
+            flex-shrink:0; flex-wrap:wrap; background:var(--surf2,#262626);
+        }
+        .qh-filter-label { font-family:'Aref Ruqaa',serif; font-size:10pt; color:var(--text-muted,#888); white-space:nowrap; }
+        .qh-filter-select {
+            background:var(--surf3,#2e2e2e); border:1px solid rgba(255,255,255,.1);
+            border-radius:7px; color:var(--text,#eee); font-family:'Amiri',serif;
+            font-size:11.5pt; padding:4px 10px; outline:none; flex:1; min-width:140px;
+        }
+        .qh-results-count { font-family:'Amiri',serif; font-size:10.5pt; color:var(--text-muted,#888); }
+        .qh-results {
+            flex:1; overflow-y:auto; padding:12px 18px;
+            min-height:220px; max-height:45vh;
+        }
+        .qh-loading, .qh-empty {
+            display:flex; align-items:center; justify-content:center;
+            flex-direction:column; gap:10px;
+            padding:40px 20px; color:var(--text-muted,#888);
+            font-family:'Amiri',serif; font-size:14pt; text-align:center;
+        }
+        .qh-result-item {
+            background:var(--surf2,#262626); border:1px solid rgba(255,255,255,.05);
+            border-radius:10px; padding:11px 16px; margin-bottom:7px;
+            cursor:pointer; transition:all .2s;
+            border-right:3px solid transparent;
+        }
+        .qh-result-item:hover  { background:var(--gold-dim,rgba(201,162,39,.08)); border-right-color:var(--gold-line,rgba(201,162,39,.3)); }
+        .qh-result-item.selected { background:rgba(201,162,39,.18); border-right-color:var(--gold,#c9a227); border-color:var(--gold-line,rgba(201,162,39,.3)); }
+        .qh-verse-text { font-family:'Amiri',serif; font-size:14pt; color:var(--text,#eee); line-height:2; direction:rtl; }
+        .qh-verse-meta { font-family:'Aref Ruqaa',serif; font-size:9.5pt; color:var(--text-muted,#888); display:flex; gap:8px; flex-wrap:wrap; margin-top:5px; align-items:center; }
+        .qh-meta-chip { background:var(--surf3,#2e2e2e); border-radius:20px; padding:2px 10px; color:var(--gold,#c9a227); font-size:9.5pt; border:1px solid var(--gold-line,rgba(201,162,39,.3)); }
+        .qh-tafseer-text { font-family:'Amiri',serif; font-size:12.5pt; color:var(--text-dim,#aaa); line-height:1.85; direction:rtl; margin-top:5px; }
+        .qh-tafseer-source { font-size:9.5pt; color:var(--text-muted,#888); font-family:'Aref Ruqaa',serif; margin-top:4px; }
+        .qh-actions {
+            border-top:1px solid var(--gold-line,rgba(201,162,39,.3)); padding:11px 18px;
+            background:var(--surf2,#262626); display:none;
+            flex-wrap:wrap; gap:8px; align-items:center; flex-shrink:0;
+        }
+        .qh-actions.show { display:flex; }
+        .qh-action-info { font-family:'Amiri',serif; font-size:12pt; color:var(--gold,#c9a227); flex:1; min-width:160px; }
+        .qh-act-btn {
+            background:var(--surf3,#2e2e2e); border:1px solid var(--gold-line,rgba(201,162,39,.3));
+            border-radius:9px; color:var(--text,#eee); font-family:'Amiri',serif; font-size:12pt;
+            padding:7px 15px; cursor:pointer; white-space:nowrap; transition:all .18s;
+        }
+        .qh-act-btn:hover  { background:var(--gold-dim,rgba(201,162,39,.08)); border-color:var(--gold,#c9a227); color:var(--gold,#c9a227); }
+        .qh-act-btn:disabled { opacity:.4; cursor:not-allowed; }
+        .qh-act-btn.primary { background:linear-gradient(135deg,#4e7c5f,#3a5e47); color:#fff; border-color:transparent; }
+        .qh-act-btn.primary:hover { filter:brightness(1.12); }
+        .qh-act-btn.with-tafseer { background:linear-gradient(135deg,#2980b9,#1a5e8a); color:#fff; border-color:transparent; }
+        .qh-act-btn.with-tafseer:hover { filter:brightness(1.1); }
+        #hadithModal .qh-box { border-top-color:#9b59b6; }
+        #hadithModal .qh-title { color:#c39bd3; }
+        #hadithModal .qh-search-btn { background:linear-gradient(135deg,#8e44ad,#6c3483); }
+        .h-grade-sahih { color:#2ecc71 !important; }
+        .h-grade-hasan { color:#3498db !important; }
+        .h-grade-daif  { color:#e74c3c !important; }
+        .qh-sharh-box {
+            background:var(--surf1,#1e1e1e); border-right:3px solid var(--gold-line,rgba(201,162,39,.3));
+            padding:6px 10px; margin-top:6px; border-radius:0 8px 8px 0;
+            font-size:11pt; color:var(--text-dim,#aaa); font-family:'Amiri',serif; line-height:1.75;
+        }
+        .qh-hadith-direct-link {
+            display:inline-flex; align-items:center; gap:5px;
+            color:var(--gold,#c9a227); text-decoration:none; font-family:'Amiri',serif; font-size:12pt;
+            border:1px solid var(--gold-line,rgba(201,162,39,.3)); border-radius:8px; padding:8px 16px;
+            background:var(--gold-dim,rgba(201,162,39,.08)); transition:all .18s; margin-top:8px;
+        }
+        .qh-hadith-direct-link:hover { background:rgba(201,162,39,.3); }
+    </style>
 </head>
 <body>
 
@@ -692,8 +833,8 @@
         <!-- Sub-panel: الميزات -->
         <div id="writing-features" class="writing-sub-panel active">
             <button class="feat-btn" onclick="openFeature('quote',this)">🗣 الاقتباس المميز</button>
-            <button class="feat-btn" onclick="openFeature('quran',this)">﴿﴾ البحث عن الآيات</button>
-            <button class="feat-btn" onclick="openFeature('hadith',this)">« » البحث في الأحاديث</button>
+            <button class="feat-btn" onclick="openQuranModal()">﴿﴾ البحث في القرآن الكريم</button>
+            <button class="feat-btn" onclick="openHadithModal()">« » البحث في الأحاديث</button>
             <button class="feat-btn" onclick="openFeature('media',this)">📦 استدعاء الوسائط</button>
             <button class="feat-btn" onclick="openFeature('format',this)">🖋 تنسيق النصوص</button>
             <button class="feat-btn" onclick="openFeature('footnote',this)">📝 الحواشي</button>
@@ -2371,6 +2512,594 @@
         }, 3000);
     }
 
+/* ══════════════════════════════════════════════════════
+   ██  دالة insertAtCursor — إدراج النص عند موضع المؤشر
+══════════════════════════════════════════════════════ */
+function insertAtCursor(text) {
+    const el = document.getElementById('mainText');
+    if (!el) return;
+    const start = el.selectionStart;
+    const end   = el.selectionEnd;
+    const val   = el.value;
+    el.value = val.substring(0, start) + text + val.substring(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
+    el.focus();
+    if (typeof autoSaveAndBuild === 'function') autoSaveAndBuild();
+}
+
+/* ══════════════════════════════════════════════════════
+   ██  نظام البحث في القرآن الكريم
+══════════════════════════════════════════════════════ */
+const quranState = {
+    qrSources:[],
+    qtSources:[],
+    activeTab:'ayat',
+    searchResults:[],
+    filteredResults:[],
+    selectedResult:null,
+    selectedSurahNum:null,
+    selectedAyahStart:null,
+    selectedAyahEnd:null,
+    selectedSourceKey:null,
+    availableTafseers:[],
+    sourcesLoaded:false,
+    sourcesLoading:false
+};
+
+function openQuranModal() {
+    document.getElementById('quranModal').classList.add('open');
+    if (!quranState.sourcesLoaded && !quranState.sourcesLoading) loadQuranSources();
+    setTimeout(()=>{ const el = document.getElementById('q-text-input'); if(el) el.focus(); }, 100);
+}
+function closeQuranModal() {
+    document.getElementById('quranModal').classList.remove('open');
+    resetQuranSelection();
+}
+
+async function loadQuranSources() {
+    quranState.sourcesLoading = true;
+    const sel = document.getElementById('q-source-select');
+    if (sel) sel.innerHTML = '<option value="">⏳ جاري تحميل المصادر...</option>';
+
+    let manifest = null;
+    try {
+        const r = await fetch('Q/manifest.json');
+        if (r.ok) manifest = await r.json();
+    } catch(e) {}
+
+    const defaultQR = ['QR-hafs','QR-warsh','QR-shu3ba','QR-qalun'];
+    const defaultQT = ['QT-tabari','QT-katheer','QT-saadi','QT-qurtubi','QT-jalalayn'];
+    const qrList    = manifest?.quran   || defaultQR;
+    const qtList    = manifest?.tafseer || defaultQT;
+
+    const probe = async (list, bucket) => {
+        for (const raw of list) {
+            const fname = raw.endsWith('.json') ? raw : raw+'.json';
+            const key   = raw.replace('.json','');
+            try {
+                const r = await fetch(`Q/${fname}`);
+                if (!r.ok) continue;
+                const d = await r.json();
+                if (d?.name) bucket.push({ key, name:d.name, data:d });
+            } catch(e) {}
+        }
+    };
+    await Promise.all([probe(qrList, quranState.qrSources), probe(qtList, quranState.qtSources)]);
+    quranState.sourcesLoaded  = true;
+    quranState.sourcesLoading = false;
+    updateQSourceDropdown();
+}
+
+function updateQSourceDropdown() {
+    const sel    = document.getElementById('q-source-select');
+    if (!sel) return;
+    const isAyat = quranState.activeTab === 'ayat';
+    const list   = isAyat ? quranState.qrSources : quranState.qtSources;
+    if (!list.length) {
+        sel.innerHTML = '<option value="">⚠ لا توجد ملفات في مجلد Q/</option>';
+        return;
+    }
+    sel.innerHTML = '<option value="all">الكل</option>';
+    list.forEach(s => sel.innerHTML += `<option value="${s.key}">${s.name}</option>`);
+}
+
+function switchQTab(tab, btn) {
+    quranState.activeTab = tab;
+    document.querySelectorAll('#quranModal .qh-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    updateQSourceDropdown();
+    document.getElementById('q-results').innerHTML = '<div class="qh-empty">أدخل نصاً للبحث</div>';
+    document.getElementById('q-filter-bar').style.display = 'none';
+    resetQuranSelection();
+}
+
+function doQuranSearch() {
+    const query  = document.getElementById('q-text-input').value.trim();
+    const surahQ = document.getElementById('q-surah-input').value.trim();
+    const ayahQ  = document.getElementById('q-ayah-input').value.trim();
+    const srcKey = document.getElementById('q-source-select').value;
+    const isAyat = quranState.activeTab === 'ayat';
+    const pool   = isAyat ? quranState.qrSources : quranState.qtSources;
+
+    if (!query && !surahQ && !ayahQ) {
+        document.getElementById('q-results').innerHTML = '<div class="qh-empty">الرجاء إدخال نص للبحث أو اسم السورة أو رقم الآية</div>';
+        return;
+    }
+    if (!pool.length) {
+        document.getElementById('q-results').innerHTML = '<div class="qh-empty">⚠ لا توجد ملفات QR-* في مجلد Q/<br><small>تأكد من وجود الملفات وأعد تحميل الصفحة</small></div>';
+        return;
+    }
+
+    document.getElementById('q-results').innerHTML = '<div class="qh-loading">⏳ جاري البحث في كتاب الله...</div>';
+    document.getElementById('q-search-btn').disabled = true;
+    resetQuranSelection();
+
+    requestAnimationFrame(() => {
+        const results = [];
+        const sources = (srcKey==='all'||!srcKey) ? pool : pool.filter(s=>s.key===srcKey);
+        const normQ   = query ? qhNormalizeArabic(query) : '';
+
+        sources.forEach(src => {
+            const surahs = src.data?.surahs || src.data?.chapters || [];
+            surahs.forEach(surah => {
+                if (surahQ && !surah.name?.includes(surahQ) && String(surah.number)!==surahQ) return;
+                const verses = surah.verses || surah.ayahs || [];
+                verses.forEach((v, idx) => {
+                    const ayahNum = idx+1;
+                    if (ayahQ && String(ayahNum)!==ayahQ) return;
+                    const raw  = typeof v==='string' ? v : (v.text||v.tafseer||v.content||'');
+                    const norm = qhNormalizeArabic(raw);
+                    if (normQ && !norm.includes(normQ)) return;
+                    results.push({ sourceKey:src.key, sourceName:src.name, surahNum:surah.number, surahName:surah.name, ayahNum, text:raw });
+                });
+            });
+        });
+
+        quranState.searchResults  = results;
+        quranState.filteredResults = results;
+        renderQuranResults(results, isAyat);
+        document.getElementById('q-search-btn').disabled = false;
+    });
+}
+
+function qhNormalizeArabic(s='') {
+    return s.replace(/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g,'')
+             .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/\s+/g,' ').trim();
+}
+
+function renderQuranResults(results, isAyat) {
+    const box   = document.getElementById('q-results');
+    const fbar  = document.getElementById('q-filter-bar');
+    const query = document.getElementById('q-text-input').value.trim();
+
+    if (!results.length) {
+        box.innerHTML = '<div class="qh-empty">🔍 لا توجد نتائج — جرب كلمات أخرى</div>';
+        fbar.style.display = 'none'; return;
+    }
+
+    const srcKeys  = [...new Set(results.map(r=>r.sourceKey))];
+    const srcNames = {};
+    results.forEach(r=>srcNames[r.sourceKey]=r.sourceName);
+    if (srcKeys.length>1) {
+        const fs = document.getElementById('q-filter-source');
+        fs.innerHTML = '<option value="all">جميع المصادر</option>';
+        srcKeys.forEach(k=>fs.innerHTML+=`<option value="${k}">${srcNames[k]}</option>`);
+        fbar.style.display = 'flex';
+    } else { fbar.style.display='none'; }
+    document.getElementById('q-results-count').textContent = `${results.length} نتيجة`;
+
+    const shown = results.slice(0,120);
+    box.innerHTML = '';
+    shown.forEach((r,i) => {
+        const div = document.createElement('div');
+        div.className = 'qh-result-item';
+        div.dataset.idx = i;
+        if (isAyat) {
+            div.innerHTML = `
+                <div class="qh-verse-text">${qhHlQuery(r.text, query)}</div>
+                <div class="qh-verse-meta">
+                    <span class="qh-meta-chip">📖 ${r.surahName}</span>
+                    <span class="qh-meta-chip">الآية ${qhToArabicNum(r.ayahNum)}</span>
+                    <span style="opacity:.6;font-size:9pt;">${r.sourceName}</span>
+                </div>`;
+        } else {
+            div.innerHTML = `
+                <div class="qh-verse-meta" style="margin-bottom:5px;">
+                    <span class="qh-meta-chip">📖 ${r.surahName}</span>
+                    <span class="qh-meta-chip">الآية ${qhToArabicNum(r.ayahNum)}</span>
+                </div>
+                <div class="qh-tafseer-text">${qhHlQuery(r.text.substring(0,280),query)}${r.text.length>280?'…':''}</div>
+                <div class="qh-tafseer-source">📚 ${r.sourceName}</div>`;
+        }
+        div.onclick = () => selectQResult(i, div);
+        box.appendChild(div);
+    });
+    if (results.length>120)
+        box.innerHTML += `<div class="qh-empty" style="font-size:11pt;padding:14px;">عرض أول ١٢٠ نتيجة من ${results.length}. دقّق البحث للحصول على نتائج أدق.</div>`;
+}
+
+function qhHlQuery(text, q) {
+    if (!q) return text;
+    const esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    try { return text.replace(new RegExp(esc,'g'), m=>`<mark style="background:rgba(201,162,39,.35);border-radius:3px;padding:0 2px;">${m}</mark>`); }
+    catch(e) { return text; }
+}
+
+function qhToArabicNum(n) { return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
+
+function applyQuranFilter() {
+    const f = document.getElementById('q-filter-source').value;
+    quranState.filteredResults = f==='all' ? quranState.searchResults : quranState.searchResults.filter(r=>r.sourceKey===f);
+    renderQuranResults(quranState.filteredResults, quranState.activeTab==='ayat');
+    resetQuranSelection();
+}
+
+function selectQResult(idx, el) {
+    document.querySelectorAll('#q-results .qh-result-item').forEach(d=>d.classList.remove('selected'));
+    el.classList.add('selected');
+    const r = quranState.filteredResults[idx];
+    quranState.selectedResult    = r;
+    quranState.selectedSurahNum  = r.surahNum;
+    quranState.selectedAyahStart = r.ayahNum;
+    quranState.selectedAyahEnd   = r.ayahNum;
+    quranState.selectedSourceKey = r.sourceKey;
+    updateQActionBar();
+    if (quranState.activeTab==='ayat') checkTafseers(r);
+}
+
+function checkTafseers(r) {
+    const btn = document.getElementById('q-tafseer-btn');
+    quranState.availableTafseers = quranState.qtSources.filter(ts => {
+        const s = (ts.data?.surahs||ts.data?.chapters||[]).find(s=>s.number===r.surahNum);
+        const v = (s?.verses||s?.ayahs||[])[r.ayahNum-1];
+        return !!v;
+    });
+    if (btn) btn.style.display = quranState.availableTafseers.length ? 'inline-flex' : 'none';
+}
+
+function updateQActionBar() {
+    const r = quranState.selectedResult; if (!r) return;
+    const pool  = quranState.activeTab==='ayat' ? quranState.qrSources : quranState.qtSources;
+    const src   = pool.find(s=>s.key===quranState.selectedSourceKey);
+    const surah = (src?.data?.surahs||src?.data?.chapters||[]).find(s=>s.number===quranState.selectedSurahNum);
+    const maxA  = (surah?.verses||surah?.ayahs||[]).length||0;
+    const s=quranState.selectedAyahStart, e=quranState.selectedAyahEnd;
+    document.getElementById('q-selection-info').textContent = s===e ? `${r.surahName} — آية ${qhToArabicNum(s)}` : `${r.surahName} — الآيات ${qhToArabicNum(s)} – ${qhToArabicNum(e)}`;
+    document.getElementById('q-actions').classList.add('show');
+    document.getElementById('q-prev-btn').disabled = s<=1;
+    document.getElementById('q-next-btn').disabled = maxA>0 && e>=maxA;
+}
+
+function addAdjacentAyah(dir) {
+    const pool  = quranState.qrSources;
+    const src   = pool.find(s=>s.key===quranState.selectedSourceKey);
+    const surah = (src?.data?.surahs||src?.data?.chapters||[]).find(s=>s.number===quranState.selectedSurahNum);
+    if (!surah) return;
+    const verses = surah.verses||surah.ayahs||[];
+    if (dir===-1 && quranState.selectedAyahStart>1) quranState.selectedAyahStart--;
+    else if (dir===1 && quranState.selectedAyahEnd<verses.length) quranState.selectedAyahEnd++;
+    else return;
+    const textEl = document.querySelector('#q-results .qh-result-item.selected .qh-verse-text');
+    if (textEl && verses.length) {
+        const slice = verses.slice(quranState.selectedAyahStart-1, quranState.selectedAyahEnd);
+        textEl.textContent = qhBuildMultiVerseText(slice, quranState.selectedAyahStart);
+    }
+    updateQActionBar();
+    if (quranState.activeTab==='ayat') checkTafseers(quranState.selectedResult);
+}
+
+function qhBuildMultiVerseText(slice, startNum) {
+    if (slice.length===1) return typeof slice[0]==='string'?slice[0]:(slice[0].text||'');
+    return slice.map((v,i)=>{ const t=typeof v==='string'?v:(v.text||v.content||''); return `${t} ۝${qhToArabicNum(startNum+i)}`; }).join(' ');
+}
+
+function buildVerseInsertText() {
+    const pool  = quranState.qrSources;
+    const src   = pool.find(s=>s.key===quranState.selectedSourceKey);
+    const surah = (src?.data?.surahs||src?.data?.chapters||[]).find(s=>s.number===quranState.selectedSurahNum);
+    if (!surah) return null;
+    const verses = surah.verses||surah.ayahs||[];
+    const s=quranState.selectedAyahStart, e=quranState.selectedAyahEnd;
+    const slice  = verses.slice(s-1, e);
+    const text   = qhBuildMultiVerseText(slice, s);
+    const ref    = s===e ? qhToArabicNum(s) : `${qhToArabicNum(s)}-${qhToArabicNum(e)}`;
+    return `﴿${text}﴾[${surah.name}: ${ref}]`;
+}
+
+function insertQuranVerse() {
+    const str = buildVerseInsertText();
+    if (!str) return;
+    insertAtCursor(str);
+    closeQuranModal();
+}
+
+function showTafseerPicker() {
+    const list  = document.getElementById('tafseer-picker-list');
+    const modal = document.getElementById('tafseerPickerModal');
+    const avail = quranState.availableTafseers;
+    if (!avail.length) { insertQuranVerse(); return; }
+    list.innerHTML = '';
+    avail.forEach(ts => {
+        const div = document.createElement('div');
+        div.className = 'qh-result-item';
+        div.innerHTML = `<div class="qh-verse-text" style="font-size:13pt;">📚 ${ts.name}</div>`;
+        div.onclick = () => { closeTafseerPicker(); insertQuranWithTafseer(ts); };
+        list.appendChild(div);
+    });
+    modal.classList.add('open');
+}
+function closeTafseerPicker() { document.getElementById('tafseerPickerModal').classList.remove('open'); }
+
+function insertQuranWithTafseer(tafseerSrc) {
+    const verseStr = buildVerseInsertText();
+    if (!verseStr) return;
+    const surah = (tafseerSrc.data?.surahs||tafseerSrc.data?.chapters||[]).find(s=>s.number===quranState.selectedSurahNum);
+    if (!surah) { insertAtCursor(verseStr); closeQuranModal(); return; }
+    const vRaw     = (surah.verses||surah.ayahs||[])[quranState.selectedAyahStart-1];
+    const tafsText = typeof vRaw==='string'?vRaw:(vRaw?.tafseer||vRaw?.text||'');
+    const tName    = tafseerSrc.name;
+    const quoteStr = `[«${tafsText}»]{${tName}}[اقتباس]`;
+    insertAtCursor(verseStr + '\n' + quoteStr);
+    closeQuranModal();
+}
+
+function resetQuranSelection() {
+    Object.assign(quranState,{selectedResult:null,selectedSurahNum:null,selectedAyahStart:null,selectedAyahEnd:null,selectedSourceKey:null,availableTafseers:[]});
+    document.getElementById('q-actions')?.classList.remove('show');
+    const tb = document.getElementById('q-tafseer-btn'); if(tb) tb.style.display='none';
+    document.querySelectorAll('#q-results .qh-result-item').forEach(d=>d.classList.remove('selected'));
+}
+
+/* ══════════════════════════════════════════════════════
+   ██  نظام البحث في السنة النبوية — الدرر السنية API
+══════════════════════════════════════════════════════ */
+const hadithState = { results:[], selectedResult:null };
+
+function openHadithModal() {
+    document.getElementById('hadithModal').classList.add('open');
+    setTimeout(()=>{ const el=document.getElementById('h-text-input'); if(el) el.focus(); }, 100);
+}
+function closeHadithModal() {
+    document.getElementById('hadithModal').classList.remove('open');
+    resetHadithSel();
+}
+
+async function doHadithSearch() {
+    const q      = document.getElementById('h-text-input').value.trim();
+    const custom = document.getElementById('h-custom-source').value.trim();
+    if (!q) { document.getElementById('h-results').innerHTML='<div class="qh-empty">الرجاء إدخال نص البحث</div>'; return; }
+    document.getElementById('h-results').innerHTML='<div class="qh-loading">⏳ جاري البحث في موسوعة الحديث...</div>';
+    resetHadithSel();
+    if (custom) {
+        await searchHadithCustom(q, custom);
+    } else {
+        await searchHadithDorar(q);
+    }
+}
+
+async function searchHadithDorar(q) {
+    const box = document.getElementById('h-results');
+    const dorarSearch = `https://dorar.net/hadith?skey=${encodeURIComponent(q)}`;
+    try {
+        /* API الرسمي للدرر السنية: dorar_api.json?skey=<نص البحث>
+           مع proxy لتجاوز CORS من المتصفح */
+        const api   = `https://dorar.net/dorar_api.json?skey=${encodeURIComponent(q)}`;
+        const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(api)}`;
+        const res   = await fetch(proxy, { signal: AbortSignal.timeout(14000) });
+        const raw   = await res.json();
+        const data  = JSON.parse(raw.contents);
+
+        if (!data?.ahadith?.result?.length) {
+            box.innerHTML = `<div class="qh-empty" style="gap:14px;">
+                <div>لا توجد نتائج مطابقة في موسوعة الدرر السنية</div>
+                <a href="${dorarSearch}" target="_blank" class="qh-hadith-direct-link">🔗 البحث مباشرة على الدرر السنية</a>
+            </div>`;
+            return;
+        }
+
+        hadithState.results = data.ahadith.result.map(h => ({
+            text:     qhStripHTML(h.hadith || ''),
+            narrator: h.rawi    || '',
+            scholar:  h.mohdith || '',
+            book:     h.book    || '',
+            page:     h.numberOrPage || '',
+            grade:    h.grade   || '',
+            sharh:    h.hassharhh ? qhStripHTML(h.sharh||'') : '',
+            source:   'الدرر السنية'
+        }));
+        renderHadithResults();
+
+    } catch(e) {
+        box.innerHTML = `<div class="qh-empty" style="gap:14px;">
+            <div>⚠ تعذّر الاتصال بموسوعة الدرر السنية</div>
+            <a href="${dorarSearch}" target="_blank" class="qh-hadith-direct-link">🔗 البحث مباشرة على الدرر السنية</a>
+        </div>`;
+    }
+}
+
+async function searchHadithCustom(q, url) {
+    const box = document.getElementById('h-results');
+    try {
+        const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const res   = await fetch(proxy, { signal: AbortSignal.timeout(12000) });
+        const raw   = await res.json();
+        try {
+            const data = JSON.parse(raw.contents);
+            const arr  = Array.isArray(data) ? data : (data.data||data.hadiths||data.results||[]);
+            const norm = qhNormalizeArabic(q);
+            const hits = arr.filter(h => {
+                const t = h.text||h.hadith||h.matn||h.content||'';
+                return qhNormalizeArabic(t).includes(norm);
+            });
+            hadithState.results = hits.map(h => ({
+                text: h.text||h.hadith||h.matn||h.content||'',
+                narrator: h.narrator||h.rawi||'',
+                scholar:  h.scholar||h.mohdith||'',
+                book:     h.book||h.source||new URL(url).hostname,
+                grade:    h.grade||h.hukm||'',
+                sharh:    '', source: new URL(url).hostname
+            }));
+            if (!hadithState.results.length) {
+                box.innerHTML='<div class="qh-empty">لا توجد نتائج في المصدر المخصص</div>'; return;
+            }
+            renderHadithResults(); return;
+        } catch(e) {}
+        const doc   = new DOMParser().parseFromString(raw.contents,'text/html');
+        const items = doc.querySelectorAll('.hadith,.matn,[class*="hadith"]');
+        if (items.length) {
+            hadithState.results = [...items].slice(0,25).map(el=>({
+                text:el.textContent.trim(), narrator:'', scholar:'',
+                book:new URL(url).hostname, grade:'', sharh:'', source:new URL(url).hostname
+            }));
+            renderHadithResults();
+        } else { box.innerHTML='<div class="qh-empty">لم يُعثر على أحاديث في المصدر المحدد</div>'; }
+    } catch(e) { box.innerHTML='<div class="qh-empty">⚠ فشل الاتصال بالمصدر المخصص</div>'; }
+}
+
+function renderHadithResults() {
+    const box = document.getElementById('h-results');
+    if (!hadithState.results.length) { box.innerHTML='<div class="qh-empty">لا توجد نتائج</div>'; return; }
+    box.innerHTML='';
+    hadithState.results.slice(0,30).forEach((h,i) => {
+        const gc = (h.grade||'').includes('صحيح')?'h-grade-sahih':(h.grade||'').includes('حسن')?'h-grade-hasan':'h-grade-daif';
+        const div = document.createElement('div');
+        div.className = 'qh-result-item';
+        div.innerHTML = `
+            <div class="qh-verse-text" style="font-size:13pt;">«${h.text.substring(0,320)}${h.text.length>320?'…':''}»</div>
+            <div class="qh-verse-meta">
+                ${h.scholar ? `<span class="qh-meta-chip">👤 ${h.scholar}</span>` : ''}
+                ${h.book    ? `<span class="qh-meta-chip">📚 ${h.book}</span>`    : ''}
+                ${h.grade   ? `<span class="qh-meta-chip ${gc}">⚖ ${h.grade}</span>` : ''}
+                <span style="opacity:.6;font-size:9pt;">${h.source}</span>
+            </div>
+            ${h.sharh ? `<div class="qh-sharh-box">💬 ${h.sharh.substring(0,220)}…</div>` : ''}`;
+        div.onclick = () => selectHadith(i, div);
+        box.appendChild(div);
+    });
+}
+
+function selectHadith(idx, el) {
+    document.querySelectorAll('#h-results .qh-result-item').forEach(d=>d.classList.remove('selected'));
+    el.classList.add('selected');
+    hadithState.selectedResult = hadithState.results[idx];
+    const h = hadithState.selectedResult;
+    document.getElementById('h-selection-info').textContent = h.book ? `📚 ${h.book}` : '✅ حديث محدد';
+    document.getElementById('h-actions').classList.add('show');
+}
+
+function insertHadithResult() {
+    const h = hadithState.selectedResult; if(!h) return;
+    const ref = [h.book, h.scholar].filter(Boolean).join('/');
+    insertAtCursor(`«${h.text}»${ref ? `[${ref}]` : ''}`);
+    closeHadithModal();
+}
+
+function resetHadithSel() {
+    hadithState.selectedResult = null;
+    document.getElementById('h-actions')?.classList.remove('show');
+    document.querySelectorAll('#h-results .qh-result-item').forEach(d=>d.classList.remove('selected'));
+}
+
+function qhStripHTML(s='') {
+    return s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+}
+
 </script>
+
+<!-- ════════════════════════════════════════════════════
+     نافذة البحث في القرآن الكريم
+════════════════════════════════════════════════════ -->
+<div id="quranModal" class="qh-modal">
+    <div class="qh-box">
+        <div class="qh-header">
+            <span class="qh-title">﴾﴿ البحث في القرآن الكريم</span>
+            <button class="qh-close" onclick="closeQuranModal()">✖ إغلاق</button>
+        </div>
+        <div class="qh-tabs">
+            <button class="qh-tab active" id="qtab-ayat"    onclick="switchQTab('ayat',this)">🔍 الآيات والسور</button>
+            <button class="qh-tab"        id="qtab-tafseer" onclick="switchQTab('tafseer',this)">📖 التفسير</button>
+        </div>
+        <div class="qh-search-area">
+            <div class="qh-field" style="flex:2;min-width:170px;">
+                <label>نص الآية أو جزء منها</label>
+                <input type="text" id="q-text-input" placeholder="ابحث بالنص..." onkeydown="if(event.key==='Enter')doQuranSearch()">
+            </div>
+            <div class="qh-field" style="min-width:120px;">
+                <label>اسم السورة</label>
+                <input type="text" id="q-surah-input" placeholder="الفاتحة..." onkeydown="if(event.key==='Enter')doQuranSearch()">
+            </div>
+            <div class="qh-field">
+                <label>رقم الآية</label>
+                <input type="number" id="q-ayah-input" placeholder="١" min="1" onkeydown="if(event.key==='Enter')doQuranSearch()">
+            </div>
+            <div class="qh-field" id="q-source-field" style="min-width:150px;">
+                <label>المصدر / الرواية</label>
+                <select id="q-source-select">
+                    <option value="">⏳ جاري التحميل...</option>
+                </select>
+            </div>
+            <button class="qh-search-btn" id="q-search-btn" onclick="doQuranSearch()">🔍 بحث</button>
+        </div>
+        <div class="qh-filter-bar" id="q-filter-bar" style="display:none;">
+            <span class="qh-filter-label">🔽 تصفية حسب المصدر:</span>
+            <select class="qh-filter-select" id="q-filter-source" onchange="applyQuranFilter()">
+                <option value="all">جميع المصادر</option>
+            </select>
+            <span class="qh-results-count" id="q-results-count"></span>
+        </div>
+        <div class="qh-results" id="q-results">
+            <div class="qh-empty">أدخل نصاً للبحث في كتاب الله ﷻ</div>
+        </div>
+        <div class="qh-actions" id="q-actions">
+            <span class="qh-action-info" id="q-selection-info">—</span>
+            <button class="qh-act-btn" id="q-prev-btn" onclick="addAdjacentAyah(-1)" title="إضافة الآية السابقة">→ الآية السابقة</button>
+            <button class="qh-act-btn" id="q-next-btn" onclick="addAdjacentAyah(1)"  title="إضافة الآية التالية">الآية التالية ←</button>
+            <button class="qh-act-btn primary"      onclick="insertQuranVerse()">✔ إضافة الآية</button>
+            <button class="qh-act-btn with-tafseer" id="q-tafseer-btn" onclick="showTafseerPicker()" style="display:none;">📖 إضافة مع التفسير</button>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     نافذة البحث في السنة النبوية — الدرر السنية
+════════════════════════════════════════════════════ -->
+<div id="hadithModal" class="qh-modal">
+    <div class="qh-box">
+        <div class="qh-header">
+            <span class="qh-title">« » البحث في السنة النبوية</span>
+            <button class="qh-close" onclick="closeHadithModal()">✖ إغلاق</button>
+        </div>
+        <div class="qh-search-area" style="background:rgba(142,68,173,.07);">
+            <div class="qh-field" style="flex:2;min-width:180px;">
+                <label>نص البحث في الحديث</label>
+                <input type="text" id="h-text-input" placeholder="ابحث في الأحاديث النبوية الشريفة..." onkeydown="if(event.key==='Enter')doHadithSearch()">
+            </div>
+            <div class="qh-field" style="flex:1;min-width:190px;">
+                <label>مصدر مخصص <span style="opacity:.6">(اختياري — الافتراضي: الدرر السنية)</span></label>
+                <input type="text" id="h-custom-source" placeholder="رابط ملف JSON أو موقع للبحث فيه...">
+            </div>
+            <button class="qh-search-btn" onclick="doHadithSearch()">🔍 بحث</button>
+        </div>
+        <div class="qh-results" id="h-results">
+            <div class="qh-empty">ابحث في موسوعة الدرر السنية</div>
+        </div>
+        <div class="qh-actions" id="h-actions">
+            <span class="qh-action-info" id="h-selection-info">—</span>
+            <button class="qh-act-btn primary" onclick="insertHadithResult()">✔ إضافة الحديث</button>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة اختيار التفسير (ثانوية) -->
+<div id="tafseerPickerModal" class="qh-modal" style="z-index:4600;">
+    <div class="qh-box" style="max-width:500px;">
+        <div class="qh-header">
+            <span class="qh-title" style="font-size:14pt;">اختر كتاب التفسير</span>
+            <button class="qh-close" onclick="closeTafseerPicker()">✖</button>
+        </div>
+        <div class="qh-results" id="tafseer-picker-list" style="max-height:55vh;"></div>
+    </div>
+</div>
+
 </body>
 </html>
