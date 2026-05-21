@@ -207,14 +207,48 @@
     .deleted-info{background:#fff3cd;border:1px solid #ffc107;border-radius:10px;
       padding:12px 16px;font-size:10.5pt;color:#856404;margin-bottom:14px;}
 
-    /* MINI MENU */
-    .mini-menu-overlay{position:fixed;inset:0;z-index:600;display:none;}
-    .mini-menu{position:fixed;background:var(--card);border-radius:14px;
-      box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:200px;z-index:601;overflow:hidden;border:1px solid var(--border);display:none;}
-    .mini-menu-item{padding:12px 18px;cursor:pointer;font-size:11pt;
-      display:flex;align-items:center;gap:10px;transition:.15s;}
-    .mini-menu-item:hover{background:#f5f5f5;}
-    .mini-menu-item.danger{color:#e74c3c;}
+    /* ── ACTION MODAL (بديل mini-menu) ── */
+    .action-modal-overlay{
+      position:fixed;inset:0;z-index:600;display:none;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      align-items:flex-end;justify-content:center;
+    }
+    @media(min-width:600px){
+      .action-modal-overlay{ align-items:center; }
+      .action-modal-box{ border-radius:16px !important; max-width:420px; }
+    }
+    .action-modal-box{
+      background:var(--card);width:100%;max-width:500px;
+      border-radius:20px 20px 0 0;
+      padding:6px 0 16px;
+      box-shadow:0 -8px 40px rgba(0,0,0,.2);
+      animation:slideUp .22s ease;
+    }
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .action-modal-handle{
+      width:40px;height:4px;border-radius:2px;background:#ddd;
+      margin:10px auto 14px;
+    }
+    .action-modal-title{
+      font-family:'Aref Ruqaa',serif;font-size:13pt;color:#555;
+      text-align:center;padding:0 16px 10px;
+      border-bottom:1px solid var(--border);margin-bottom:6px;
+    }
+    .action-modal-item{
+      display:flex;align-items:center;gap:14px;
+      padding:13px 22px;cursor:pointer;transition:.15s;
+      font-size:12pt;
+    }
+    .action-modal-item:hover{background:#f5f5f5;}
+    .action-modal-item.danger{color:#e74c3c;}
+    .action-modal-item-icon{font-size:18pt;width:28px;text-align:center;flex-shrink:0;}
+    .action-modal-cancel{
+      margin:8px 16px 0;width:calc(100% - 32px);
+      padding:12px;border-radius:12px;border:none;
+      background:#f0f0f0;font-family:'Amiri',serif;font-size:12pt;
+      cursor:pointer;transition:.2s;color:#555;
+    }
+    .action-modal-cancel:hover{background:#e0e0e0;}
 
     /* MODALS */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;
@@ -695,9 +729,15 @@
 
 </div><!-- /profile-wrapper -->
 
-<!-- MINI MENU -->
-<div class="mini-menu-overlay" id="miniMenuOverlay" onclick="closeMiniMenu()"></div>
-<div class="mini-menu" id="miniMenu"></div>
+<!-- ACTION MODAL (نافذة الخيارات) -->
+<div class="action-modal-overlay" id="actionModalOverlay" onclick="closeActionModal()">
+  <div class="action-modal-box" onclick="event.stopPropagation()">
+    <div class="action-modal-handle"></div>
+    <div class="action-modal-title" id="actionModalTitle"></div>
+    <div id="actionModalItems"></div>
+    <button class="action-modal-cancel" onclick="closeActionModal()">إلغاء</button>
+  </div>
+</div>
 
 <!-- ══════════ POST EDITOR OVERLAY ══════════ -->
 <div class="pe-overlay" id="peOverlay">
@@ -1468,24 +1508,28 @@ function goToNotifPost(postId, userId) {
 // ─────────────────────────────────────────────
 // MINI MENU
 // ─────────────────────────────────────────────
-function showMiniMenu(items, e) {
-  const menu = document.getElementById('miniMenu');
-  menu.innerHTML = items.map(item=>
-    `<div class="mini-menu-item ${item.danger?'danger':''}" onclick="closeMiniMenu();${item.fn}">
-      <span>${item.icon}</span>${item.label}</div>`
+function showMiniMenu(items, e, title) {
+  const overlay   = document.getElementById('actionModalOverlay');
+  const titleEl   = document.getElementById('actionModalTitle');
+  const itemsEl   = document.getElementById('actionModalItems');
+  titleEl.textContent = title || '';
+  titleEl.style.display = title ? 'block' : 'none';
+  itemsEl.innerHTML = items.map(item =>
+    `<div class="action-modal-item ${item.danger?'danger':''}"
+          onclick="closeActionModal();${item.fn}">
+      <span class="action-modal-item-icon">${item.icon}</span>
+      <span>${item.label}</span>
+    </div>`
   ).join('');
-  const r = e.target.getBoundingClientRect();
-  const w = 220;
-  let left = r.right - w;
-  if (left < 8) left = 8;
-  menu.style.cssText = `top:${r.bottom+6}px;left:${left}px;display:block;`;
-  document.getElementById('miniMenuOverlay').style.display = 'block';
+  overlay.style.display = 'flex';
 }
 
-function closeMiniMenu() {
-  document.getElementById('miniMenu').style.display = 'none';
-  document.getElementById('miniMenuOverlay').style.display = 'none';
+function closeActionModal() {
+  document.getElementById('actionModalOverlay').style.display = 'none';
 }
+
+// أبقِ الاسم القديم للتوافق مع أي كود يستدعيه
+const closeMiniMenu = closeActionModal;
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -1555,10 +1599,13 @@ function saveTabVisibility() {
   localStorage.setItem('royal_tab_visibility', JSON.stringify(saved));
   closeModal('tabVisModal');
   showToast('✅ تم حفظ إعدادات التبويبات');
-  // مزامنة للسحابة
   if (navigator.onLine && currentUser && currentUser.role === 'member') {
+    const viewedShares = JSON.parse(localStorage.getItem('royal_viewed_shares') || '[]');
     fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-      action: 'save_tab_visibility', userId: currentUser.id, visibility: saved
+      action: 'save_tab_visibility',
+      userId: currentUser.id,
+      visibility: saved,
+      viewedShares
     })}).catch(()=>{});
   }
 }
@@ -1571,10 +1618,14 @@ function showTabVisBtn() {
 
 // تحقق من رؤية تبويب ما للزائر
 function isTabVisible(tabKey) {
-  const vis = _visitorProfile && _visitorProfile.tabVisibility
-    ? _visitorProfile.tabVisibility
-    : JSON.parse(localStorage.getItem('royal_tab_visibility') || '{}');
-  const mode    = (vis[tabKey] || 'all');
+  // للمالك: اقرأ من localStorage
+  if (_isOwner) {
+    const vis  = JSON.parse(localStorage.getItem('royal_tab_visibility') || '{}');
+    return vis[tabKey] !== 'hidden';
+  }
+  // للزائر: اعتمد على bيانات المستخدم المزار (tabVisibility من getPublicProfile)
+  const vis     = (_visitorProfile && _visitorProfile.tabVisibility) || {};
+  const mode    = vis[tabKey] || 'all';
   const myId    = currentUser && currentUser.id || '';
   const ownerId = _targetUid || '';
   if (mode === 'all')      return true;
@@ -1752,39 +1803,94 @@ async function publishPost() {
   if (text.length > _peMaxChars) { showToast('⚠️ تجاوزت حد الحروف'); return; }
 
   const btn = document.getElementById('pePublishBtn');
-  btn.disabled = true; btn.textContent = 'جاري النشر...';
+  btn.disabled = true; btn.textContent = 'جاري الرفع...';
 
+  // ── رفع كل الملفات إلى السحابة أولاً، واستبدال base64 بالرابط ──
+  // base64 لا يُخزَّن أبداً في localStorage لتجنب QuotaExceededError
+  const uploadedAtts = [];
+  for (const att of _peAttachments) {
+    if (att.type === 'youtube') {
+      uploadedAtts.push(att);  // يوتيوب لا يحتاج رفع
+      continue;
+    }
+    if (att.src && !att.data) {
+      uploadedAtts.push(att);  // مرفوع مسبقاً من uploadLargeFile
+      continue;
+    }
+    if (att.data) {
+      // ارفع إلى Drive واحصل على رابط
+      if (navigator.onLine && currentUser && currentUser.role === 'member') {
+        try {
+          btn.textContent = 'جاري رفع: ' + att.name.slice(0, 20) + '...';
+          const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
+            body: JSON.stringify({
+              action:   'upload_file',
+              userId:   currentUser.id,
+              fileName: att.name,
+              mimeType: att.mimeType || '',
+              data:     att.data
+            })
+          });
+          const result = await res.json();
+          if (result.success) {
+            // احفظ الرابط فقط — لا base64
+            uploadedAtts.push({ type: att.type, src: result.fileUrl, name: att.name, isCloud: true });
+          } else {
+            showToast('⚠️ فشل رفع: ' + att.name); return;
+          }
+        } catch(_e) {
+          showToast('⚠️ خطأ في رفع: ' + att.name); return;
+        }
+      } else {
+        // أوفلاين: احفظ مؤشراً مؤقتاً فقط (بلا base64)
+        uploadedAtts.push({ type: att.type, name: att.name, pending: true });
+        localStorage.setItem('royal_pending_posts_sync', 'true');
+      }
+    }
+  }
+
+  btn.textContent = 'جاري النشر...';
+
+  const postId = _peEditId || ('p_' + Date.now());
   const post = {
-    id:          _peEditId || ('p_' + Date.now()),
-    type:        _peMode,
+    id:           postId,
+    type:         _peMode,
     text,
-    attachments: _peAttachments,
-    visibility:  { mode: 'all', accounts: [] },
-    reactions:   { heart:[], like:[], laugh:[] },
+    attachments:  uploadedAtts,   // روابط فقط — لا base64
+    visibility:   { mode: 'all', accounts: [] },
+    reactions:    { heart:[], like:[], laugh:[] },
     commentsCount: 0,
-    hidden:      false,
-    createdAt:   _peEditId ? undefined : Date.now(),
-    updatedAt:   Date.now()
+    hidden:       false,
+    createdAt:    _peEditId ? undefined : Date.now(),
+    updatedAt:    Date.now()
   };
 
-  // حفظ محلي
-  const key = _peMode === 'doc' ? 'royal_docs' : 'royal_posts';
-  let feed  = JSON.parse(localStorage.getItem(key) || '[]');
+  // حفظ محلي (خالٍ من base64 — آمن على localStorage)
+  const key  = _peMode === 'doc' ? 'royal_docs' : 'royal_posts';
+  let feed   = JSON.parse(localStorage.getItem(key) || '[]');
   if (_peEditId) {
     const idx = feed.findIndex(p => p.id === _peEditId);
     if (idx > -1) feed[idx] = { ...feed[idx], ...post }; else feed.unshift(post);
   } else {
     feed.unshift(post);
   }
-  localStorage.setItem(key, JSON.stringify(feed));
+  try {
+    localStorage.setItem(key, JSON.stringify(feed));
+  } catch(quotaErr) {
+    // إذا امتلأت المساحة حتى بعد حذف base64 — أبقِ آخر 20 منشور فقط
+    feed = feed.slice(0, 20);
+    try { localStorage.setItem(key, JSON.stringify(feed)); } catch(_) {}
+    showToast('⚠️ تم حذف المنشورات القديمة لتوفير مساحة');
+  }
 
-  // رفع للسحابة
+  // رفع بيانات المنشور (metadata) للسحابة
   if (navigator.onLine && currentUser && currentUser.role === 'member') {
     try {
       await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-        action:  'save_post',
-        userId:  currentUser.id,
-        userName:currentUser.username,
+        action:   'save_post',
+        userId:   currentUser.id,
+        userName: currentUser.username,
+        userPhoto: currentUser.profilePhoto || '',
         post
       })});
     } catch(_) {
