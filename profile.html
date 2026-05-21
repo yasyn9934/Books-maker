@@ -15,6 +15,8 @@
     }
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);min-height:100vh;user-select:none;-webkit-user-select:none;}
+    @keyframes sk-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .sk-line,.sk-circle{animation:sk-pulse 1.4s ease-in-out infinite;}
 
     /* TOP BAR */
     .topbar{position:sticky;top:0;z-index:200;background:var(--card);
@@ -477,13 +479,70 @@
     }
 
     /* ══════════ صور / slider / صوتيات ══════════ */
-    .post-imgs-grid{ display:flex;flex-wrap:wrap;gap:6px;margin-top:10px; }
-    .post-imgs-grid img{
-      border-radius:8px;object-fit:cover;cursor:pointer;
-      flex:1 1 calc(50% - 3px);max-height:220px;min-width:80px;
+    .post-imgs-grid{
+      display:grid; gap:2px; margin-top:8px; border-radius:10px; overflow:hidden;
+      width:100%; aspect-ratio:auto;
     }
-    .post-imgs-grid[data-count="1"] img{ flex:1 1 100%;max-height:300px; }
-    .post-imgs-grid[data-count="3"] img:first-child{ flex:1 1 100%; }
+    /* 1 صورة */
+    .post-imgs-grid[data-count="1"]{ grid-template-columns:1fr; }
+    .post-imgs-grid[data-count="1"] img{ height:280px; }
+    /* 2 صورتان */
+    .post-imgs-grid[data-count="2"]{ grid-template-columns:1fr 1fr; }
+    .post-imgs-grid[data-count="2"] img{ height:200px; }
+    /* 3 صور */
+    .post-imgs-grid[data-count="3"]{
+      grid-template-columns:1fr 1fr; grid-template-rows:auto auto;
+    }
+    .post-imgs-grid[data-count="3"] img:nth-child(1){
+      grid-column:1/3; height:200px;
+    }
+    .post-imgs-grid[data-count="3"] img:nth-child(2),
+    .post-imgs-grid[data-count="3"] img:nth-child(3){ height:150px; }
+    /* 4 صور */
+    .post-imgs-grid[data-count="4"]{ grid-template-columns:1fr 1fr; }
+    .post-imgs-grid[data-count="4"] img{ height:160px; }
+    /* 5 صور */
+    .post-imgs-grid[data-count="5"]{ grid-template-columns:1fr 1fr; }
+    .post-imgs-grid[data-count="5"] img:nth-child(1){ grid-column:1/3; height:200px; }
+    .post-imgs-grid[data-count="5"] img:nth-child(2),
+    .post-imgs-grid[data-count="5"] img:nth-child(3){ height:140px; }
+    /* 6 صور */
+    .post-imgs-grid[data-count="6"]{ grid-template-columns:repeat(3,1fr); }
+    .post-imgs-grid[data-count="6"] img{ height:140px; }
+    /* مشترك */
+    .post-imgs-grid img{
+      width:100%; object-fit:cover; cursor:pointer; display:block;
+    }
+    /* صورة "+" */
+    .post-img-more{
+      position:relative; cursor:pointer; display:block; width:100%;
+    }
+    .post-img-more img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .post-img-more-overlay{
+      position:absolute; inset:0; background:rgba(0,0,0,.55);
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:22pt; font-weight:bold;
+    }
+
+    /* media frames للصوت/الفيديو من Drive */
+    .drive-media-frame{
+      width:100%; border:none; border-radius:10px; display:block;
+      background:#000;
+    }
+    .drive-media-frame.audio-frame{ height:80px; }
+    .drive-media-frame.video-frame{ height:240px; }
+
+    /* files grid — مثل الصور لكن بأيقونات */
+    .post-files-grid{
+      display:grid; gap:2px; margin-top:8px; border-radius:10px; overflow:hidden;
+    }
+    .post-file-thumb{
+      background:#f0f4ec; padding:16px; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:4px; font-size:10pt; text-align:center;
+    }
+    .post-file-thumb:hover{ background:#e0ede0; }
+    .post-file-thumb .file-icon{ font-size:26pt; }
 
     /* gallery overlay */
     .gallery-overlay{
@@ -693,8 +752,21 @@
 <!-- MAIN CONTENT -->
 <div class="profile-wrapper">
 
+  <!-- SKELETON -->
+  <div id="profileSkeleton" class="profile-card" style="padding:24px">
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:16px">
+      <div class="sk-circle" style="width:80px;height:80px;border-radius:50%;background:#e8e8e8"></div>
+      <div style="flex:1">
+        <div class="sk-line" style="width:55%;height:18px;margin-bottom:10px;background:#e8e8e8;border-radius:6px"></div>
+        <div class="sk-line" style="width:35%;height:13px;background:#efefef;border-radius:6px"></div>
+      </div>
+    </div>
+    <div class="sk-line" style="width:100%;height:11px;margin-bottom:7px;background:#efefef;border-radius:6px"></div>
+    <div class="sk-line" style="width:70%;height:11px;background:#efefef;border-radius:6px"></div>
+  </div>
+
   <!-- PROFILE CARD -->
-  <div class="profile-card">
+  <div class="profile-card" id="profileCard" style="display:none">
     <div class="profile-cover" id="profileCover">
       <div class="profile-avatar-wrap">
         <div class="profile-avatar" id="profileAvatar">👤</div>
@@ -709,15 +781,14 @@
       <div class="profile-bio" id="profileBio" style="display:none"></div>
       <div class="profile-meta"    id="profileMeta"></div>
       <div class="profile-socials"  id="profileSocials"></div>
-      <!-- زر تعديل الحساب (صاحب الحساب فقط) -->
       <button class="profile-edit-btn" id="editBtn" onclick="window.location.href='edit-account.html'">✏️ تعديل الحساب</button>
       <button class="profile-edit-btn" id="tabVisBtn"
         onclick="openTabVisibilityModal()"
         style="display:none;background:#555;margin-right:8px">⚙️ إعدادات التبويبات</button>
-      <!-- زر المتابعة (الزوار فقط) -->
       <button class="follow-btn" id="followBtn" onclick="toggleFollow()" style="display:none">➕ متابعة</button>
     </div>
   </div>
+
 
   <!-- MAIN TABS — يتغير حسب الوضع -->
   <div class="main-tabs" id="mainTabsWrap">
@@ -875,6 +946,69 @@ let currentShareTab = 'mine';
 let currentNotifTab = 'all';
 let myShares        = [];
 
+// ══════════════════════════════════════════════
+// IndexedDB MEDIA CACHE
+// ══════════════════════════════════════════════
+const MEDIA_CACHE_DB = 'royal_media_cache';
+const MEDIA_STORE    = 'files';
+let _idb = null;
+
+function openIDB() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(MEDIA_CACHE_DB, 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(MEDIA_STORE)) {
+        db.createObjectStore(MEDIA_STORE, { keyPath:'url' });
+      }
+    };
+    req.onsuccess = e => { _idb = e.target.result; res(_idb); };
+    req.onerror   = ()=> rej(req.error);
+  });
+}
+
+async function getCachedMedia(url) {
+  try {
+    const db    = await openIDB();
+    const tx    = db.transaction(MEDIA_STORE,'readonly');
+    const store = tx.objectStore(MEDIA_STORE);
+    return new Promise(res => {
+      const req = store.get(url);
+      req.onsuccess = () => res(req.result || null);
+      req.onerror   = () => res(null);
+    });
+  } catch(_) { return null; }
+}
+
+async function setCachedMedia(url, blob, modifiedAt) {
+  try {
+    const db    = await openIDB();
+    const tx    = db.transaction(MEDIA_STORE,'readwrite');
+    tx.objectStore(MEDIA_STORE).put({ url, blob, modifiedAt: modifiedAt || Date.now(), cachedAt: Date.now() });
+  } catch(_) {}
+}
+
+// تحميل وسيط مع كاش: يعيد blob URL أو src أصلي إن فشل
+async function loadMediaCached(url) {
+  if (!url) return url;
+  // Drive thumbnail URLs تعمل مباشرة في <img> — لا نُخزّنها في cache الصور كبيرة
+  if (url.includes('drive.google.com/thumbnail')) return url;
+  const cached = await getCachedMedia(url);
+  if (cached && cached.blob) {
+    return URL.createObjectURL(cached.blob);
+  }
+  try {
+    const resp = await fetch(url, { mode:'cors' });
+    if (!resp.ok) return url;
+    const blob = await resp.blob();
+    await setCachedMedia(url, blob);
+    return URL.createObjectURL(blob);
+  } catch(_) {
+    return url;  // استخدم URL مباشرة كـ fallback
+  }
+}
+
 // ─────────────────────────────────────────────
 // وضع الصفحة: Owner أو Visitor
 // ─────────────────────────────────────────────
@@ -894,6 +1028,11 @@ let _visitorCatTab   = 'all';
 function renderProfileCard(isOwner) {
   const u = isOwner ? currentUser : _visitorProfile;
   if (!u) return;
+  // إخفاء skeleton وإظهار البطاقة
+  const sk   = document.getElementById('profileSkeleton');
+  const card = document.getElementById('profileCard');
+  if (sk)   sk.style.display   = 'none';
+  if (card) card.style.display = 'block';
 
   const color = u.cardColor || '#2c3e50';
   document.getElementById('profileCover').style.background = color;
@@ -1938,21 +2077,45 @@ function buildPostCard(post, isOwner) {
   const ytbs   = atts.filter(a => a.type==='youtube');
   const pid    = post.id;
 
-  const imgsHtml = images.length ? `<div class="post-imgs-grid" data-count="${images.length}">
-    ${images.map((a,i)=>`<img src="${a.src||a.data||''}" alt=""
-      onclick="openGallery('${pid}',${i})" loading="lazy">`).join('')}
+  // ── الصور: grid ذكي ──
+  const imgsHtml = images.length ? buildImgGrid(images, pid) : '';
+
+  // ── الفيديوهات: iframe Drive أو video tag ──
+  const vidsHtml = videos.length ? `<div class="post-vid-slider" id="slider_${pid}_video">
+    ${videos.map((a,i)=>{
+      const src = a.src||a.data||'';
+      const isDrive = src.includes('drive.google.com');
+      if (isDrive) return `<iframe class="drive-media-frame video-frame${i>0?' hidden-slide':''}"
+        src="${src}" allowfullscreen loading="lazy"></iframe>`;
+      return `<video class="${i===0?'active':''}" controls ${i>0?'style="display:none"':''}>
+        <source src="${src}"></video>`;
+    }).join('')}
+    ${videos.length>1?`<div class="slider-arrows">
+      <button class="slider-arr" onclick="sliderNav('${pid}','vid',1)">&#8249;</button>
+      <button class="slider-arr" onclick="sliderNav('${pid}','vid',-1)">&#8250;</button>
+    </div>`:''}
   </div>` : '';
-  const vidsHtml = videos.length ? buildSlider(videos,'video',pid) : '';
-  const audsHtml = audios.length
-    ? `<div class="post-audios">${audios.map(a=>`<audio class="post-media-audio" controls>
-        <source src="${a.src||a.data||''}"></audio>`).join('')}</div>` : '';
-  const filesHtml = files.map(a=>
-    `<a class="post-file-chip" href="${a.src||a.data||'#'}" download="${a.name}" target="_blank">📎 ${a.name}</a>`
-  ).join('');
+
+  // ── الصوتيات: iframe Drive أو audio tag ──
+  const audsHtml = audios.length ? `<div class="post-audios">
+    ${audios.map(a=>{
+      const src = a.src||a.data||'';
+      const isDrive = src.includes('drive.google.com');
+      if (isDrive) return `<iframe class="drive-media-frame audio-frame"
+        src="${src}" loading="lazy"></iframe>`;
+      return `<audio class="post-media-audio" controls><source src="${src}"></audio>`;
+    }).join('')}
+  </div>` : '';
+
+  // ── الملفات: grid مثل الصور ──
+  const filesHtml = files.length ? buildFileGrid(files, pid) : '';
+
+  // ── يوتيوب ──
   const ytHtml = ytbs.map(a=>
     `<div class="pe-yt-preview"><iframe src="https://www.youtube.com/embed/${a.ytId}"
       allowfullscreen loading="lazy"></iframe></div>`
   ).join('');
+
   const mediaHtml = imgsHtml + vidsHtml + audsHtml + filesHtml + ytHtml;
 
   // الردود والتفاعلات
@@ -2112,33 +2275,116 @@ function sliderNav(postId, type, dir) {
   items[cur].style.display = '';
 }
 
-// gallery للصور
-let _galleryImages = [];
-let _galleryIdx    = 0;
+// ── buildImgGrid: grid ذكي للصور ──
+function buildImgGrid(images, pid) {
+  const n = Math.min(images.length, 6);
+  const visImgs = images.slice(0, n);
+  const more    = images.length > 6 ? images.length - 5 : 0;
+
+  return `<div class="post-imgs-grid" data-count="${n}">
+    ${visImgs.map((a, i) => {
+      const src = a.src || a.data || '';
+      const isLast = more > 0 && i === 4;
+      if (isLast) return `<div class="post-img-more" onclick="openGallery('${pid}',${i})">
+        <img src="${src}" alt="" loading="lazy">
+        <div class="post-img-more-overlay">+${more}</div>
+      </div>`;
+      return `<img src="${src}" alt="" onclick="openGallery('${pid}',${i})" loading="lazy">`;
+    }).join('')}
+  </div>`;
+}
+
+// ── buildFileGrid: نفس منطق الصور لكن للملفات ──
+function buildFileGrid(files, pid) {
+  const icons = { pdf:'📄', html:'🌐', txt:'📝', doc:'📃', docx:'📃' };
+  const n = Math.min(files.length, 6);
+  const visFiles = files.slice(0, n);
+  const more     = files.length > 6 ? files.length - 5 : 0;
+  const gridCols = n <= 1 ? '1fr' : n <= 2 ? '1fr 1fr' : 'repeat(3,1fr)';
+
+  return `<div class="post-files-grid" style="grid-template-columns:${gridCols}">
+    ${visFiles.map((a, i) => {
+      const ext  = (a.name || '').split('.').pop().toLowerCase();
+      const icon = icons[ext] || '📎';
+      const isLast = more > 0 && i === 4;
+      const src  = a.src || a.data || '#';
+      if (isLast) return `<div class="post-file-thumb" onclick="openFileGallery('${pid}',${i})">
+        <span class="file-icon">${icon}</span>
+        <span style="font-size:8.5pt;color:#888">+${more} أخرى</span>
+      </div>`;
+      return `<div class="post-file-thumb" onclick="openFileGallery('${pid}',${i})">
+        <span class="file-icon">${icon}</span>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%">${a.name||'ملف'}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ── gallery للصور والملفات ──
+let _galleryItems = [];
+let _galleryIdx   = 0;
+let _galleryType  = 'image';
 
 function openGallery(postId, idx) {
-  // جمع صور هذا المنشور
-  const allPosts = [
+  const allPosts = getAllLocalPosts();
+  const post     = allPosts.find(p => p.id === postId);
+  if (!post) return;
+  _galleryItems = (post.attachments||[]).filter(a=>a.type==='image');
+  _galleryType  = 'image';
+  _openGalleryAt(idx);
+}
+
+function openFileGallery(postId, idx) {
+  const allPosts = getAllLocalPosts();
+  const post     = allPosts.find(p => p.id === postId);
+  if (!post) return;
+  _galleryItems = (post.attachments||[]).filter(a=>!['image','video','audio','youtube'].includes(a.type));
+  _galleryType  = 'file';
+  _openGalleryAt(idx);
+}
+
+function getAllLocalPosts() {
+  return [
     ...JSON.parse(localStorage.getItem('royal_posts')||'[]'),
     ...JSON.parse(localStorage.getItem('royal_docs') ||'[]')
   ];
-  const post = allPosts.find(p => p.id === postId);
-  if (!post) return;
-  _galleryImages = (post.attachments||[]).filter(a=>a.type==='image').map(a=>a.src||a.data||'');
-  if (!_galleryImages.length) return;
-  _galleryIdx = Math.min(idx, _galleryImages.length - 1);
+}
+
+function _openGalleryAt(idx) {
+  if (!_galleryItems.length) return;
+  _galleryIdx = Math.min(idx, _galleryItems.length - 1);
   _renderGallery();
   document.getElementById('galleryOverlay').classList.add('open');
 }
 
 function _renderGallery() {
-  document.getElementById('galleryImg').src = _galleryImages[_galleryIdx];
-  document.getElementById('galleryRight').style.display = _galleryImages.length > 1 ? '' : 'none';
-  document.getElementById('galleryLeft').style.display  = _galleryImages.length > 1 ? '' : 'none';
+  const item = _galleryItems[_galleryIdx];
+  const src  = item ? (item.src || item.data || '') : '';
+  const imgEl = document.getElementById('galleryImg');
+  const fr    = document.getElementById('galleryFrame');
+
+  if (_galleryType === 'image') {
+    imgEl.src    = src;
+    imgEl.style.display = 'block';
+    if (fr) fr.style.display = 'none';
+  } else {
+    // ملفات — استخدم iframe للمعاينة
+    if (!fr) {
+      const iframe = document.createElement('iframe');
+      iframe.id    = 'galleryFrame';
+      iframe.style.cssText = 'width:90vw;height:80vh;border:none;border-radius:8px;background:#fff';
+      imgEl.after(iframe);
+    }
+    document.getElementById('galleryFrame').src = src;
+    document.getElementById('galleryFrame').style.display = 'block';
+    imgEl.style.display = 'none';
+  }
+  document.getElementById('galleryRight').style.display = _galleryItems.length > 1 ? '' : 'none';
+  document.getElementById('galleryLeft').style.display  = _galleryItems.length > 1 ? '' : 'none';
 }
 
 function galleryNav(dir) {
-  _galleryIdx = (_galleryIdx + dir + _galleryImages.length) % _galleryImages.length;
+  _galleryIdx = (_galleryIdx + dir + _galleryItems.length) % _galleryItems.length;
   _renderGallery();
 }
 
@@ -2532,6 +2778,23 @@ async function initVisitorMode() {
 
   buildMainTabs('visitor');
   renderVisitorBooksTab();
+
+  // إظهار تبويبات المنشورات/الوثائق حسب tabVisibility من ملف صاحب الحساب
+  const tVis   = (_visitorProfile && _visitorProfile.tabVisibility) || {};
+  const _myId  = currentUser && currentUser.id || '';
+
+  function _tabOk(key) {
+    const mode = tVis[key] || 'all';
+    if (mode === 'all')      return true;
+    if (mode === 'hidden')   return _myId === _targetUid;
+    if (mode === 'specific') return (tVis[key+'_accounts']||[]).some(a=>a.id===_myId);
+    if (mode === 'exclude')  return !(tVis[key+'_accounts']||[]).some(a=>a.id===_myId);
+    return true;
+  }
+  const pbtn = document.getElementById('visitorPostsTabBtn');
+  const dbtn = document.getElementById('visitorDocsTabBtn');
+  if (pbtn && _tabOk('posts')) pbtn.style.display = 'inline-flex';
+  if (dbtn && _tabOk('docs'))  dbtn.style.display  = 'inline-flex';
 }
 
 // ─────────────────────────────────────────────
