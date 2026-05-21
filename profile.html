@@ -1891,8 +1891,7 @@ function buildPostCard(post, isOwner) {
 
 function escHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/
-/g,'<br>');
+    .replace(/"/g,'&quot;').replace(/ /g,'<br>');
 }
 
 function openPostMenu(postId, type, isOwner, e) {
