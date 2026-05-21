@@ -680,9 +680,16 @@
         #hadithModal .qh-box { border-top-color:#9b59b6; }
         #hadithModal .qh-title { color:#c39bd3; }
         #hadithModal .qh-search-btn { background:linear-gradient(135deg,#8e44ad,#6c3483); }
-        .h-grade-sahih { color:#2ecc71 !important; }
-        .h-grade-hasan { color:#3498db !important; }
-        .h-grade-daif  { color:#e74c3c !important; }
+        /* درجات الحديث — ألوان النص */
+        .h-grade-sahih  { color:#27ae60 !important; }
+        .h-grade-hasan  { color:#2ecc71 !important; }
+        .h-grade-daif   { color:#e67e22 !important; }
+        .h-grade-mawdoo { color:#e74c3c !important; }
+        /* درجات الحديث — خلفية الشريحة */
+        .qh-meta-chip.h-grade-sahih  { background:rgba(39,174,96,.15);  border-color:rgba(39,174,96,.45); }
+        .qh-meta-chip.h-grade-hasan  { background:rgba(46,204,113,.12); border-color:rgba(46,204,113,.4); }
+        .qh-meta-chip.h-grade-daif   { background:rgba(230,126,34,.13); border-color:rgba(230,126,34,.4); }
+        .qh-meta-chip.h-grade-mawdoo { background:rgba(231,76,60,.13);  border-color:rgba(231,76,60,.4); }
         .qh-sharh-box {
             background:var(--surf1,#1e1e1e); border-right:3px solid var(--gold-line,rgba(201,162,39,.3));
             padding:6px 10px; margin-top:6px; border-radius:0 8px 8px 0;
@@ -1958,14 +1965,28 @@
     // --- 2. قاعدة البيانات والخزنة ---
     function initDB(callback) {
         let req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => { let db = e.target.result; if (!db.objectStoreNames.contains(VAULT_STORE)) db.createObjectStore(VAULT_STORE); };
+        req.onupgradeneeded = (e) => {
+            let db = e.target.result;
+            if (!db.objectStoreNames.contains(VAULT_STORE)) db.createObjectStore(VAULT_STORE);
+        };
         req.onsuccess = (e) => callback(e.target.result);
+        req.onerror   = ()  => callback(null);          // ← fallback: تعذّر فتح IndexedDB
     }
     function saveVaultToDB() {
-        initDB(db => { let tx = db.transaction(VAULT_STORE,'readwrite'); tx.objectStore(VAULT_STORE).put(mediaVault,'currentVault'); });
+        initDB(db => {
+            if (!db) return;                            // ← حماية من null
+            let tx = db.transaction(VAULT_STORE, 'readwrite');
+            tx.objectStore(VAULT_STORE).put(mediaVault, 'currentVault');
+        });
     }
     function loadVaultFromDB(callback) {
-        initDB(db => { let tx = db.transaction(VAULT_STORE,'readonly'); let req = tx.objectStore(VAULT_STORE).get('currentVault'); req.onsuccess = () => callback(req.result || {}); });
+        initDB(db => {
+            if (!db) { callback({}); return; }          // ← DB فشل: أعد قاموساً فارغاً
+            let tx  = db.transaction(VAULT_STORE, 'readonly');
+            let req = tx.objectStore(VAULT_STORE).get('currentVault');
+            req.onsuccess = () => callback(req.result || {});
+            req.onerror   = () => callback({});         // ← طلب القراءة فشل
+        });
     }
     function addToMediaVault(event) {
         let key = document.getElementById('mediaKeyInput').value.trim();
@@ -2855,6 +2876,56 @@ function resetQuranSelection() {
 ══════════════════════════════════════════════════════ */
 const hadithState = { results:[], selectedResult:null };
 
+/* ── JSONP: الطريقة الرسمية لـ API الدرر السنية ──────────────
+   يُنشئ عنصر <script> يستدعي dorar_api.json?skey=...&callback=cbName
+   وينتظر استجابة JSONP دون الحاجة إلى أي proxy خارجي.
+──────────────────────────────────────────────────────────── */
+function dorarJSONP(q) {
+    return new Promise((resolve, reject) => {
+        const cbName = '_dorar_' + Date.now();
+        const script = document.createElement('script');
+        let settled  = false;
+
+        const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true; cleanup();
+            reject(new Error('timeout'));
+        }, 14000);
+
+        function cleanup() {
+            clearTimeout(timer);
+            delete window[cbName];
+            if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[cbName] = (data) => {
+            if (settled) return;
+            settled = true; cleanup();
+            resolve(data);
+        };
+
+        script.src = `https://dorar.net/dorar_api.json?skey=${encodeURIComponent(q)}&callback=${cbName}`;
+        script.onerror = () => {
+            if (settled) return;
+            settled = true; cleanup();
+            reject(new Error('network error'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+/* ── تصنيف درجة الحديث ──────────────────────────────────── */
+function getHadithGradeClass(grade) {
+    const g = grade || '';
+    if (g.includes('صحيح'))                                             return 'h-grade-sahih';
+    if (g.includes('حسن'))                                              return 'h-grade-hasan';
+    if (g.includes('ضعيف') || g.includes('واه') || g.includes('منكر')) return 'h-grade-daif';
+    if (g.includes('موضوع') || g.includes('مكذوب') ||
+        g.includes('لا أصل') || g.includes('ليس بحديث') ||
+        g.includes('باطل')   || g.includes('مختلق'))                    return 'h-grade-mawdoo';
+    return '';
+}
+
 function openHadithModal() {
     document.getElementById('hadithModal').classList.add('open');
     setTimeout(()=>{ const el=document.getElementById('h-text-input'); if(el) el.focus(); }, 100);
@@ -2867,8 +2938,11 @@ function closeHadithModal() {
 async function doHadithSearch() {
     const q      = document.getElementById('h-text-input').value.trim();
     const custom = document.getElementById('h-custom-source').value.trim();
-    if (!q) { document.getElementById('h-results').innerHTML='<div class="qh-empty">الرجاء إدخال نص البحث</div>'; return; }
-    document.getElementById('h-results').innerHTML='<div class="qh-loading">⏳ جاري البحث في موسوعة الحديث...</div>';
+    if (!q) {
+        document.getElementById('h-results').innerHTML = '<div class="qh-empty">الرجاء إدخال نص البحث</div>';
+        return;
+    }
+    document.getElementById('h-results').innerHTML = '<div class="qh-loading">⏳ جاري البحث في موسوعة الحديث...</div>';
     resetHadithSel();
     if (custom) {
         await searchHadithCustom(q, custom);
@@ -2877,46 +2951,48 @@ async function doHadithSearch() {
     }
 }
 
+/* ── البحث في الدرر السنية عبر JSONP الرسمي ─────────────── */
 async function searchHadithDorar(q) {
-    const box = document.getElementById('h-results');
+    const box         = document.getElementById('h-results');
     const dorarSearch = `https://dorar.net/hadith?skey=${encodeURIComponent(q)}`;
     try {
-        /* API الرسمي للدرر السنية: dorar_api.json?skey=<نص البحث>
-           مع proxy لتجاوز CORS من المتصفح */
-        const api   = `https://dorar.net/dorar_api.json?skey=${encodeURIComponent(q)}`;
-        const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(api)}`;
-        const res   = await fetch(proxy, { signal: AbortSignal.timeout(14000) });
-        const raw   = await res.json();
-        const data  = JSON.parse(raw.contents);
+        const data = await dorarJSONP(q);
 
-        if (!data?.ahadith?.result?.length) {
-            box.innerHTML = `<div class="qh-empty" style="gap:14px;">
+        /* API الدرر يعيد إما مصفوفة مباشرةً في data.ahadith
+           أو كائناً فيه data.ahadith.result (إصدارات مختلفة) */
+        const raw = Array.isArray(data?.ahadith)
+            ? data.ahadith
+            : (data?.ahadith?.result || []);
+
+        if (!raw.length) {
+            box.innerHTML = `<div class="qh-empty" style="gap:16px;">
                 <div>لا توجد نتائج مطابقة في موسوعة الدرر السنية</div>
                 <a href="${dorarSearch}" target="_blank" class="qh-hadith-direct-link">🔗 البحث مباشرة على الدرر السنية</a>
             </div>`;
             return;
         }
 
-        hadithState.results = data.ahadith.result.map(h => ({
-            text:     qhStripHTML(h.hadith || ''),
-            narrator: h.rawi    || '',
-            scholar:  h.mohdith || '',
-            book:     h.book    || '',
-            page:     h.numberOrPage || '',
-            grade:    h.grade   || '',
-            sharh:    h.hassharhh ? qhStripHTML(h.sharh||'') : '',
+        hadithState.results = raw.map(h => ({
+            text:     qhStripHTML(h.hadith || h.th || ''),
+            narrator: h.rawi          || '',
+            scholar:  h.mohdith       || '',
+            book:     h.book          || '',
+            page:     h.numberOrPage  || '',
+            grade:    h.grade         || '',
+            sharh:    h.hassharhh ? qhStripHTML(h.sharh || '') : '',
             source:   'الدرر السنية'
         }));
         renderHadithResults();
 
     } catch(e) {
-        box.innerHTML = `<div class="qh-empty" style="gap:14px;">
+        box.innerHTML = `<div class="qh-empty" style="gap:16px;">
             <div>⚠ تعذّر الاتصال بموسوعة الدرر السنية</div>
             <a href="${dorarSearch}" target="_blank" class="qh-hadith-direct-link">🔗 البحث مباشرة على الدرر السنية</a>
         </div>`;
     }
 }
 
+/* ── البحث في مصدر مخصص ─────────────────────────────────── */
 async function searchHadithCustom(q, url) {
     const box = document.getElementById('h-results');
     try {
@@ -2925,70 +3001,103 @@ async function searchHadithCustom(q, url) {
         const raw   = await res.json();
         try {
             const data = JSON.parse(raw.contents);
-            const arr  = Array.isArray(data) ? data : (data.data||data.hadiths||data.results||[]);
+            const arr  = Array.isArray(data) ? data : (data.data || data.hadiths || data.results || []);
             const norm = qhNormalizeArabic(q);
             const hits = arr.filter(h => {
-                const t = h.text||h.hadith||h.matn||h.content||'';
+                const t = h.text || h.hadith || h.matn || h.content || '';
                 return qhNormalizeArabic(t).includes(norm);
             });
             hadithState.results = hits.map(h => ({
-                text: h.text||h.hadith||h.matn||h.content||'',
-                narrator: h.narrator||h.rawi||'',
-                scholar:  h.scholar||h.mohdith||'',
-                book:     h.book||h.source||new URL(url).hostname,
-                grade:    h.grade||h.hukm||'',
+                text:     h.text || h.hadith || h.matn || h.content || '',
+                narrator: h.narrator || h.rawi    || '',
+                scholar:  h.scholar  || h.mohdith || '',
+                book:     h.book     || h.source  || new URL(url).hostname,
+                grade:    h.grade    || h.hukm    || '',
                 sharh:    '', source: new URL(url).hostname
             }));
             if (!hadithState.results.length) {
-                box.innerHTML='<div class="qh-empty">لا توجد نتائج في المصدر المخصص</div>'; return;
+                box.innerHTML = '<div class="qh-empty">لا توجد نتائج في المصدر المخصص</div>';
+                return;
             }
             renderHadithResults(); return;
         } catch(e) {}
-        const doc   = new DOMParser().parseFromString(raw.contents,'text/html');
+        const doc   = new DOMParser().parseFromString(raw.contents, 'text/html');
         const items = doc.querySelectorAll('.hadith,.matn,[class*="hadith"]');
         if (items.length) {
-            hadithState.results = [...items].slice(0,25).map(el=>({
-                text:el.textContent.trim(), narrator:'', scholar:'',
-                book:new URL(url).hostname, grade:'', sharh:'', source:new URL(url).hostname
+            hadithState.results = [...items].slice(0, 25).map(el => ({
+                text: el.textContent.trim(), narrator:'', scholar:'',
+                book: new URL(url).hostname, grade:'', sharh:'', source: new URL(url).hostname
             }));
             renderHadithResults();
-        } else { box.innerHTML='<div class="qh-empty">لم يُعثر على أحاديث في المصدر المحدد</div>'; }
-    } catch(e) { box.innerHTML='<div class="qh-empty">⚠ فشل الاتصال بالمصدر المخصص</div>'; }
+        } else {
+            box.innerHTML = '<div class="qh-empty">لم يُعثر على أحاديث في المصدر المحدد</div>';
+        }
+    } catch(e) {
+        box.innerHTML = '<div class="qh-empty">⚠ فشل الاتصال بالمصدر المخصص</div>';
+    }
 }
 
+/* ── عرض النتائج ─────────────────────────────────────────── */
 function renderHadithResults() {
     const box = document.getElementById('h-results');
-    if (!hadithState.results.length) { box.innerHTML='<div class="qh-empty">لا توجد نتائج</div>'; return; }
-    box.innerHTML='';
-    hadithState.results.slice(0,30).forEach((h,i) => {
-        const gc = (h.grade||'').includes('صحيح')?'h-grade-sahih':(h.grade||'').includes('حسن')?'h-grade-hasan':'h-grade-daif';
+    if (!hadithState.results.length) {
+        box.innerHTML = '<div class="qh-empty">لا توجد نتائج</div>';
+        return;
+    }
+    box.innerHTML = '';
+
+    hadithState.results.slice(0, 40).forEach((h, i) => {
+        const gc  = getHadithGradeClass(h.grade);
         const div = document.createElement('div');
         div.className = 'qh-result-item';
+
+        /* شريط درجة الحديث: شريط ملوّن على يمين البطاقة */
+        const borderColor = gc === 'h-grade-sahih'  ? '#27ae60'
+                          : gc === 'h-grade-hasan'  ? '#2ecc71'
+                          : gc === 'h-grade-daif'   ? '#e67e22'
+                          : gc === 'h-grade-mawdoo' ? '#e74c3c'
+                          : 'transparent';
+        div.style.borderRightColor = borderColor;
+        if (borderColor !== 'transparent') div.style.borderRightWidth = '4px';
+
+        const textPreview = h.text.length > 350
+            ? h.text.substring(0, 350) + '…'
+            : h.text;
+
         div.innerHTML = `
-            <div class="qh-verse-text" style="font-size:13pt;">«${h.text.substring(0,320)}${h.text.length>320?'…':''}»</div>
-            <div class="qh-verse-meta">
-                ${h.scholar ? `<span class="qh-meta-chip">👤 ${h.scholar}</span>` : ''}
-                ${h.book    ? `<span class="qh-meta-chip">📚 ${h.book}</span>`    : ''}
-                ${h.grade   ? `<span class="qh-meta-chip ${gc}">⚖ ${h.grade}</span>` : ''}
-                <span style="opacity:.6;font-size:9pt;">${h.source}</span>
+            <div class="qh-verse-text" style="font-size:13pt;line-height:2;">«${textPreview}»</div>
+            <div class="qh-verse-meta" style="margin-top:8px;">
+                ${h.narrator ? `<span class="qh-meta-chip">🎙 ${h.narrator}</span>`            : ''}
+                ${h.scholar  ? `<span class="qh-meta-chip">👤 ${h.scholar}</span>`             : ''}
+                ${h.book     ? `<span class="qh-meta-chip">📚 ${h.book}</span>`                : ''}
+                ${h.page     ? `<span class="qh-meta-chip">📄 ${h.page}</span>`                : ''}
+                ${h.grade    ? `<span class="qh-meta-chip ${gc}">⚖ ${h.grade}</span>`          : ''}
             </div>
-            ${h.sharh ? `<div class="qh-sharh-box">💬 ${h.sharh.substring(0,220)}…</div>` : ''}`;
+            ${h.sharh ? `<div class="qh-sharh-box">💬 ${h.sharh.substring(0, 280)}${h.sharh.length>280?'…':''}</div>` : ''}`;
+
         div.onclick = () => selectHadith(i, div);
         box.appendChild(div);
     });
+
+    if (hadithState.results.length > 40) {
+        box.innerHTML += `<div class="qh-empty" style="font-size:11pt;padding:14px;">
+            عرض أول ٤٠ نتيجة من ${hadithState.results.length} — دقّق البحث للحصول على نتائج أدق.
+        </div>`;
+    }
 }
 
 function selectHadith(idx, el) {
-    document.querySelectorAll('#h-results .qh-result-item').forEach(d=>d.classList.remove('selected'));
+    document.querySelectorAll('#h-results .qh-result-item').forEach(d => d.classList.remove('selected'));
     el.classList.add('selected');
     hadithState.selectedResult = hadithState.results[idx];
     const h = hadithState.selectedResult;
-    document.getElementById('h-selection-info').textContent = h.book ? `📚 ${h.book}` : '✅ حديث محدد';
+    const parts = [h.book, h.scholar].filter(Boolean).join(' — ');
+    document.getElementById('h-selection-info').textContent = parts || '✅ حديث محدد';
     document.getElementById('h-actions').classList.add('show');
 }
 
 function insertHadithResult() {
-    const h = hadithState.selectedResult; if(!h) return;
+    const h = hadithState.selectedResult; if (!h) return;
     const ref = [h.book, h.scholar].filter(Boolean).join('/');
     insertAtCursor(`«${h.text}»${ref ? `[${ref}]` : ''}`);
     closeHadithModal();
@@ -2997,11 +3106,17 @@ function insertHadithResult() {
 function resetHadithSel() {
     hadithState.selectedResult = null;
     document.getElementById('h-actions')?.classList.remove('show');
-    document.querySelectorAll('#h-results .qh-result-item').forEach(d=>d.classList.remove('selected'));
+    document.querySelectorAll('#h-results .qh-result-item').forEach(d => d.classList.remove('selected'));
 }
 
-function qhStripHTML(s='') {
-    return s.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+function qhStripHTML(s = '') {
+    return s.replace(/<[^>]+>/g, '')
+            .replace(/&amp;/g,  '&')
+            .replace(/&lt;/g,   '<')
+            .replace(/&gt;/g,   '>')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/\s+/g,    ' ')
+            .trim();
 }
 
 </script>
