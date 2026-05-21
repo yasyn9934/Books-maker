@@ -1891,7 +1891,8 @@ function buildPostCard(post, isOwner) {
 
 function escHtml(t) {
   return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/ /g,'<br>');
+    .replace(/"/g,'&quot;').replace(/
+/g,'<br>');
 }
 
 function openPostMenu(postId, type, isOwner, e) {
@@ -1984,10 +1985,11 @@ function buildSlider(items, type, postId) {
     `<${tag} class="${i===0?'active':''}" controls ${i===0?'':'style="display:none"'}>
       <source src="${a.src||a.data||''}"></${tag}>`
   ).join('');
+  const _stype  = type === 'video' ? 'vid' : 'aud';
   const arrows = items.length > 1
     ? `<div class="slider-arrows">
-        <button class="slider-arr" onclick="sliderNav('${postId}',${type==='video'?''vid'':''aud''}, 1)">&#8249;</button>
-        <button class="slider-arr" onclick="sliderNav('${postId}',${type==='video'?''vid'':''aud''}, -1)">&#8250;</button>
+        <button class="slider-arr" onclick="sliderNav('${postId}','${_stype}', 1)">&#8249;</button>
+        <button class="slider-arr" onclick="sliderNav('${postId}','${_stype}', -1)">&#8250;</button>
        </div>` : '';
   return `<div class="post-vid-slider" id="slider_${postId}_${type}">${vids}${arrows}</div>`;
 }
