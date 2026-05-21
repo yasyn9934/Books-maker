@@ -901,9 +901,9 @@
 <!-- gallery للصور -->
 <div class="gallery-overlay" id="galleryOverlay">
   <button class="gallery-close" onclick="closeGallery()">✕</button>
-  <button class="gallery-arrow right" id="galleryRight" onclick="galleryNav(1)">&#8249;</button>
+  <button class="gallery-arrow right" id="galleryRight" onclick="galleryNav(1)">&#8250;</button><!-- [FIX] كان &#8249; -->
   <img class="gallery-img" id="galleryImg" src="" alt="">
-  <button class="gallery-arrow left" id="galleryLeft" onclick="galleryNav(-1)">&#8250;</button>
+  <button class="gallery-arrow left" id="galleryLeft" onclick="galleryNav(-1)">&#8249;</button><!-- [FIX] كان &#8250; -->
 </div>
 
 <!-- SHARE INFO MODAL -->
@@ -1190,18 +1190,27 @@ function toggleFav(id) {
 }
 
 function openCatChange(id) {
-  if (!categories.length) { alert('لا توجد تصنيفات.'); return; }
-  const names = categories.map(c=>c.name).join('\n');
-  const chosen = prompt('اختر اسم التصنيف:\n'+names);
-  if (!chosen) return;
-  const cat = categories.find(c=>c.name.trim()===chosen.trim());
-  if (!cat) { alert('التصنيف غير موجود.'); return; }
-  const b = books.find(b=>b.id===id);
+  if (!categories.length) { showToast('⚠️ لا توجد تصنيفات'); return; }
+  // [FIX] استبدال prompt() البدائي بنافذة modal أنيقة
+  const items = categories.map(c => ({
+    icon: '🏷️',
+    label: c.name,
+    fn: `_applyCatChange('${id}','${c.id}')`
+  }));
+  showMiniMenu(items, { target: document.getElementById('booksGrid') || document.body }, 'اختر التصنيف');
+}
+
+function _applyCatChange(bookId, catId) {
+  const cat = categories.find(c => c.id === catId);
+  if (!cat) return;
+  const b = books.find(b => b.id === bookId);
+  if (!b) return;
   b.categoryId = cat.id;
   if (!b.categoryIds) b.categoryIds = [];
   if (!b.categoryIds.includes(cat.id)) b.categoryIds.push(cat.id);
   localStorage.setItem('royal_books_list', JSON.stringify(books));
   renderBooksTab();
+  showToast(`✅ تم تغيير التصنيف إلى "${cat.name}"`);
 }
 
 function confirmDeleteBook(id) {
@@ -1216,7 +1225,12 @@ function confirmDeleteBook(id) {
       localStorage.setItem('royal_deleted_books', JSON.stringify(deletedBooks));
       if (navigator.onLine && currentUser.role==='member') {
         fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
-          body:JSON.stringify({ action:'delete_book', userId:currentUser.id, bookId:id })
+          body:JSON.stringify({
+            action:'delete_book',
+            userId:currentUser.id,
+            userName: currentUser.username || '',  // [FIX] كان مفقوداً
+            bookId:id
+          })
         }).catch(()=>{});
       }
       renderBooksTab();
@@ -1381,7 +1395,7 @@ function copyShareLink(bookId) {
   const entry = myShares.find(e=>e.book.id===bookId);
   if (!entry) return;
   const url = location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+entry.shares[0].shareId;
-  navigator.clipboard.writeText(url).then(()=>alert('✅ تم نسخ الرابط')).catch(()=>{});
+  navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ الرابط')).catch(()=>{}); // [FIX] كانت alert
 }
 
 function deleteMyShare(bookId) {
@@ -1434,7 +1448,7 @@ function openOthersMenu(shareId, e) {
 
 function copyOthersLink(shareId) {
   const url = location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+shareId;
-  navigator.clipboard.writeText(url).then(()=>alert('✅ تم نسخ الرابط')).catch(()=>{});
+  navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ الرابط')).catch(()=>{}); // [FIX] كانت alert
 }
 
 function reportShare(shareId) {
@@ -1503,10 +1517,12 @@ function notifItemHtml(n) {
   const thumbContent = (!isSystem && n.sender && n.sender.photo)
     ? `<img src="${n.sender.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
     : (TYPE_ICON[n.type]||'📩');
-  // موجز المنشور بدل الرابط
-  const excerpt = n.postExcerpt
-    ? `<em style="color:#666;font-size:9.5pt">${n.postExcerpt.slice(0,60)}${n.postExcerpt.length>60?'…':''}</em>`
-    : (n.message||'');
+  // [FIX] تعقيم النص قبل إدراجه لتفادي XSS
+  const safeExcerpt = escHtml(n.postExcerpt || '');
+  const safeMsg     = escHtml(n.message     || '');
+  const excerpt = safeExcerpt
+    ? `<em style="color:#666;font-size:9.5pt">${safeExcerpt.slice(0,60)}${safeExcerpt.length>60?'…':''}</em>`
+    : safeMsg;
   const senderClick = (!isSystem && n.sender && n.sender.id)
     ? `onclick="event.stopPropagation();window.location.href='profile.html?uid=${n.sender.id}'" style="cursor:pointer;text-decoration:underline dotted"`
     : '';
@@ -1560,9 +1576,12 @@ function renderNotifPageList() {
     const thumbC   = (!isSystem && n.sender?.photo)
       ? `<img src="${n.sender.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : (TYPE_ICON[n.type]||'📩');
-    const excerptC = n.postExcerpt
-      ? `<em style="color:#666;font-size:9.5pt">${n.postExcerpt.slice(0,80)}${n.postExcerpt.length>80?'…':''}</em>`
-      : (n.message||'');
+    // [FIX] تعقيم النص قبل إدراجه لتفادي XSS
+    const safeExcerpt = escHtml(n.postExcerpt || '');
+    const safeMsg     = escHtml(n.message     || '');
+    const excerptC = safeExcerpt
+      ? `<em style="color:#666;font-size:9.5pt">${safeExcerpt.slice(0,80)}${safeExcerpt.length>80?'…':''}</em>`
+      : safeMsg;
     const senderC  = (!isSystem && n.sender?.id)
       ? `<span style="cursor:pointer;text-decoration:underline dotted"
            onclick="event.stopPropagation();window.location.href='profile.html?uid=${n.sender.id}'">${n.sender.name}</span>`
@@ -1609,7 +1628,7 @@ function openNotifDetail(id) {
           <div class="notif-detail-time">${new Date(n.createdAt).toLocaleString('ar')}</div>
         </div>
       </div>
-      <div class="notif-detail-msg">${n.message||''}</div>
+      <div class="notif-detail-msg">${escHtml(n.message||'')}</div><!-- [FIX] تعقيم XSS -->
       ${mediaHtml ? `<div class="notif-media-wrap">${mediaHtml}</div>` : ''}
       ${fileChips ? `<div class="notif-detail-files">${fileChips}</div>` : ''}
       ${n.postId ? `<button onclick="goToNotifPost('${n.postId}','${n.sender?.id||''}')"
@@ -1685,11 +1704,15 @@ function closeModal(id) { document.getElementById(id).style.display='none'; }
 function timeAgo(ts) {
   if (!ts) return '';
   const m = Math.floor((Date.now()-ts)/60000);
-  if (m<1)  return 'الآن';
-  if (m<60) return `منذ ${m} دقيقة`;
-  const h = Math.floor(m/60);
-  if (h<24) return `منذ ${h} ساعة`;
-  return `منذ ${Math.floor(h/24)} يوم`;
+  if (m < 1)    return 'الآن';
+  if (m < 60)   return `منذ ${m} دقيقة`;
+  const h = Math.floor(m / 60);
+  if (h < 24)   return `منذ ${h} ساعة`;
+  const d = Math.floor(h / 24);
+  if (d < 30)   return `منذ ${d} يوم`;      // [FIX] إضافة أشهر وسنوات
+  const mo = Math.floor(d / 30);
+  if (mo < 12)  return `منذ ${mo} شهر`;
+  return `منذ ${Math.floor(mo / 12)} سنة`;
 }
 
 // ══════════════════════════════════════════════
@@ -1739,12 +1762,12 @@ function saveTabVisibility() {
   closeModal('tabVisModal');
   showToast('✅ تم حفظ إعدادات التبويبات');
   if (navigator.onLine && currentUser && currentUser.role === 'member') {
-    const viewedShares = JSON.parse(localStorage.getItem('royal_viewed_shares') || '[]');
+    // [FIX] إزالة المتغير المحلي الذي كان يُظلِّل المتغير العام viewedShares
     fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
       action: 'save_tab_visibility',
       userId: currentUser.id,
       visibility: saved,
-      viewedShares
+      viewedShares: viewedShares   // يستخدم المتغير العام مباشرة
     })}).catch(()=>{});
   }
 }
@@ -1891,20 +1914,8 @@ function triggerAttach(type) {
   inp.click();
 }
 
-function handlePeFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const type = e.target.dataset.filetype || 'pdf';
-  if (file.size > 10 * 1024 * 1024) { showToast('⚠️ الحجم الأقصى 10 ميغابايت'); return; }
-  const reader = new FileReader();
-  reader.onload = ev => {
-    _peAttachments.push({ type, data: ev.target.result, name: file.name, size: file.size });
-    renderPeAttachments();
-    updatePeAttachBtns();
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
-}
+// [FIX] handlePeFile القديمة أُزيلت — المُستخدمة هي handlePeFileEnhanced (السطر 848 في HTML)
+
 
 function renderPeAttachments() {
   const wrap = document.getElementById('peAttachments');
@@ -2000,6 +2011,7 @@ async function publishPost() {
     reactions:    { heart:[], like:[], laugh:[] },
     commentsCount: 0,
     hidden:       false,
+    isNew:        !_peEditId,     // [FIX] حقل صريح لاكتشاف المنشورات الجديدة في الخادم
     createdAt:    _peEditId ? undefined : Date.now(),
     updatedAt:    Date.now()
   };
@@ -2202,11 +2214,12 @@ async function deletePost(postId, type) {
 }
 
 function reactPost(postId, reaction) {
-  // تفاعل محلي فقط في هذه المرحلة
+  // [FIX] استخدام flag لتجنب استدعاء loadFeed مرتين إن وُجد المنشور في كلا المفاتيحين
+  let feedType = null;
   ['royal_posts','royal_docs'].forEach(key => {
     const feed = JSON.parse(localStorage.getItem(key) || '[]');
     const post = feed.find(p => p.id === postId);
-    if (!post) return;
+    if (!post || feedType) return;  // تجاهل إن وُجد في المفتاح الأول بالفعل
     if (!post.reactions) post.reactions = { heart:[], like:[], laugh:[] };
     const uid  = currentUser && currentUser.id || 'guest';
     const arr  = post.reactions[reaction] || [];
@@ -2214,8 +2227,9 @@ function reactPost(postId, reaction) {
     if (idx > -1) arr.splice(idx, 1); else arr.push(uid);
     post.reactions[reaction] = arr;
     localStorage.setItem(key, JSON.stringify(feed));
-    loadFeed(post.type || 'post');
+    feedType = post.type || 'post';
   });
+  if (feedType) loadFeed(feedType);
 }
 
 function copyPostText(postId) {
@@ -2664,6 +2678,7 @@ function switchVisitorTab(tab, btn) {
   });
   const active = document.getElementById('visitor-tab-' + tab);
   if (active) active.style.display = 'block';
+  // [FIX] توحيد الدالة المكررة — كانت النسخة الثانية (المحذوفة) تتعامل مع books فقط
   if (tab === 'books') renderVisitorBooksTab();
   if (tab === 'posts') loadVisitorFeed('post');
   if (tab === 'docs')  loadVisitorFeed('doc');
@@ -2878,11 +2893,7 @@ function switchMainTab(tab, btn) {
 // ─────────────────────────────────────────────
 // VISITOR BOOKS TAB
 // ─────────────────────────────────────────────
-function switchVisitorTab(tab, btn) {
-  document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (tab === 'books') renderVisitorBooksTab();
-}
+// [FIX] الدالة المكررة هنا أُزيلت — switchVisitorTab الكاملة معرَّفة أعلاه (تُظهر books/posts/docs)
 
 function renderVisitorBooksTab() {
   if (!_visitorShares.length) {
