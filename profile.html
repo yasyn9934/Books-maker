@@ -18,6 +18,15 @@
     @keyframes sk-pulse{0%,100%{opacity:1}50%{opacity:.5}}
     .sk-line,.sk-circle{animation:sk-pulse 1.4s ease-in-out infinite;}
 
+    /* ── MediaProxy containers ── */
+    .media-proxy-container{position:relative;border-radius:8px;overflow:hidden;background:#1a1a1a;}
+    .media-loading{display:flex;align-items:center;justify-content:center;
+      min-height:54px;color:#888;font-size:11pt;padding:8px;}
+    .media-error{display:flex;align-items:center;justify-content:center;
+      min-height:54px;color:#e74c3c;font-size:10pt;padding:8px;}
+    .video-proxy{min-height:200px;}
+    .audio-proxy{min-height:54px;}
+
     /* TOP BAR */
     .topbar{position:sticky;top:0;z-index:200;background:var(--card);
       border-bottom:1px solid var(--border);padding:10px 16px;
@@ -989,11 +998,12 @@ async function setCachedMedia(url, blob, modifiedAt) {
   } catch(_) {}
 }
 
-// تحميل وسيط مع كاش: يعيد blob URL أو src أصلي إن فشل
+// loadMediaCached: دالة قديمة للـ URLs العامة — لا تُستخدم لـ Drive بعد الآن
+// ملفات Drive تمر عبر MediaProxy.getUrl() حصراً
 async function loadMediaCached(url) {
   if (!url) return url;
-  // Drive thumbnail URLs تعمل مباشرة في <img> — لا نُخزّنها في cache الصور كبيرة
-  if (url.includes('drive.google.com/thumbnail')) return url;
+  // لا نمرر روابط Drive هنا — تُعالَج عبر MediaProxy
+  if (url.includes('drive.google.com')) return null;
   const cached = await getCachedMedia(url);
   if (cached && cached.blob) {
     return URL.createObjectURL(cached.blob);
@@ -1798,6 +1808,92 @@ function isTabVisible(tabKey) {
 }
 
 // ══════════════════════════════════════════════
+// MEDIA PROXY — وسيط الوسائط (Drive ← GAS ← موقع)
+// كل وصول للملفات يمر من هنا — لا يظهر Drive أبداً
+// ══════════════════════════════════════════════
+const MediaProxy = {
+
+  // كاش blob URLs في الذاكرة لتجنب طلبات مكررة
+  _cache: {},
+
+  /**
+   * جلب ملف عبر GAS وإعادة URL قابل للاستخدام في <img>/<audio>/<video>
+   * - ملفات ≤ 20MB → blob:// URL مباشرة
+   * - ملفات > 20MB  → GAS doGet URL (يُستخدم في iframe)
+   */
+  async getUrl(fileId) {
+    if (!fileId) return null;
+    if (this._cache[fileId]) return this._cache[fileId];
+
+    try {
+      const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'proxy_media', fileId })
+      });
+      const json = await res.json();
+      if (!json.success) return null;
+
+      if (json.mode === 'inline') {
+        // base64 → Blob → Object URL
+        const bytes  = Uint8Array.from(atob(json.data), c => c.charCodeAt(0));
+        const blob   = new Blob([bytes], { type: json.mimeType });
+        const url    = URL.createObjectURL(blob);
+        this._cache[fileId] = { url, mode: 'inline', mime: json.mimeType, name: json.fileName };
+        return this._cache[fileId];
+      } else {
+        // iframe src — GAS doGet URL
+        this._cache[fileId] = { url: json.iframeSrc, mode: 'iframe', mime: json.mimeType, name: json.fileName };
+        return this._cache[fileId];
+      }
+    } catch(_) { return null; }
+  },
+
+  /**
+   * عرض ملف داخل container تلقائياً حسب النوع
+   */
+  async render(fileId, container, opts = {}) {
+    if (!fileId || !container) return;
+    container.innerHTML = `<div class="media-loading">⏳</div>`;
+    const result = await this.getUrl(fileId);
+    if (!result) { container.innerHTML = `<div class="media-error">⚠️ تعذّر تحميل الملف</div>`; return; }
+    const { url, mode, mime } = result;
+    const kind = mime ? mime.split('/')[0] : 'application';
+
+    if (mode === 'iframe') {
+      container.innerHTML = `<iframe src="${url}"
+        style="width:100%;height:${opts.height||'300px'};border:none;border-radius:8px"
+        allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe>`;
+      return;
+    }
+    // inline blob://
+    if (kind === 'image') {
+      container.innerHTML = `<img src="${url}" style="max-width:100%;border-radius:8px"
+        alt="" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>`;
+    } else if (kind === 'video') {
+      container.innerHTML = `<video controls src="${url}"
+        style="width:100%;border-radius:8px" ${opts.autoplay?'autoplay':''}></video>`;
+    } else if (kind === 'audio') {
+      container.innerHTML = `<audio controls src="${url}" style="width:100%"></audio>`;
+    } else {
+      container.innerHTML = `<embed src="${url}" type="${mime}"
+        style="width:100%;height:${opts.height||'400px'};border-radius:8px">`;
+    }
+  },
+
+  /**
+   * تحميل مباشر بدون ظهور Drive
+   */
+  async download(fileId, fileName) {
+    const result = await this.getUrl(fileId);
+    if (!result || result.mode === 'iframe') { showToast('⚠️ الملف كبير جداً للتحميل المباشر'); return; }
+    const a = document.createElement('a');
+    a.href     = result.url;
+    a.download = fileName || result.name || 'file';
+    a.click();
+  }
+};
+
+// ══════════════════════════════════════════════
 // POST EDITOR
 // ══════════════════════════════════════════════
 let _peMode       = 'post';   // 'post' | 'doc'
@@ -1920,16 +2016,31 @@ function triggerAttach(type) {
 function renderPeAttachments() {
   const wrap = document.getElementById('peAttachments');
   wrap.innerHTML = _peAttachments.map((a, i) => {
-    const icon = { image:'🖼️', audio:'🎵', video:'🎥', pdf:'📄' }[a.type] || '📎';
+    const icon    = { image:'🖼️', audio:'🎵', video:'🎥', pdf:'📄' }[a.type] || '📎';
+    const isCloud = a.isCloud || a.fileId;
+    // للصور المرفوعة: نعرض placeholder أولاً ثم تُحمَّل عبر MediaProxy
     const preview = a.type === 'image'
-      ? `<img class="pe-att-thumb" src="${a.data}" alt="">`
+      ? `<img class="pe-att-thumb" src="${a.data||''}" alt="" data-file-id="${a.fileId||''}">`
       : `<span>${icon}</span>`;
-    return `<div class="pe-att-chip">
+    return `<div class="pe-att-chip" data-att-idx="${i}">
       ${preview}
-      <span style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5pt">${a.name}</span>
+      <span style="max-width:80px;overflow:hidden;text-overflow:ellipsis;
+        white-space:nowrap;font-size:9.5pt">${a.name}</span>
+      ${isCloud ? '<span style="font-size:8pt;color:#6B8E23">☁️</span>' : ''}
       <button class="pe-att-remove" onclick="removePeAtt(${i})">✕</button>
     </div>`;
   }).join('');
+
+  // تحميل معاينات الصور المرفوعة عبر MediaProxy
+  _peAttachments.forEach(async (a, i) => {
+    if (a.type === 'image' && a.fileId && !a.data) {
+      const result = await MediaProxy.getUrl(a.fileId);
+      if (result) {
+        const thumb = wrap.querySelector(`[data-att-idx="${i}"] .pe-att-thumb`);
+        if (thumb) thumb.src = result.url;
+      }
+    }
+  });
 }
 
 function removePeAtt(idx) {
@@ -1955,27 +2066,29 @@ async function publishPost() {
   const btn = document.getElementById('pePublishBtn');
   btn.disabled = true; btn.textContent = 'جاري الرفع...';
 
-  // ── رفع كل الملفات إلى السحابة أولاً، واستبدال base64 بالرابط ──
-  // base64 لا يُخزَّن أبداً في localStorage لتجنب QuotaExceededError
+  // ── رفع الملفات غير المرفوعة بعد، واستبدال base64 بـ fileId ──
+  // المبدأ: لا base64 ولا Drive URLs تُخزَّن في localStorage
   const uploadedAtts = [];
   for (const att of _peAttachments) {
     if (att.type === 'youtube') {
-      uploadedAtts.push(att);  // يوتيوب لا يحتاج رفع
+      uploadedAtts.push(att);
       continue;
     }
-    if (att.src && !att.data) {
-      uploadedAtts.push(att);  // مرفوع مسبقاً من uploadLargeFile
+    if (att.fileId && !att.data) {
+      // مرفوع مسبقاً — احتفظ بـ fileId فقط
+      uploadedAtts.push({ type: att.type, fileId: att.fileId, mimeType: att.mimeType, name: att.name, isCloud: true });
       continue;
     }
     if (att.data) {
-      // ارفع إلى Drive واحصل على رابط
+      // base64 محلي — ارفعه الآن
       if (navigator.onLine && currentUser && currentUser.role === 'member') {
         try {
           btn.textContent = 'جاري رفع: ' + att.name.slice(0, 20) + '...';
-          const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
+          const res    = await fetch(AUTH_CONFIG.SCRIPT_URL, { method: 'POST',
             body: JSON.stringify({
               action:   'upload_file',
               userId:   currentUser.id,
+              userName: currentUser.username || '',
               fileName: att.name,
               mimeType: att.mimeType || '',
               data:     att.data
@@ -1983,8 +2096,7 @@ async function publishPost() {
           });
           const result = await res.json();
           if (result.success) {
-            // احفظ الرابط فقط — لا base64
-            uploadedAtts.push({ type: att.type, src: result.fileUrl, name: att.name, isCloud: true });
+            uploadedAtts.push({ type: att.type, fileId: result.fileId, mimeType: result.mimeType, name: att.name, isCloud: true });
           } else {
             showToast('⚠️ فشل رفع: ' + att.name); return;
           }
@@ -1992,7 +2104,6 @@ async function publishPost() {
           showToast('⚠️ خطأ في رفع: ' + att.name); return;
         }
       } else {
-        // أوفلاين: احفظ مؤشراً مؤقتاً فقط (بلا base64)
         uploadedAtts.push({ type: att.type, name: att.name, pending: true });
         localStorage.setItem('royal_pending_posts_sync', 'true');
       }
@@ -2072,6 +2183,8 @@ function loadFeed(type) {
     return;
   }
   el.innerHTML = feed.map(p => buildPostCard(p, true)).join('');
+  // تحميل الوسائط عبر MediaProxy بعد رسم كل card
+  feed.forEach(p => initPostCardMedia(p));
 }
 
 function buildPostCard(post, isOwner) {
@@ -2087,43 +2200,33 @@ function buildPostCard(post, isOwner) {
   const audios = atts.filter(a => a.type==='audio');
   const files  = atts.filter(a => !['image','video','audio','youtube'].includes(a.type));
   const ytbs   = atts.filter(a => a.type==='youtube');
-  const pid    = post.id;
 
-  // ── الصور: grid ذكي ──
+  // ── الصور: grid ذكي — تُحمَّل عبر MediaProxy بعد الرسم ──
   const imgsHtml = images.length ? buildImgGrid(images, pid) : '';
 
-  // ── الفيديوهات: iframe Drive أو video tag ──
-  const vidsHtml = videos.length ? `<div class="post-vid-slider" id="slider_${pid}_video">
-    ${videos.map((a,i)=>{
-      const src = a.src||a.data||'';
-      const isDrive = src.includes('drive.google.com');
-      if (isDrive) return `<iframe class="drive-media-frame video-frame${i>0?' hidden-slide':''}"
-        src="${src}" allowfullscreen loading="lazy"></iframe>`;
-      return `<video class="${i===0?'active':''}" controls ${i>0?'style="display:none"':''}>
-        <source src="${src}"></video>`;
-    }).join('')}
-    ${videos.length>1?`<div class="slider-arrows">
-      <button class="slider-arr" onclick="sliderNav('${pid}','vid',1)">&#8249;</button>
-      <button class="slider-arr" onclick="sliderNav('${pid}','vid',-1)">&#8250;</button>
-    </div>`:''}
-  </div>` : '';
+  // ── الفيديوهات: container يُملأ بـ MediaProxy.render ──
+  const vidsHtml = videos.length
+    ? `<div class="post-media-group" id="vids_${pid}">
+        ${videos.map((_,i) => `<div class="media-proxy-container video-proxy"
+          id="vproxy_${pid}_${i}" data-file-id="${_.fileId||''}"
+          style="min-height:180px;background:#000;border-radius:8px;margin-bottom:6px">
+          <div class="media-loading">⏳</div></div>`).join('')}
+      </div>` : '';
 
-  // ── الصوتيات: iframe Drive أو audio tag ──
-  const audsHtml = audios.length ? `<div class="post-audios">
-    ${audios.map(a=>{
-      const src = a.src||a.data||'';
-      const isDrive = src.includes('drive.google.com');
-      if (isDrive) return `<iframe class="drive-media-frame audio-frame"
-        src="${src}" loading="lazy"></iframe>`;
-      return `<audio class="post-media-audio" controls><source src="${src}"></audio>`;
-    }).join('')}
-  </div>` : '';
+  // ── الصوتيات ──
+  const audsHtml = audios.length
+    ? `<div class="post-audios" id="auds_${pid}">
+        ${audios.map((_,i) => `<div class="media-proxy-container audio-proxy"
+          id="aproxy_${pid}_${i}" data-file-id="${_.fileId||''}"
+          style="min-height:54px;padding:4px 0">
+          <div class="media-loading">⏳</div></div>`).join('')}
+      </div>` : '';
 
-  // ── الملفات: grid مثل الصور ──
+  // ── الملفات ──
   const filesHtml = files.length ? buildFileGrid(files, pid) : '';
 
   // ── يوتيوب ──
-  const ytHtml = ytbs.map(a=>
+  const ytHtml = ytbs.map(a =>
     `<div class="pe-yt-preview"><iframe src="https://www.youtube.com/embed/${a.ytId}"
       allowfullscreen loading="lazy"></iframe></div>`
   ).join('');
@@ -2168,6 +2271,35 @@ function buildPostCard(post, isOwner) {
       ${ownerActions}
     </div>
   </div>`;
+}
+
+// تُستدعى بعد رسم كل post card لتحميل الوسائط عبر MediaProxy
+async function initPostCardMedia(post) {
+  const atts   = post.attachments || [];
+  const pid    = post.id;
+
+  // الصور — تُحمَّل عبر MediaProxy وتُحدَّث الـ src
+  const imgEls = document.querySelectorAll(`#pc_${pid} img[data-file-id]`);
+  imgEls.forEach(async img => {
+    const fileId = img.getAttribute('data-file-id');
+    if (!fileId) return;
+    const result = await MediaProxy.getUrl(fileId);
+    if (result) { img.src = result.url; img.style.opacity = '1'; }
+  });
+
+  // الفيديوهات
+  atts.filter(a => a.type === 'video').forEach(async (a, i) => {
+    const container = document.getElementById(`vproxy_${pid}_${i}`);
+    if (!container || !a.fileId) return;
+    await MediaProxy.render(a.fileId, container, { height: '240px' });
+  });
+
+  // الصوتيات
+  atts.filter(a => a.type === 'audio').forEach(async (a, i) => {
+    const container = document.getElementById(`aproxy_${pid}_${i}`);
+    if (!container || !a.fileId) return;
+    await MediaProxy.render(a.fileId, container, { height: '54px' });
+  });
 }
 
 function escHtml(t) {
@@ -2289,21 +2421,25 @@ function sliderNav(postId, type, dir) {
   items[cur].style.display = '';
 }
 
-// ── buildImgGrid: grid ذكي للصور ──
+// ── buildImgGrid: grid ذكي للصور — تُحمَّل عبر MediaProxy ──
 function buildImgGrid(images, pid) {
-  const n = Math.min(images.length, 6);
+  const n       = Math.min(images.length, 6);
   const visImgs = images.slice(0, n);
   const more    = images.length > 6 ? images.length - 5 : 0;
 
   return `<div class="post-imgs-grid" data-count="${n}">
     ${visImgs.map((a, i) => {
-      const src = a.src || a.data || '';
-      const isLast = more > 0 && i === 4;
+      const fileId  = a.fileId  || '';
+      const fallback = a.src || a.data || '';   // قديم: fallback مؤقت
+      const isLast  = more > 0 && i === 4;
       if (isLast) return `<div class="post-img-more" onclick="openGallery('${pid}',${i})">
-        <img src="${src}" alt="" loading="lazy">
+        <img src="${fallback}" data-file-id="${fileId}" alt="" loading="lazy"
+          style="opacity:${fallback?1:0.3};transition:opacity .3s">
         <div class="post-img-more-overlay">+${more}</div>
       </div>`;
-      return `<img src="${src}" alt="" onclick="openGallery('${pid}',${i})" loading="lazy">`;
+      return `<img src="${fallback}" data-file-id="${fileId}" alt=""
+        onclick="openGallery('${pid}',${i})" loading="lazy"
+        style="opacity:${fallback?1:0.3};transition:opacity .3s">`;
     }).join('')}
   </div>`;
 }
@@ -2371,27 +2507,40 @@ function _openGalleryAt(idx) {
   document.getElementById('galleryOverlay').classList.add('open');
 }
 
-function _renderGallery() {
-  const item = _galleryItems[_galleryIdx];
-  const src  = item ? (item.src || item.data || '') : '';
-  const imgEl = document.getElementById('galleryImg');
-  const fr    = document.getElementById('galleryFrame');
+async function _renderGallery() {
+  const item   = _galleryItems[_galleryIdx];
+  const fileId = item && item.fileId;
+  const imgEl  = document.getElementById('galleryImg');
+  const fr     = document.getElementById('galleryFrame');
 
   if (_galleryType === 'image') {
-    imgEl.src    = src;
-    imgEl.style.display = 'block';
+    imgEl.src = '';
+    imgEl.style.display  = 'block';
     if (fr) fr.style.display = 'none';
+    if (fileId) {
+      // جلب عبر MediaProxy — لا Drive URL يظهر
+      const result = await MediaProxy.getUrl(fileId);
+      if (result) imgEl.src = result.url;
+    } else {
+      imgEl.src = item ? (item.src || item.data || '') : '';
+    }
   } else {
-    // ملفات — استخدم iframe للمعاينة
+    // ملفات — iframe عبر GAS doGet token
     if (!fr) {
       const iframe = document.createElement('iframe');
       iframe.id    = 'galleryFrame';
       iframe.style.cssText = 'width:90vw;height:80vh;border:none;border-radius:8px;background:#fff';
       imgEl.after(iframe);
     }
-    document.getElementById('galleryFrame').src = src;
-    document.getElementById('galleryFrame').style.display = 'block';
-    imgEl.style.display = 'none';
+    const galleryFr = document.getElementById('galleryFrame');
+    if (fileId) {
+      const result = await MediaProxy.getUrl(fileId);
+      if (result) galleryFr.src = result.url;
+    } else {
+      galleryFr.src = item ? (item.src || '') : '';
+    }
+    galleryFr.style.display = 'block';
+    imgEl.style.display     = 'none';
   }
   document.getElementById('galleryRight').style.display = _galleryItems.length > 1 ? '' : 'none';
   document.getElementById('galleryLeft').style.display  = _galleryItems.length > 1 ? '' : 'none';
@@ -2412,7 +2561,7 @@ function extractYoutubeId(url) {
   return m ? m[1] : null;
 }
 
-// رفع الملفات الكبيرة (> 10MB الافتراضي) إلى GAS للحفظ في Drive
+// رفع الملفات الكبيرة (> 10MB) إلى GAS/Drive — يُعيد fileId لا Drive URL
 async function uploadLargeFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -2423,13 +2572,14 @@ async function uploadLargeFile(file) {
           body: JSON.stringify({
             action:   'upload_file',
             userId:   currentUser.id,
+            userName: currentUser.username || '',
             fileName: file.name,
             mimeType: file.type,
-            data:     ev.target.result  // base64
+            data:     ev.target.result
           })
         });
         const data = await res.json();
-        if (data.success) resolve(data.fileUrl);
+        if (data.success) resolve({ fileId: data.fileId, mimeType: data.mimeType });
         else reject(new Error(data.message));
       } catch(e) { reject(e); }
     };
@@ -2437,83 +2587,124 @@ async function uploadLargeFile(file) {
   });
 }
 
-// تحديث handlePeFile ليدعم الملفات الكبيرة + YouTube
+// معالجة اختيار الملف — كل الملفات ترفع مباشرة إلى Drive عبر GAS
+// المُرفقات تُخزَّن كـ { fileId } فقط — لا base64 ولا Drive URLs
 async function handlePeFileEnhanced(e) {
   const file     = e.target.files[0];
   if (!file) return;
   const fileType = e.target.dataset.filetype || 'pdf';
   const limit    = getFileSizeLimit();
-  const TEN_MB   = 10 * 1024 * 1024;
 
-  // تحقق الحد الأقصى
   if (file.size > limit) {
     showToast('⚠️ حجم الملف يتجاوز الحد المسموح به لحسابك'); return;
   }
 
-  // تحقق حدود الوحدات
   const counts = {};
   _peAttachments.forEach(a => counts[a.type] = (counts[a.type]||0)+1);
   if ((counts[fileType]||0) >= (PE_LIMITS[fileType]||6)) {
     showToast(`⚠️ الحد الأقصى ${PE_LIMITS[fileType]||6} من نوع ${fileType}`); return;
   }
 
-  const btn = document.getElementById('pe'+fileType[0].toUpperCase()+fileType.slice(1)+'Btn');
+  const btnId  = 'pe' + fileType[0].toUpperCase() + fileType.slice(1) + 'Btn';
+  const btn    = document.getElementById(btnId);
+  const labels = { image:'🖼️ صورة', audio:'🎵 صوت', video:'🎥 فيديو', pdf:'📄 ملف' };
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
 
-  if (file.size > TEN_MB) {
-    // رفع للسحابة
-    showToast('⏳ جاري رفع الملف إلى السحابة...');
-    try {
-      const url = await uploadLargeFile(file);
-      _peAttachments.push({ type: fileType, src: url, name: file.name, size: file.size, isCloud: true });
-      renderPeAttachments();
-      renderPePreview();
-      updatePeAttachBtns();
-      showToast('✅ تم رفع الملف');
-    } catch(_err) {
-      showToast('⚠️ فشل رفع الملف: ' + _err.message);
-    }
-  } else {
-    // قراءة محلية
-    const reader = new FileReader();
-    reader.onload = ev => {
-      _peAttachments.push({ type: fileType, data: ev.target.result, name: file.name, size: file.size });
-      renderPeAttachments();
-      renderPePreview();
-      updatePeAttachBtns();
-    };
-    reader.readAsDataURL(file);
+  if (!navigator.onLine || !currentUser) {
+    showToast('⚠️ يجب الاتصال بالإنترنت لرفع الملفات'); 
+    if (btn) { btn.disabled = false; btn.textContent = labels[fileType] || '📎'; }
+    e.target.value = ''; return;
   }
-  if (btn) { btn.disabled = false; btn.textContent = ({image:'🖼️ صورة',audio:'🎵 صوت',video:'🎥 فيديو',pdf:'📄 ملف'})[fileType]||'📎'; }
+
+  showToast('⏳ جاري رفع ' + file.name.slice(0, 20) + '...');
+  try {
+    const result = await uploadLargeFile(file); // يُعيد { fileId, mimeType }
+
+    // تخزين fileId فقط — لا base64 ولا Drive URLs أبداً
+    const att = {
+      type:     fileType,
+      fileId:   result.fileId,
+      mimeType: result.mimeType || file.type,
+      name:     file.name,
+      size:     file.size,
+      isCloud:  true
+    };
+    _peAttachments.push(att);
+
+    // معاينة فورية عبر MediaProxy (blob:// لا Drive)
+    await _addPreviewForAtt(att, _peAttachments.length - 1);
+    renderPeAttachments();
+    updatePeAttachBtns();
+    showToast('✅ تم رفع الملف');
+  } catch(err) {
+    showToast('⚠️ فشل رفع الملف: ' + (err.message || ''));
+  }
+  if (btn) { btn.disabled = false; btn.textContent = labels[fileType] || '📎'; }
   e.target.value = '';
 }
 
-// معاينة الملفات أثناء الكتابة
+// إضافة معاينة للمرفق بعد رفعه عبر MediaProxy
+async function _addPreviewForAtt(att, idx) {
+  const wrap = document.getElementById('peAttachments');
+  if (!wrap) return;
+  const chip = wrap.querySelector(`[data-att-idx="${idx}"]`);
+  if (!chip) return;
+  if (att.type === 'image' && att.fileId) {
+    const result = await MediaProxy.getUrl(att.fileId);
+    if (result) {
+      const thumb = chip.querySelector('.pe-att-thumb');
+      if (thumb) { thumb.src = result.url; }
+    }
+  }
+}
+
+// معاينة المرفقات أثناء التحرير
 function renderPePreview() {
   let wrap = document.getElementById('pePreviewWrap');
   if (!wrap) {
     wrap = document.createElement('div');
-    wrap.id = 'pePreviewWrap';
+    wrap.id        = 'pePreviewWrap';
     wrap.className = 'pe-preview-wrap';
     document.getElementById('peAttachments').after(wrap);
   }
   wrap.innerHTML = _peAttachments.map((a, i) => {
-    const src = a.src || a.data || '';
+    if (a.type === 'youtube')
+      return `<div class="pe-preview-item"><img
+        src="https://img.youtube.com/vi/${a.ytId}/mqdefault.jpg"
+        style="width:100%;height:100%;object-fit:cover">
+        <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
     if (a.type === 'image')
-      return `<div class="pe-preview-item"><img src="${src}" alt="">
+      return `<div class="pe-preview-item" id="pprev_${i}">
+        <div class="media-loading" style="font-size:10pt">⏳</div>
         <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
     if (a.type === 'video')
-      return `<div class="pe-preview-item"><video src="${src}" style="width:100%;height:100%;object-fit:cover"></video>
+      return `<div class="pe-preview-item" id="pprev_${i}">
+        <div style="color:#fff;font-size:18pt;text-align:center;padding:10px">🎥</div>
+        <span style="color:#ccc;font-size:8pt">${a.name.slice(0,14)}</span>
         <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
     if (a.type === 'audio')
       return `<div class="pe-preview-item pe-preview-audio">🎵<br>${a.name.slice(0,14)}
         <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
-    if (a.type === 'youtube')
-      return `<div class="pe-preview-item"><img src="https://img.youtube.com/vi/${a.ytId}/mqdefault.jpg"
-        style="width:100%;height:100%;object-fit:cover"><button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
     return `<div class="pe-preview-item pe-preview-file">📎<br>${a.name.slice(0,14)}
       <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button></div>`;
   }).join('');
+
+  // تحميل معاينات الصور عبر MediaProxy
+  _peAttachments.forEach(async (a, i) => {
+    if (a.type !== 'image') return;
+    const container = document.getElementById('pprev_' + i);
+    if (!container) return;
+    if (a.fileId) {
+      const result = await MediaProxy.getUrl(a.fileId);
+      if (result) container.innerHTML = `<img src="${result.url}"
+        style="width:100%;height:100%;object-fit:cover">
+        <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button>`;
+    } else if (a.data) {
+      container.innerHTML = `<img src="${a.data}"
+        style="width:100%;height:100%;object-fit:cover">
+        <button class="pe-prev-remove" onclick="removePeAtt(${i})">✕</button>`;
+    }
+  });
 }
 
 // كشف YouTube عند اللصق في Textarea
