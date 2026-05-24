@@ -2193,6 +2193,9 @@ function buildPostCard(post, isOwner) {
   const name    = u ? (u.username || '—') : '—';
   const ts      = post.createdAt ? timeAgo(post.createdAt) : '';
 
+  // معرف المنشور — يجب تعريفه أولاً قبل أي استخدام
+  const pid = post.id;
+
   // تجميع الوسائط حسب النوع
   const atts   = post.attachments || [];
   const images = atts.filter(a => a.type==='image');
