@@ -44,10 +44,10 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .user-card{background:var(--card);border-radius:16px;overflow:hidden;
   box-shadow:var(--shadow);border:1px solid var(--border);transition:.2s;position:relative;}
 .user-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.12);}
-.user-card-cover{height:80px;background:linear-gradient(135deg,#2c3e50,#3498db);}
-.user-avatar-wrap{margin:-38px auto 0;width:76px;height:76px;border-radius:50%;
-  border:3px solid var(--card);overflow:hidden;background:#eee;
-  display:flex;align-items:center;justify-content:center;font-size:28pt;}
+.user-card-cover{height:100px;background:linear-gradient(135deg,#2c3e50,#3498db);}
+.user-avatar-wrap{margin:-52px auto 0;width:104px;height:104px;border-radius:50%;
+  border:4px solid var(--card);overflow:hidden;background:#eee;
+  display:flex;align-items:center;justify-content:center;font-size:38pt;}
 .user-avatar-wrap img{width:100%;height:100%;object-fit:cover;}
 .user-info{text-align:center;padding:10px 12px 14px;}
 .user-name{font-family:'Aref Ruqaa',serif;font-size:14pt;color:#2c3e50;margin-bottom:2px;}
@@ -198,14 +198,115 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .user-mini-name{font-family:'Aref Ruqaa',serif;font-size:15pt;color:#2c3e50;}
 .user-mini-acct{font-size:10pt;color:var(--gold);}
 .user-mini-tier{font-size:9.5pt;margin-top:4px;}
+
+/* ══ AUTH GATE ══ */
+#authGate{
+  position:fixed;inset:0;z-index:2000;
+  background:linear-gradient(135deg,#1a2a1a 0%,#2c3e50 100%);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.gate-card{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:20px;
+  padding:36px 32px;
+  width:100%;max-width:400px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+  text-align:center;
+}
+.gate-logo{font-size:42pt;margin-bottom:8px;}
+.gate-title{font-family:'Aref Ruqaa',serif;font-size:20pt;color:#fff;margin-bottom:4px;}
+.gate-sub{font-size:10.5pt;color:rgba(255,255,255,.55);margin-bottom:28px;}
+.gate-input-wrap{position:relative;margin-bottom:14px;}
+.gate-input{
+  width:100%;padding:13px 16px 13px 44px;
+  border:1.5px solid rgba(255,255,255,.2);
+  border-radius:12px;background:rgba(255,255,255,.08);
+  color:#fff;font-family:'Amiri',serif;font-size:13pt;
+  outline:none;letter-spacing:2px;text-align:center;
+  transition:.2s;
+}
+.gate-input::placeholder{letter-spacing:0;color:rgba(255,255,255,.35);}
+.gate-input:focus{border-color:var(--green);background:rgba(255,255,255,.12);}
+.gate-eye{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:rgba(255,255,255,.5);
+  cursor:pointer;font-size:16pt;line-height:1;
+}
+.gate-btn{
+  width:100%;padding:13px;border-radius:12px;border:none;
+  background:var(--green);color:#fff;
+  font-family:'Amiri',serif;font-size:13pt;cursor:pointer;
+  transition:.2s;margin-bottom:10px;
+}
+.gate-btn:hover{background:#5a7a1e;transform:translateY(-1px);}
+.gate-btn:disabled{background:#555;cursor:default;transform:none;}
+.gate-err{color:#ff7675;font-size:10pt;margin-top:6px;min-height:18px;}
+.gate-hint{font-size:9.5pt;color:rgba(255,255,255,.35);margin-top:14px;}
+
+/* ══ CHANGE CODE MODAL ══ */
+.cc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(4px);z-index:1500;display:none;
+  align-items:center;justify-content:center;}
+.cc-overlay.open{display:flex;}
+.cc-box{background:var(--card);border-radius:16px;width:92%;max-width:420px;
+  padding:24px 22px;box-shadow:0 16px 50px rgba(0,0,0,.25);}
+.cc-title{font-family:'Aref Ruqaa',serif;font-size:16pt;color:var(--green);
+  margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.cc-field{width:100%;padding:11px 14px;border:1.5px solid var(--border);
+  border-radius:10px;font-family:'Amiri',serif;font-size:12pt;
+  outline:none;margin-bottom:10px;}
+.cc-field:focus{border-color:var(--green);}
+.cc-actions{display:flex;gap:10px;margin-top:4px;}
 </style>
 </head>
 <body>
 
+<!-- ══ AUTH GATE ══ -->
+<div id="authGate">
+  <div class="gate-card">
+    <div class="gate-logo">⚙️</div>
+    <div class="gate-title">لوحة الإدارة</div>
+    <div class="gate-sub">أدخل رمز الدخول للمتابعة</div>
+    <div class="gate-input-wrap">
+      <input class="gate-input" id="gateCodeInput" type="password"
+        placeholder="● ● ● ● ● ● ● ● ●"
+        onkeydown="if(event.key==='Enter')submitGateCode()">
+      <button class="gate-eye" onclick="toggleGateEye(this)" tabindex="-1">👁</button>
+    </div>
+    <div class="gate-err" id="gateErr"></div>
+    <button class="gate-btn" id="gateBtn" onclick="submitGateCode()">دخول</button>
+    <div class="gate-hint">أو سجّل دخولك بحساب مشرف وستُفتح اللوحة تلقائيًا</div>
+  </div>
+</div>
+
+<!-- ══ CHANGE CODE MODAL ══ -->
+<div class="cc-overlay" id="ccModal">
+  <div class="cc-box">
+    <div class="cc-title">🔑 تغيير رمز الدخول</div>
+    <input class="cc-field" id="ccNew"     type="password" placeholder="الرمز الجديد (6 أحرف على الأقل)">
+    <input class="cc-field" id="ccConfirm" type="password" placeholder="تأكيد الرمز الجديد">
+    <div class="gate-err" id="ccErr"></div>
+    <div class="cc-actions">
+      <button class="btn-primary"    style="flex:1" onclick="confirmChangeCode()">✅ حفظ الرمز</button>
+      <button class="btn-secondary"  style="flex:1" onclick="closeCcModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOPBAR -->
 <div class="topbar">
   <span class="topbar-title">⚙️ لوحة الإدارة</span>
-  <div class="topbar-user" id="topbarUser"></div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button id="changeCodeBtn" onclick="openCcModal()"
+      style="background:none;border:1.5px solid var(--border);border-radius:10px;
+             padding:7px 14px;font-family:'Amiri',serif;font-size:10.5pt;
+             cursor:pointer;color:#555;display:none;transition:.2s;"
+      title="تغيير رمز الدخول">🔑 تغيير الرمز</button>
+    <div class="topbar-user" id="topbarUser"></div>
+  </div>
 </div>
 
 <!-- SEARCH -->
@@ -283,6 +384,15 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
         <input type="text" id="notifTitle" placeholder="عنوان الإشعار...">
         <textarea id="notifMsg" placeholder="نص الإشعار..."></textarea>
         <input type="text" id="notifLink" placeholder="رابط (اختياري)...">
+        <div>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:11pt;
+            color:var(--green);cursor:pointer;padding:4px 0">
+            📎 إرفاق ملفات
+            <input type="file" id="notifFileInput" style="display:none" multiple
+              onchange="previewNotifFiles(this)" accept="image/*,video/*,audio/*,.pdf">
+          </label>
+          <div id="notifFilesPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+        </div>
         <div style="display:flex;gap:10px">
           <button class="btn-primary" style="flex:1" onclick="confirmSendNotif()">📤 إرسال</button>
           <button class="btn-secondary" style="flex:1" onclick="closeModal('sendNotifModal')">إلغاء</button>
@@ -300,23 +410,112 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 const SCRIPT_URL = AUTH_CONFIG.SCRIPT_URL;
 let _allUsers    = [];
 let _filtered    = [];
-let _activeUser  = null; // المستخدم المحدد حالياً
+let _activeUser  = null;
 
-// التحقق من صلاحية المشرف
+// ════════════════════════════════════════════════
+// AUTH GATE
+// ════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  if (!currentUser || currentUser.tier !== 'admin' || currentUser.id !== 'user_1776619013182') {
-    document.body.innerHTML = `<div style="text-align:center;padding:100px;font-size:16pt;color:#e74c3c">
-      ⛔️ هذه الصفحة للمشرفين فقط</div>`;
-    return;
+  // إن كان المستخدم مشرفًا مسبقًا → افتح اللوحة مباشرة
+  if (currentUser && currentUser.tier === 'admin') {
+    grantAccess(currentUser);
   }
+  // وإلا → أبقِ البوابة ظاهرة وانتظر الرمز
+});
 
-  // عرض بيانات المشرف في الـ topbar
-  const photo = currentUser.profilePhoto
-    ? `<img src="${currentUser.profilePhoto}" alt="">` : '👤';
+/** يُنفَّذ بعد التحقق الناجح (رتبة أو رمز) */
+function grantAccess(user) {
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('changeCodeBtn').style.display = 'inline-flex';
+
+  const photo = user.profilePhoto
+    ? `<img src="${user.profilePhoto}" alt="">` : '👤';
   document.getElementById('topbarUser').innerHTML =
-    `${photo} <span>${currentUser.username}</span>`;
+    `${photo} <span>${user.username}</span>`;
 
   loadUsers();
+}
+
+/** إرسال رمز البوابة للتحقق */
+async function submitGateCode() {
+  const code = document.getElementById('gateCodeInput').value.trim();
+  if (!code) { document.getElementById('gateErr').textContent = 'أدخل الرمز أولًا'; return; }
+
+  const btn = document.getElementById('gateBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ جارٍ التحقق...';
+  document.getElementById('gateErr').textContent = '';
+
+  try {
+    const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+      action: 'admin_verify_code',
+      code,
+      userId: currentUser ? currentUser.id : null
+    })});
+    const data = await res.json();
+
+    if (data.success) {
+      // تحديث currentUser في الذاكرة والتخزين المحلي إن أُعيد المستخدم
+      if (data.user) {
+        const merged = Object.assign({}, currentUser || {}, data.user);
+        try { localStorage.setItem('currentUser', JSON.stringify(merged)); } catch(_) {}
+        window.currentUser = merged;
+      }
+      grantAccess(window.currentUser || data.user || { username:'مشرف', profilePhoto:'' });
+    } else {
+      document.getElementById('gateErr').textContent = '❌ ' + (data.message || 'الرمز غير صحيح');
+      document.getElementById('gateCodeInput').value = '';
+      document.getElementById('gateCodeInput').focus();
+    }
+  } catch(e) {
+    document.getElementById('gateErr').textContent = '⚠️ تعذّر الاتصال';
+  }
+  btn.disabled = false;
+  btn.textContent = 'دخول';
+}
+
+function toggleGateEye(btn) {
+  const inp = document.getElementById('gateCodeInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+// ════════════════════════════════════════════════
+// CHANGE CODE MODAL
+// ════════════════════════════════════════════════
+function openCcModal()  { document.getElementById('ccModal').classList.add('open'); }
+function closeCcModal() {
+  document.getElementById('ccModal').classList.remove('open');
+  ['ccNew','ccConfirm'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('ccErr').textContent = '';
+}
+
+async function confirmChangeCode() {
+  const nw  = document.getElementById('ccNew').value.trim();
+  const cf  = document.getElementById('ccConfirm').value.trim();
+  const err = document.getElementById('ccErr');
+  if (nw.length < 6)   { err.textContent='الرمز يجب أن يكون 6 أحرف على الأقل'; return; }
+  if (nw !== cf)        { err.textContent='الرمزان غير متطابقَين'; return; }
+
+  err.textContent = '';
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+    action: 'admin_change_code',
+    requesterId: currentUser.id,
+    newCode: nw
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (data && data.success) {
+    closeCcModal();
+    showToast('✅ تم تغيير رمز الدخول بنجاح');
+  } else {
+    err.textContent = '⚠️ ' + (data && data.message ? data.message : 'فشل التغيير');
+  }
+}
+
+document.getElementById('ccModal').addEventListener('click', e=>{
+  if (e.target === document.getElementById('ccModal')) closeCcModal();
 });
 
 // ════════════════════════════════════════════════
@@ -435,12 +634,12 @@ async function openStatsModal(uid) {
   if (!data || !data.success) { body.innerHTML='<div class="empty-msg">⚠️ تعذر جلب البيانات</div>'; return; }
 
   const s    = data.stats;
-  const tabs = ['overview','sharedBooks','viewedBooks','notifications'];
   const tabsHtml = [
-    { id:'overview',     label:'نظرة عامة' },
-    { id:'sharedBooks',  label:'الكتب المشاركة' },
-    { id:'viewedBooks',  label:'الكتب المشاهدة' },
-    { id:'notifications',label:'الإشعارات' },
+    { id:'overview',       label:'نظرة عامة' },
+    { id:'sharedBooks',    label:'الكتب المشاركة' },
+    { id:'viewedBooks',    label:'الكتب المشاهدة' },
+    { id:'commentHistory', label:'التعليقات' },
+    { id:'notifications',  label:'الإشعارات' },
   ].map((t,i) => `<button class="modal-tab ${i===0?'active':''}"
     onclick="switchModalTab('${t.id}',this)">${t.label}</button>`).join('');
 
@@ -450,18 +649,20 @@ async function openStatsModal(uid) {
 
     <div id="tab_overview" class="modal-tab-content active">
       <div class="stats-grid">
-        ${[['📚','الكتب المشاركة',s.sharedBooks.length],['📝','المنشورات',s.posts],
-           ['🏅','الوثائق',s.docs],['👥','المتابعون',s.followers],
-           ['🔔','الإشعارات',s.notifications]].map(([e,l,v])=>
+        ${[['📚','الكتب',s.books||0],['🔗','مشاركات',s.sharedBooks.length],
+           ['📝','منشورات',s.posts],['📄','وثائق',s.docs],
+           ['👥','متابعون',s.followers],['👤','يتابع',s.following||0],
+           ['🔔','إشعارات',s.notifications]].map(([e,l,v])=>
           `<div class="stat-box"><div class="stat-box-num">${v}</div>
            <div class="stat-box-lbl">${e} ${l}</div></div>`).join('')}
       </div>
       <div class="stat-list">
         ${[['البريد',s.email||'—'],['الرتبة',tierLabel(s.tier)],
+           ['اسم الحساب',s.accountName?'@'+esc(s.accountName):'—'],
            ['التسجيل',s.registerDate||'—'],['آخر دخول',s.lastLogin||'—']].map(([k,v])=>
           `<div class="stat-list-item">
             <span style="color:#888;min-width:90px">${k}</span>
-            <span style="font-weight:bold">${esc(String(v))}</span>
+            <span style="font-weight:bold">${v}</span>
           </div>`).join('')}
       </div>
     </div>
@@ -470,18 +671,32 @@ async function openStatsModal(uid) {
       ${s.sharedBooks.length
         ? s.sharedBooks.map(sh=>`<div class="stat-list-item">
             📖 <a href="s/index.html?id=${sh.shareId}" target="_blank"
-              style="color:var(--blue)">رابط مشاركة: ${esc(sh.bookId||sh.shareId)}</a>
+              style="color:var(--blue)">${esc(sh.title||sh.bookId||sh.shareId)}</a>
           </div>`).join('')
         : '<div class="empty-msg">لا توجد مشاركات</div>'}
     </div>
 
     <div id="tab_viewedBooks" class="modal-tab-content">
-      ${s.viewedBooks.length
+      ${(s.viewedBooks||[]).length
         ? s.viewedBooks.map(v=>`<div class="stat-list-item">
-            👁️ <a href="s/index.html?id=${v.shareId}" target="_blank"
-              style="color:var(--blue)">${esc(v.bookData?.title||v.shareId)}</a>
+            👁️ <a href="s/index.html?id=${v.shareId||v}" target="_blank"
+              style="color:var(--blue)">${esc((v.bookData&&v.bookData.title)||v.shareId||String(v))}</a>
           </div>`).join('')
         : '<div class="empty-msg">لا توجد كتب مشاهدة</div>'}
+    </div>
+
+    <div id="tab_commentHistory" class="modal-tab-content">
+      ${(s.commentHistory||[]).length
+        ? s.commentHistory.map(c=>`
+          <div class="note-card">
+            <div class="note-meta">
+              <span style="color:${c.type==='book'?'var(--blue)':'var(--green)'}">${c.type==='book'?'📖 كتاب':'📝 منشور'}</span>
+              <span>${timeAgo(c.timestamp||c.createdAt||0)}</span>
+            </div>
+            <div class="note-text">${esc(c.text||'')}</div>
+            ${c.targetId?`<a href="s/index.html?id=${c.targetId}" target="_blank" style="font-size:9.5pt;color:var(--blue)">عرض المصدر ↗</a>`:''}
+          </div>`).join('')
+        : '<div class="empty-msg">لا يوجد سجل تعليقات مخزّن بعد</div>'}
     </div>
 
     <div id="tab_notifications" class="modal-tab-content">
@@ -719,7 +934,16 @@ async function openNotesModal(uid) {
 
     <div id="tab_notes_tab" class="modal-tab-content active">
       <div class="notes-compose">
-        <textarea class="notes-textarea" id="noteInput" placeholder="أكتب ملاحظة..."></textarea>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <textarea class="notes-textarea" id="noteInput" placeholder="أكتب ملاحظة..."></textarea>
+          <div id="noteFilesPreview" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          <label style="display:inline-flex;align-items:center;gap:6px;font-size:10pt;
+            color:var(--green);cursor:pointer;padding:4px 0">
+            📎 إرفاق ملف
+            <input type="file" id="noteFileInput" style="display:none" multiple
+              onchange="previewNoteFiles(this)" accept="image/*,video/*,audio/*,.pdf">
+          </label>
+        </div>
         <button class="notes-send-btn" onclick="sendNote('${uid}')">إرسال</button>
       </div>
       <div id="notesListWrap">
@@ -730,6 +954,11 @@ async function openNotesModal(uid) {
               <span>${timeAgo(n.createdAt)}</span>
             </div>
             <div class="note-text">${esc(n.text||n.message||'')}</div>
+            ${(n.files&&n.files.length)?n.files.map(f=>`
+              <a href="https://drive.google.com/file/d/${f.fileId}/view" target="_blank"
+                style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;
+                font-size:9.5pt;color:var(--blue);text-decoration:none">
+                📎 ${esc(f.name||'ملف')}</a>`).join(' '):''}
           </div>`).join('') || '<div class="empty-msg">لا توجد ملاحظات</div>'}
       </div>
     </div>
@@ -750,22 +979,46 @@ async function openNotesModal(uid) {
 async function sendNote(uid) {
   const text = document.getElementById('noteInput')?.value.trim();
   if (!text) { showToast('⚠️ أكتب ملاحظة أولاً'); return; }
+
+  // قراءة الملفات المرفقة
+  const fileInput = document.getElementById('noteFileInput');
+  const files = fileInput ? Array.from(fileInput.files) : [];
+  let filesPayload = [];
+  for (const f of files) {
+    try {
+      const b64 = await new Promise((res,rej)=>{
+        const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(f);
+      });
+      filesPayload.push({ name:f.name, mimeType:f.type, data:b64, size:f.size });
+    } catch(_) {}
+  }
+
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
     action:'admin_add_note', requesterId:currentUser.id, targetUserId:uid,
-    note: { text, authorId:currentUser.id, authorName:currentUser.username, createdAt:Date.now() }
+    note: { text, authorId:currentUser.id, authorName:currentUser.username, createdAt:Date.now(), files:filesPayload }
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
   if (data && data.success) {
     document.getElementById('noteInput').value = '';
-    // أضف الملاحظة محلياً
+    if (fileInput) fileInput.value = '';
+    document.getElementById('noteFilesPreview').innerHTML = '';
     const wrap = document.getElementById('notesListWrap');
     const div  = document.createElement('div');
     div.className = 'note-card';
     div.innerHTML = `<div class="note-meta"><span>${esc(currentUser.username)}</span><span>الآن</span></div>
-      <div class="note-text">${esc(text)}</div>`;
+      <div class="note-text">${esc(text)}</div>
+      ${filesPayload.length?`<span style="font-size:9.5pt;color:#888">📎 ${filesPayload.length} مرفق</span>`:''}`;
     wrap.prepend(div);
     showToast('✅ تم إرسال الملاحظة');
   } else { showToast('⚠️ فشل الإرسال'); }
+}
+
+function previewNoteFiles(input) {
+  const wrap = document.getElementById('noteFilesPreview');
+  if (!wrap) return;
+  wrap.innerHTML = Array.from(input.files).map(f=>
+    `<span style="background:#f0f4f0;border-radius:8px;padding:3px 10px;font-size:9.5pt;
+      display:flex;align-items:center;gap:4px">📎 ${esc(f.name)}</span>`).join('');
 }
 
 // ════════════════════════════════════════════════
@@ -777,7 +1030,17 @@ function openSendNotif(uid) {
   ['notifTitle','notifMsg','notifLink'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  const fi=document.getElementById('notifFileInput'); if(fi) fi.value='';
+  const fp=document.getElementById('notifFilesPreview'); if(fp) fp.innerHTML='';
   openModal('sendNotifModal');
+}
+
+function previewNotifFiles(input) {
+  const wrap = document.getElementById('notifFilesPreview');
+  if (!wrap) return;
+  wrap.innerHTML = Array.from(input.files).map(f=>
+    `<span style="background:#f0f4f0;border-radius:8px;padding:3px 10px;font-size:9.5pt;
+      display:inline-flex;align-items:center;gap:4px">📎 ${esc(f.name)}</span>`).join('');
 }
 
 async function confirmSendNotif() {
@@ -787,11 +1050,25 @@ async function confirmSendNotif() {
   const link  = document.getElementById('notifLink').value.trim();
   if (!msg) { showToast('⚠️ أكتب نص الإشعار'); return; }
 
+  // قراءة الملفات
+  const fileInput = document.getElementById('notifFileInput');
+  const files = fileInput ? Array.from(fileInput.files) : [];
+  let attachments = [];
+  for (const f of files) {
+    try {
+      const b64 = await new Promise((res,rej)=>{
+        const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(f);
+      });
+      attachments.push({ name:f.name, mimeType:f.type, data:b64, size:f.size });
+    } catch(_) {}
+  }
+
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
     action:'admin_send_notif', requesterId:currentUser.id,
     targetUserId:_activeUser.id,
     notification:{ title:title||'إشعار من الموقع', message:msg, link:link||'', type:'site',
-                   sender:{ id:'system', name:'الموقع' }, createdAt:Date.now() }
+                   sender:{ id:'system', name:'الموقع' }, createdAt:Date.now() },
+    attachments
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
   if (data && data.success) {
