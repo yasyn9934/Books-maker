@@ -189,6 +189,18 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .loading-center{text-align:center;padding:40px;color:#aaa;font-size:13pt;}
 .empty-msg{text-align:center;padding:30px;color:#aaa;font-size:11pt;}
 
+/* بطاقات الكتب في إحصائيات المستخدم */
+.admin-books-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;padding:4px 0;}
+.admin-book-card{border-radius:10px;overflow:hidden;border:1px solid var(--border);
+  cursor:pointer;transition:.2s;background:var(--card);}
+.admin-book-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12);}
+.admin-book-cover{height:110px;background:#e9ecef;background-size:cover;background-position:center;
+  display:flex;align-items:center;justify-content:center;color:#aaa;}
+.admin-book-info{padding:8px 10px;}
+.admin-book-title{font-size:10pt;font-weight:bold;color:#333;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;}
+.admin-book-meta{font-size:9pt;color:#999;}
+
 /* ── PROFILE MINI CARD ── */
 .user-mini-card{display:flex;gap:12px;align-items:center;
   background:#f5f7f5;border-radius:12px;padding:12px;margin-bottom:16px;}
@@ -669,19 +681,39 @@ async function openStatsModal(uid) {
 
     <div id="tab_sharedBooks" class="modal-tab-content">
       ${s.sharedBooks.length
-        ? s.sharedBooks.map(sh=>`<div class="stat-list-item">
-            📖 <a href="s/index.html?id=${sh.shareId}" target="_blank"
-              style="color:var(--blue)">${esc(sh.title||sh.bookId||sh.shareId)}</a>
-          </div>`).join('')
+        ? `<div class="admin-books-grid">${s.sharedBooks.map(sh=>{
+            const cover = (sh.bookData && (sh.bookData.cardImage||sh.bookData.cover)) || '';
+            const title = esc(sh.title || (sh.bookData&&sh.bookData.title) || sh.bookId || sh.shareId);
+            return `<div class="admin-book-card" onclick="window.open('s/index.html?id=${sh.shareId}','_blank')">
+              <div class="admin-book-cover" style="${cover?`background-image:url('${cover}')`:'background:#ddd'}">
+                ${!cover?`<span style="font-size:22pt">📖</span>`:''}
+              </div>
+              <div class="admin-book-info">
+                <div class="admin-book-title">${title}</div>
+                <div class="admin-book-meta">👁️ ${sh.uses||0} مشاهدة</div>
+              </div>
+            </div>`;
+          }).join('')}</div>`
         : '<div class="empty-msg">لا توجد مشاركات</div>'}
     </div>
 
     <div id="tab_viewedBooks" class="modal-tab-content">
       ${(s.viewedBooks||[]).length
-        ? s.viewedBooks.map(v=>`<div class="stat-list-item">
-            👁️ <a href="s/index.html?id=${v.shareId||v}" target="_blank"
-              style="color:var(--blue)">${esc((v.bookData&&v.bookData.title)||v.shareId||String(v))}</a>
-          </div>`).join('')
+        ? `<div class="admin-books-grid">${s.viewedBooks.map(v=>{
+            const bd    = (v && v.bookData) ? v.bookData : {};
+            const cover = bd.cardImage || bd.cover || '';
+            const title = esc(bd.title || v.shareId || '');
+            const sid   = v.shareId || v;
+            return `<div class="admin-book-card" onclick="window.open('s/index.html?id=${sid}','_blank')">
+              <div class="admin-book-cover" style="${cover?`background-image:url('${cover}')`:'background:#ddd'}">
+                ${!cover?`<span style="font-size:22pt">📚</span>`:''}
+              </div>
+              <div class="admin-book-info">
+                <div class="admin-book-title">${title||'كتاب'}</div>
+                <div class="admin-book-meta">📅 ${v.viewedAt?new Date(v.viewedAt).toLocaleDateString('ar'):''}</div>
+              </div>
+            </div>`;
+          }).join('')}</div>`
         : '<div class="empty-msg">لا توجد كتب مشاهدة</div>'}
     </div>
 
