@@ -19,13 +19,42 @@
     .sk-line,.sk-circle{animation:sk-pulse 1.4s ease-in-out infinite;}
 
     /* ── MediaProxy containers ── */
-    .media-proxy-container{position:relative;border-radius:8px;overflow:hidden;background:#1a1a1a;}
-    .media-loading{display:flex;align-items:center;justify-content:center;
-      min-height:54px;color:#888;font-size:11pt;padding:8px;}
+    .media-proxy-container{position:relative;border-radius:10px;overflow:hidden;background:#1a1a1a;}
+    .media-proxy-container video{width:100%;height:100%;object-fit:contain;display:block;}
+    .media-proxy-container audio{width:100%;display:block;padding:8px 0;}
+    .video-proxy{min-height:240px;display:flex;align-items:center;justify-content:center;}
+    .audio-proxy{min-height:54px;background:transparent;}
+
+    /* ساعة رملية متحركة أثناء تحميل الفيديو */
+    @keyframes hglass-flip{
+      0%,40%    { transform: rotate(0deg);   }
+      50%,90%   { transform: rotate(180deg); }
+      100%      { transform: rotate(180deg); }
+    }
+    @keyframes sand-fall{
+      0%,5%   { clip-path: polygon(35% 0,65% 0,60% 50%,40% 50%); opacity:1; }
+      45%,50% { clip-path: polygon(40% 50%,60% 50%,65% 100%,35% 100%); opacity:1; }
+      95%,100%{ clip-path: polygon(35% 0,65% 0,60% 50%,40% 50%); opacity:1; }
+    }
+    .media-loading{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      width:100%;height:100%;min-height:200px;
+      background:#111;
+    }
+    .media-loading .hg-wrap{
+      position:relative;width:60px;height:80px;
+      animation: hglass-flip 2.4s ease-in-out infinite;
+    }
+    .media-loading .hg-svg{ width:60px;height:80px; }
+    .media-loading .hg-sand{
+      position:absolute;inset:0;
+      animation: sand-fall 2.4s ease-in-out infinite;
+      background:rgba(255,200,80,.85);
+      clip-path: polygon(35% 0,65% 0,60% 50%,40% 50%);
+    }
+
     .media-error{display:flex;align-items:center;justify-content:center;
       min-height:54px;color:#e74c3c;font-size:10pt;padding:8px;}
-    .video-proxy{min-height:200px;}
-    .audio-proxy{min-height:54px;}
 
     /* TOP BAR */
     .topbar{position:sticky;top:0;z-index:200;background:var(--card);
@@ -714,6 +743,26 @@
     .account-tag button{background:none;border:none;cursor:pointer;color:#e74c3c;font-size:11pt;padding:0;}
 
     /* media viewer */
+    /* ══ POST DEEP-LINK OVERLAY ══ */
+    #postDeepOverlay{
+      position:fixed;inset:0;z-index:1200;background:var(--bg);
+      display:none;flex-direction:column;overflow-y:auto;
+    }
+    #postDeepOverlay.open{ display:flex; }
+    .post-deep-topbar{
+      position:sticky;top:0;z-index:10;
+      background:var(--card);border-bottom:1px solid var(--border);
+      padding:10px 16px;display:flex;align-items:center;gap:10px;
+    }
+    .post-deep-back{
+      background:none;border:none;font-size:18pt;cursor:pointer;
+      color:var(--green);line-height:1;padding:0 6px;
+    }
+    .post-deep-title{
+      font-family:'Aref Ruqaa',serif;font-size:14pt;color:var(--green);
+    }
+    #postDeepContent{ padding:16px;max-width:680px;margin:0 auto;width:100%; }
+
     .media-viewer-overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:2000;
       display:none;align-items:center;justify-content:center;
@@ -920,6 +969,15 @@
                background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:#555">إلغاء</button>
     </div>
   </div>
+</div>
+
+<!-- ══════════ POST DEEP-LINK OVERLAY ══════════ -->
+<div id="postDeepOverlay">
+  <div class="post-deep-topbar">
+    <button class="post-deep-back" onclick="closeDeepPost()">&#8594;</button>
+    <span class="post-deep-title">المنشور</span>
+  </div>
+  <div id="postDeepContent"></div>
 </div>
 
 <!-- ══════════ MEDIA VIEWER ══════════ -->
@@ -1875,17 +1933,17 @@ function isTabVisible(tabKey) {
 // ══════════════════════════════════════════════
 const MediaProxy = {
 
-  // كاش blob URLs في الذاكرة لتجنب طلبات مكررة
+  // كاش blob URLs في الذاكرة — {url, mode, mime, name, modifiedTime}
   _cache: {},
 
-  /**
-   * جلب ملف عبر GAS وإعادة URL قابل للاستخدام في <img>/<audio>/<video>
-   * - ملفات ≤ 20MB → blob:// URL مباشرة
-   * - ملفات > 20MB  → GAS doGet URL (يُستخدم في iframe)
-   */
   async getUrl(fileId) {
     if (!fileId) return null;
-    if (this._cache[fileId]) return this._cache[fileId];
+
+    // إن كان مخزناً في الذاكرة، أعد التحقق من modifiedTime كل دقيقتين فقط
+    const cached = this._cache[fileId];
+    if (cached && cached._checkedAt && (Date.now() - cached._checkedAt < 120_000)) {
+      return cached;
+    }
 
     try {
       const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
@@ -1895,19 +1953,32 @@ const MediaProxy = {
       const json = await res.json();
       if (!json.success) return null;
 
-      if (json.mode === 'inline') {
-        // base64 → Blob → Object URL
-        const bytes  = Uint8Array.from(atob(json.data), c => c.charCodeAt(0));
-        const blob   = new Blob([bytes], { type: json.mimeType });
-        const url    = URL.createObjectURL(blob);
-        this._cache[fileId] = { url, mode: 'inline', mime: json.mimeType, name: json.fileName };
-        return this._cache[fileId];
-      } else {
-        // iframe src — GAS doGet URL
-        this._cache[fileId] = { url: json.iframeSrc, mode: 'iframe', mime: json.mimeType, name: json.fileName };
-        return this._cache[fileId];
+      // إن تغيّر الملف (modifiedTime مختلف) ابنِ blob جديدة
+      const sameFile = cached && json.modifiedTime && cached.modifiedTime === json.modifiedTime;
+      if (sameFile) {
+        cached._checkedAt = Date.now();
+        return cached;
       }
-    } catch(_) { return null; }
+
+      // حرر blob القديمة إن وُجدت
+      if (cached && cached.mode === 'inline' && cached.url.startsWith('blob:')) {
+        try { URL.revokeObjectURL(cached.url); } catch(_) {}
+      }
+
+      let entry;
+      if (json.mode === 'inline') {
+        const bytes = Uint8Array.from(atob(json.data), c => c.charCodeAt(0));
+        const blob  = new Blob([bytes], { type: json.mimeType });
+        const url   = URL.createObjectURL(blob);
+        entry = { url, mode:'inline', mime:json.mimeType, name:json.fileName,
+                  modifiedTime: json.modifiedTime||'', _checkedAt: Date.now() };
+      } else {
+        entry = { url:json.iframeSrc, mode:'iframe', mime:json.mimeType, name:json.fileName,
+                  modifiedTime: json.modifiedTime||'', _checkedAt: Date.now() };
+      }
+      this._cache[fileId] = entry;
+      return entry;
+    } catch(_) { return cached || null; }
   },
 
   /**
@@ -1915,7 +1986,17 @@ const MediaProxy = {
    */
   async render(fileId, container, opts = {}) {
     if (!fileId || !container) return;
-    container.innerHTML = `<div class="media-loading">⏳</div>`;
+    // ساعة رملية متحركة
+    const hgHtml = `<div class="media-loading">
+      <div class="hg-wrap">
+        <svg class="hg-svg" viewBox="0 0 60 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 4h40M10 76h40M14 4 C14 30 46 50 46 76 M46 4 C46 30 14 50 14 76"
+            stroke="#aaa" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="hg-sand"></div>
+      </div>
+    </div>`;
+    container.innerHTML = hgHtml;
     const result = await this.getUrl(fileId);
     if (!result) { container.innerHTML = `<div class="media-error">⚠️ تعذّر تحميل الملف</div>`; return; }
     const { url, mode, mime } = result;
@@ -1923,19 +2004,23 @@ const MediaProxy = {
 
     if (mode === 'iframe') {
       container.innerHTML = `<iframe src="${url}"
-        style="width:100%;height:${opts.height||'300px'};border:none;border-radius:8px"
+        style="width:100%;height:${opts.height||'280px'};border:none;border-radius:8px"
         allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe>`;
       return;
     }
     // inline blob://
     if (kind === 'image') {
-      container.innerHTML = `<img src="${url}" style="max-width:100%;border-radius:8px"
+      container.innerHTML = `<img src="${url}"
+        style="max-width:100%;max-height:400px;object-fit:contain;border-radius:8px;display:block;margin:0 auto"
         alt="" ${opts.onclick ? `onclick="${opts.onclick}"` : ''}>`;
     } else if (kind === 'video') {
       container.innerHTML = `<video controls src="${url}"
-        style="width:100%;border-radius:8px" ${opts.autoplay?'autoplay':''}></video>`;
+        style="width:100%;height:100%;max-height:420px;object-fit:contain;
+               background:#000;border-radius:8px;display:block"
+        ${opts.autoplay?'autoplay':''}></video>`;
     } else if (kind === 'audio') {
-      container.innerHTML = `<audio controls src="${url}" style="width:100%"></audio>`;
+      container.innerHTML = `<audio controls src="${url}"
+        style="width:100%;display:block;margin:8px 0"></audio>`;
     } else {
       container.innerHTML = `<embed src="${url}" type="${mime}"
         style="width:100%;height:${opts.height||'400px'};border-radius:8px">`;
@@ -2439,7 +2524,9 @@ function copyPostText(postId) {
 }
 
 function sharePostLink(postId) {
-  const url = location.href.split('?')[0] + '?uid=' + (currentUser&&currentUser.id||_targetUid) + '&post=' + postId;
+  // uid دائماً هو صاحب المنشور: إن كنا في وضع المالك نستخدم id المالك، وإلا id المزار
+  const ownerUid = _isOwner ? (currentUser && currentUser.id) : _targetUid;
+  const url = location.href.split('?')[0] + '?uid=' + ownerUid + '&post=' + postId;
   navigator.clipboard.writeText(url).then(() => showToast('✅ تم نسخ رابط المنشور'));
 }
 
@@ -2632,28 +2719,102 @@ function extractYoutubeId(url) {
   return m ? m[1] : null;
 }
 
-// رفع الملفات الكبيرة (> 10MB) إلى GAS/Drive — يُعيد fileId لا Drive URL
-async function uploadLargeFile(file) {
+// رفع الملفات إلى GAS/Drive — تقدم حقيقي + زر إلغاء
+let _uploadController = null; // AbortController للإلغاء
+
+function _showUploadProgress(fileName) {
+  let wrap = document.getElementById('_uploadProgressWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = '_uploadProgressWrap';
+    wrap.style.cssText = `
+      position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+      background:#2c3e50;color:#fff;padding:12px 18px;border-radius:14px;
+      z-index:9999;min-width:240px;max-width:340px;
+      box-shadow:0 4px 20px rgba(0,0,0,.4);
+      font-family:'Amiri',serif;font-size:11pt;
+    `;
+    document.body.appendChild(wrap);
+  }
+  wrap.innerHTML = `
+    <div style="margin-bottom:6px;font-size:10pt;opacity:.8;overflow:hidden;
+                text-overflow:ellipsis;white-space:nowrap">📤 ${fileName}</div>
+    <div style="background:rgba(255,255,255,.2);border-radius:6px;height:8px;overflow:hidden">
+      <div id="_uploadBar" style="height:100%;background:#6db33f;width:0%;transition:width .3s;border-radius:6px"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+      <span id="_uploadPct" style="font-size:10pt">0%</span>
+      <button id="_uploadCancelBtn" onclick="_cancelUpload()"
+        style="background:#e74c3c;border:none;color:#fff;border-radius:8px;
+               padding:4px 12px;cursor:pointer;font-family:'Amiri',serif;font-size:10pt">
+        إلغاء
+      </button>
+    </div>`;
+  wrap.style.display = 'block';
+}
+
+function _updateUploadProgress(pct) {
+  const bar = document.getElementById('_uploadBar');
+  const pctEl = document.getElementById('_uploadPct');
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+}
+
+function _hideUploadProgress() {
+  const wrap = document.getElementById('_uploadProgressWrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+function _cancelUpload() {
+  if (_uploadController) {
+    _uploadController.abort();
+    _uploadController = null;
+  }
+  _hideUploadProgress();
+  showToast('⚠️ تم إلغاء الرفع');
+}
+
+async function uploadLargeFile(file, onProgress) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async ev => {
       try {
-        const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify({
-            action:   'upload_file',
-            userId:   currentUser.id,
-            userName: currentUser.username || '',
-            fileName: file.name,
-            mimeType: file.type,
-            data:     ev.target.result
-          })
+        _uploadController = new AbortController();
+        const signal = _uploadController.signal;
+
+        // لا يدعم fetch التقدم الحقيقي — نستخدم XMLHttpRequest
+        const xhr = new XMLHttpRequest();
+        let aborted = false;
+        signal.addEventListener('abort', () => { aborted = true; xhr.abort(); });
+
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable && onProgress) onProgress((e.loaded / e.total) * 100);
         });
-        const data = await res.json();
-        if (data.success) resolve({ fileId: data.fileId, mimeType: data.mimeType });
-        else reject(new Error(data.message));
+
+        xhr.onload = () => {
+          if (aborted) return;
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) resolve({ fileId: data.fileId, mimeType: data.mimeType });
+            else reject(new Error(data.message || 'فشل الرفع'));
+          } catch(e) { reject(e); }
+        };
+        xhr.onerror  = () => reject(new Error('خطأ في الشبكة'));
+        xhr.onabort  = () => reject(new Error('تم الإلغاء'));
+
+        xhr.open('POST', AUTH_CONFIG.SCRIPT_URL);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+          action:   'upload_file',
+          userId:   currentUser.id,
+          userName: currentUser.username || '',
+          fileName: file.name,
+          mimeType: file.type,
+          data:     ev.target.result
+        }));
       } catch(e) { reject(e); }
     };
+    reader.onerror = () => reject(new Error('فشل قراءة الملف'));
     reader.readAsDataURL(file);
   });
 }
@@ -2671,20 +2832,42 @@ async function handlePeFileEnhanced(e) {
     showToast(`⚠️ الحد الأقصى ${PE_LIMITS[fileType]||6} من نوع ${fileType}`); return;
   }
 
+  // ── التحقق من مدة الفيديو قبل الرفع ──
+  if (fileType === 'video') {
+    const durLimit = getVideoDurationLimit(); // Infinity للمشرف
+    if (isFinite(durLimit)) {
+      try {
+        const dur = await new Promise((res, rej) => {
+          const vid = document.createElement('video');
+          vid.preload = 'metadata';
+          vid.onloadedmetadata = () => { URL.revokeObjectURL(vid.src); res(vid.duration); };
+          vid.onerror = () => { URL.revokeObjectURL(vid.src); rej(); };
+          vid.src = URL.createObjectURL(file);
+        });
+        if (dur > durLimit) {
+          showToast(`⚠️ الفيديو يتجاوز الحد المسموح به (${Math.floor(durLimit/60)} دقيقة). مدته: ${Math.ceil(dur/60)} دقيقة`);
+          e.target.value = ''; return;
+        }
+      } catch(_) { /* إن لم يمكن تحميل البيانات الوصفية، نتابع الرفع */ }
+    }
+    // Infinity → مشرف أو elite → لا حد، لا تحقق
+  }
+
   const btnId  = 'pe' + fileType[0].toUpperCase() + fileType.slice(1) + 'Btn';
   const btn    = document.getElementById(btnId);
   const labels = { image:'🖼️ صورة', audio:'🎵 صوت', video:'🎥 فيديو', pdf:'📄 ملف' };
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
 
   if (!navigator.onLine || !currentUser) {
-    showToast('⚠️ يجب الاتصال بالإنترنت لرفع الملفات'); 
+    showToast('⚠️ يجب الاتصال بالإنترنت لرفع الملفات');
     if (btn) { btn.disabled = false; btn.textContent = labels[fileType] || '📎'; }
     e.target.value = ''; return;
   }
 
-  showToast('⏳ جاري رفع ' + file.name.slice(0, 20) + '...');
+  _showUploadProgress(file.name);
   try {
-    const result = await uploadLargeFile(file); // يُعيد { fileId, mimeType }
+    const result = await uploadLargeFile(file, pct => _updateUploadProgress(pct));
+    _hideUploadProgress();
 
     // تخزين fileId فقط — لا base64 ولا Drive URLs أبداً
     const att = {
@@ -2703,7 +2886,9 @@ async function handlePeFileEnhanced(e) {
     updatePeAttachBtns();
     showToast('✅ تم رفع الملف');
   } catch(err) {
-    showToast('⚠️ فشل رفع الملف: ' + (err.message || ''));
+    _hideUploadProgress();
+    if (err.message !== 'تم الإلغاء')
+      showToast('⚠️ فشل رفع الملف: ' + (err.message || ''));
   }
   if (btn) { btn.disabled = false; btn.textContent = labels[fileType] || '📎'; }
   e.target.value = '';
@@ -3007,6 +3192,10 @@ async function initOwnerMode() {
   buildMainTabs('owner');
   renderBooksTab();
   showTabVisBtn();
+
+  // فتح منشور محدد إن كان في الرابط
+  const _deepPost = new URLSearchParams(location.search).get('post');
+  if (_deepPost) _openDeepPost(_deepPost, true);
 }
 
 async function initVisitorMode() {
@@ -3050,6 +3239,10 @@ async function initVisitorMode() {
 
   buildMainTabs('visitor');
   renderVisitorBooksTab();
+
+  // فتح منشور محدد إن كان في الرابط
+  const _deepPost = new URLSearchParams(location.search).get('post');
+  if (_deepPost) _openDeepPost(_deepPost, false);
 
   // إظهار تبويبات المنشورات/الوثائق حسب tabVisibility من ملف صاحب الحساب
   const tVis   = (_visitorProfile && _visitorProfile.tabVisibility) || {};
@@ -3333,6 +3526,68 @@ async function toggleFollow() {
   }
 }
 
+// ══════════════════════════════════════════════
+// DEEP POST — فتح منشور مباشرة من الرابط
+// ══════════════════════════════════════════════
+async function _openDeepPost(postId, isOwner) {
+  const overlay = document.getElementById('postDeepOverlay');
+  const content = document.getElementById('postDeepContent');
+  overlay.classList.add('open');
+  content.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa">⏳ جاري التحميل...</div>';
+
+  let post = null;
+
+  if (isOwner) {
+    // ابحث في localStorage أولاً
+    const all = [
+      ...JSON.parse(localStorage.getItem('royal_posts')||'[]'),
+      ...JSON.parse(localStorage.getItem('royal_docs') ||'[]')
+    ];
+    post = all.find(p => p.id === postId) || null;
+  }
+
+  if (!post) {
+    // اجلب من الخادم
+    try {
+      const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
+        action:'get_user_feed', targetUserId: _targetUid || (currentUser&&currentUser.id),
+        viewerId: currentUser&&currentUser.id||'', feedType:'post'
+      })});
+      const data = await res.json();
+      if (data.success) post = (data.posts||[]).find(p=>p.id===postId) || null;
+      if (!post) {
+        // جرب docs
+        const res2 = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
+          action:'get_user_feed', targetUserId: _targetUid || (currentUser&&currentUser.id),
+          viewerId: currentUser&&currentUser.id||'', feedType:'doc'
+        })});
+        const data2 = await res2.json();
+        if (data2.success) post = (data2.posts||[]).find(p=>p.id===postId) || null;
+      }
+    } catch(_) {}
+  }
+
+  if (!post) {
+    content.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c">⚠️ لم يُعثر على المنشور</div>';
+    return;
+  }
+
+  content.innerHTML = buildPostCard(post, isOwner);
+  await initPostCardMedia(post);
+}
+
+function closeDeepPost() {
+  const overlay = document.getElementById('postDeepOverlay');
+  overlay.classList.remove('open');
+  // أظهر تبويب المنشورات كأنه تم فتحه الآن
+  if (_isOwner) {
+    const btn = document.querySelector('#mainTabsWrap .main-tab:nth-child(3)');
+    if (btn) { btn.click(); }
+  } else {
+    const btn = document.getElementById('visitorPostsTabBtn');
+    if (btn && btn.style.display !== 'none') btn.click();
+  }
+}
 function updateFollowBtn() {
   const btn = document.getElementById('followBtn');
   if (!btn) return;
