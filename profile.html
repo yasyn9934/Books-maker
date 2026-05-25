@@ -2390,9 +2390,15 @@ function openPostComments(postId) {
 // ══════════════════════════════════════════════
 
 // حدود الحجم حسب الدور
-function getFileSizeLimit() {
+function getFileSizeLimit(fileType) {
+  // لا يوجد حد للحجم لأي نوع ملف أو أي رتبة
+  return Infinity;
+}
+
+// حد مدة الفيديو بالثواني حسب الرتبة
+function getVideoDurationLimit() {
   const tier = currentUser && currentUser.tier || 'basic';
-  return { basic:10, premium:50, elite:500, admin:Infinity }[tier] * 1024 * 1024;
+  return ({ basic:120, premium:300, elite:Infinity, admin:Infinity }[tier] || 120);
 }
 
 function buildSlider(items, type, postId) {
@@ -2596,12 +2602,7 @@ async function handlePeFileEnhanced(e) {
   const file     = e.target.files[0];
   if (!file) return;
   const fileType = e.target.dataset.filetype || 'pdf';
-  const limit    = getFileSizeLimit();
-
-  if (file.size > limit) {
-    showToast('⚠️ حجم الملف يتجاوز الحد المسموح به لحسابك'); return;
-  }
-
+  // لا حد للحجم
   const counts = {};
   _peAttachments.forEach(a => counts[a.type] = (counts[a.type]||0)+1);
   if ((counts[fileType]||0) >= (PE_LIMITS[fileType]||6)) {

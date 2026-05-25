@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الإدارة</title>
+<style>
+@font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf') format('truetype');}
+@font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf') format('truetype');}
+:root{
+  --gold:#b8860b;--green:#6B8E23;--bg:#f0f2f5;
+  --card:#fff;--text:#333;--border:#e8eaed;
+  --red:#e74c3c;--blue:#2980b9;--purple:#8e44ad;
+  --shadow:0 4px 20px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
+     min-height:100vh;user-select:none;-webkit-user-select:none;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);
+  padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.topbar-title{font-family:'Aref Ruqaa',serif;font-size:20pt;color:var(--green);}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:11pt;color:#555;}
+.topbar-user img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
+
+/* ── SEARCH BAR ── */
+.search-wrap{padding:16px 20px;}
+.search-input{width:100%;padding:11px 16px;border:1.5px solid var(--border);
+  border-radius:12px;font-family:'Amiri',serif;font-size:12pt;outline:none;
+  background:var(--card);transition:.2s;}
+.search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(107,142,35,.12);}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:10px;padding:0 20px 16px;flex-wrap:wrap;}
+.stat-chip{background:var(--card);border-radius:10px;padding:10px 18px;
+  display:flex;align-items:center;gap:8px;font-size:11pt;box-shadow:var(--shadow);}
+.stat-chip-num{font-family:'Aref Ruqaa',serif;font-size:16pt;color:var(--green);}
+
+/* ── USER GRID ── */
+.users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:16px;padding:0 20px 30px;}
+.user-card{background:var(--card);border-radius:16px;overflow:hidden;
+  box-shadow:var(--shadow);border:1px solid var(--border);transition:.2s;position:relative;}
+.user-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.12);}
+.user-card-cover{height:80px;background:linear-gradient(135deg,#2c3e50,#3498db);}
+.user-avatar-wrap{margin:-38px auto 0;width:76px;height:76px;border-radius:50%;
+  border:3px solid var(--card);overflow:hidden;background:#eee;
+  display:flex;align-items:center;justify-content:center;font-size:28pt;}
+.user-avatar-wrap img{width:100%;height:100%;object-fit:cover;}
+.user-info{text-align:center;padding:10px 12px 14px;}
+.user-name{font-family:'Aref Ruqaa',serif;font-size:14pt;color:#2c3e50;margin-bottom:2px;}
+.user-acct{font-size:10pt;color:var(--gold);}
+.user-tier{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;
+  font-size:9.5pt;font-weight:bold;}
+.tier-basic{background:#f0f4f0;color:#555;}
+.tier-premium{background:#fff8e0;color:#b8860b;}
+.tier-elite{background:#f0e8ff;color:#8e44ad;}
+.tier-admin{background:#ffe8e8;color:#e74c3c;}
+.user-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:6px;}
+.badge-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;
+  border-radius:12px;font-size:9pt;}
+.user-card-dots{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.85);
+  border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15pt;
+  display:flex;align-items:center;justify-content:center;transition:.2s;}
+.user-card-dots:hover{background:#fff;}
+
+/* ── ACTION MODAL ── */
+.action-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
+  backdrop-filter:blur(4px);z-index:500;display:none;
+  align-items:flex-end;justify-content:center;}
+.action-modal-overlay.open{display:flex;}
+@media(min-width:600px){
+  .action-modal-overlay{align-items:center;}
+  .action-modal-box{border-radius:16px !important;max-width:420px;}
+}
+.action-modal-box{background:var(--card);width:100%;max-width:500px;
+  border-radius:20px 20px 0 0;padding:6px 0 16px;
+  box-shadow:0 -6px 30px rgba(0,0,0,.2);animation:slideUp .22s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.am-handle{width:40px;height:4px;border-radius:2px;background:#ddd;margin:10px auto 12px;}
+.am-title{font-family:'Aref Ruqaa',serif;font-size:13pt;color:#555;
+  text-align:center;padding:0 16px 10px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.am-item{display:flex;align-items:center;gap:14px;padding:13px 22px;
+  cursor:pointer;transition:.15s;font-size:12pt;}
+.am-item:hover{background:#f5f5f5;}
+.am-item.danger{color:var(--red);}
+.am-icon{font-size:18pt;width:28px;text-align:center;flex-shrink:0;}
+.am-cancel{margin:8px 16px 0;width:calc(100% - 32px);padding:12px;border-radius:12px;
+  border:none;background:#f0f0f0;font-family:'Amiri',serif;font-size:12pt;
+  cursor:pointer;transition:.2s;color:#555;}
+.am-cancel:hover{background:#e0e0e0;}
+
+/* ── FULL MODAL ── */
+.full-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(3px);z-index:600;display:none;
+  align-items:center;justify-content:center;}
+.full-modal-overlay.open{display:flex;}
+.full-modal{background:var(--card);border-radius:16px;width:96%;max-width:700px;
+  max-height:90vh;display:flex;flex-direction:column;
+  box-shadow:0 16px 50px rgba(0,0,0,.25);overflow:hidden;}
+.full-modal-head{padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.full-modal-head h2{font-family:'Aref Ruqaa',serif;font-size:16pt;color:var(--green);}
+.modal-close-btn{background:none;border:none;font-size:18pt;cursor:pointer;color:#888;
+  width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.modal-close-btn:hover{background:#f0f0f0;}
+.full-modal-body{flex:1;overflow-y:auto;padding:16px 20px;}
+
+/* ── TABS (داخل المودال) ── */
+.modal-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;}
+.modal-tab{white-space:nowrap;padding:7px 16px;border-radius:20px;
+  border:1.5px solid var(--border);background:none;
+  font-family:'Amiri',serif;font-size:10.5pt;cursor:pointer;transition:.2s;color:#555;}
+.modal-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
+.modal-tab-content{display:none;}
+.modal-tab-content.active{display:block;}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.stat-box{background:#f5f7f5;border-radius:10px;padding:12px;text-align:center;}
+.stat-box-num{font-family:'Aref Ruqaa',serif;font-size:20pt;color:var(--green);}
+.stat-box-lbl{font-size:9.5pt;color:#888;}
+.stat-list{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.stat-list-item{padding:10px 14px;border-bottom:1px solid var(--border);
+  font-size:11pt;display:flex;align-items:center;gap:8px;}
+.stat-list-item:last-child{border-bottom:none;}
+
+/* ── RANK EDITOR ── */
+.rank-section{margin-bottom:18px;}
+.rank-section-title{font-size:12pt;font-weight:bold;color:#2c3e50;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;}
+.rank-options{display:flex;gap:8px;flex-wrap:wrap;}
+.rank-btn{padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);
+  background:none;font-family:'Amiri',serif;font-size:11pt;cursor:pointer;transition:.2s;}
+.rank-btn.selected{background:var(--green);color:#fff;border-color:var(--green);}
+.rank-btn:hover:not(.selected){background:#f0f4f0;border-color:var(--green);}
+.badge-builder{background:#f8f9fa;border-radius:12px;padding:14px;margin-top:12px;}
+.badge-preview{display:flex;align-items:center;gap:8px;margin-bottom:12px;
+  padding:10px;background:#fff;border-radius:8px;border:1px solid var(--border);}
+.form-row{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+.form-label{font-size:10.5pt;color:#555;min-width:80px;}
+.form-input{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;
+  font-family:'Amiri',serif;font-size:11pt;outline:none;}
+.form-input:focus{border-color:var(--green);}
+.color-pick{width:40px;height:36px;border-radius:8px;border:1.5px solid var(--border);
+  cursor:pointer;padding:2px;}
+.badge-shape-btns{display:flex;gap:6px;}
+.shape-btn{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border);
+  background:none;cursor:pointer;font-size:11pt;transition:.2s;}
+.shape-btn.active{background:var(--green);color:#fff;border-color:var(--green);}
+.badges-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.badge-item{display:flex;align-items:center;gap:6px;padding:4px 12px;
+  border-radius:10px;border:1px solid var(--border);background:#f5f5f5;}
+.badge-remove{background:none;border:none;cursor:pointer;color:var(--red);
+  font-size:12pt;line-height:1;padding:0 2px;}
+
+/* ── NOTES SYSTEM ── */
+.notes-compose{display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;}
+.notes-textarea{flex:1;padding:10px 14px;border:1.5px solid var(--border);
+  border-radius:10px;font-family:'Amiri',serif;font-size:11pt;outline:none;
+  resize:vertical;min-height:80px;}
+.notes-textarea:focus{border-color:var(--green);}
+.notes-send-btn{padding:10px 16px;border-radius:10px;border:none;
+  background:var(--green);color:#fff;font-family:'Amiri',serif;
+  font-size:12pt;cursor:pointer;flex-shrink:0;}
+.note-card{background:#f8f9fa;border-radius:10px;padding:12px 14px;
+  margin-bottom:10px;border:1px solid var(--border);}
+.note-meta{font-size:9pt;color:#888;margin-bottom:6px;
+  display:flex;justify-content:space-between;}
+.note-text{font-size:11.5pt;line-height:1.7;}
+.note-isnotif{background:#fffde7;border-color:#fbc02d;}
+
+/* ── SEND NOTIF MODAL ── */
+.notif-form{display:flex;flex-direction:column;gap:12px;}
+.notif-form textarea,.notif-form input{
+  width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-family:'Amiri',serif;font-size:12pt;outline:none;}
+.notif-form textarea:focus,.notif-form input:focus{border-color:var(--green);}
+.notif-form textarea{min-height:120px;resize:vertical;}
+.btn-primary{padding:11px;border-radius:10px;border:none;background:var(--green);
+  color:#fff;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;transition:.2s;}
+.btn-primary:hover{background:#5a7a1e;}
+.btn-secondary{padding:11px;border-radius:10px;border:1.5px solid var(--border);
+  background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:#555;}
+
+/* ── LOADING / EMPTY ── */
+.loading-center{text-align:center;padding:40px;color:#aaa;font-size:13pt;}
+.empty-msg{text-align:center;padding:30px;color:#aaa;font-size:11pt;}
+
+/* ── PROFILE MINI CARD ── */
+.user-mini-card{display:flex;gap:12px;align-items:center;
+  background:#f5f7f5;border-radius:12px;padding:12px;margin-bottom:16px;}
+.user-mini-avatar{width:56px;height:56px;border-radius:50%;overflow:hidden;
+  background:#eee;display:flex;align-items:center;justify-content:center;font-size:24pt;flex-shrink:0;}
+.user-mini-avatar img{width:100%;height:100%;object-fit:cover;}
+.user-mini-name{font-family:'Aref Ruqaa',serif;font-size:15pt;color:#2c3e50;}
+.user-mini-acct{font-size:10pt;color:var(--gold);}
+.user-mini-tier{font-size:9.5pt;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span class="topbar-title">⚙️ لوحة الإدارة</span>
+  <div class="topbar-user" id="topbarUser"></div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <input class="search-input" id="searchInput" type="text"
+    placeholder="🔍 ابحث عن مستخدم بالاسم أو اسم الحساب..."
+    oninput="filterUsers(this.value)">
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-chip"><span id="totalUsers" class="stat-chip-num">—</span> مستخدم</div>
+  <div class="stat-chip"><span id="totalPremium" class="stat-chip-num">—</span> مميز</div>
+  <div class="stat-chip"><span id="totalAdmins" class="stat-chip-num">—</span> مشرف</div>
+</div>
+
+<!-- USERS GRID -->
+<div class="users-grid" id="usersGrid">
+  <div class="loading-center" style="grid-column:1/-1">⏳ جاري تحميل المستخدمين...</div>
+</div>
+
+<!-- ══ ACTION MODAL ══ -->
+<div class="action-modal-overlay" id="actionModal">
+  <div class="action-modal-box">
+    <div class="am-handle"></div>
+    <div class="am-title" id="actionModalTitle"></div>
+    <div id="actionModalItems"></div>
+    <button class="am-cancel" onclick="closeActionModal()">إلغاء</button>
+  </div>
+</div>
+
+<!-- ══ STATS MODAL ══ -->
+<div class="full-modal-overlay" id="statsModal">
+  <div class="full-modal">
+    <div class="full-modal-head">
+      <h2>معلومات المستخدم</h2>
+      <button class="modal-close-btn" onclick="closeModal('statsModal')">✕</button>
+    </div>
+    <div class="full-modal-body" id="statsModalBody"></div>
+  </div>
+</div>
+
+<!-- ══ RANK MODAL ══ -->
+<div class="full-modal-overlay" id="rankModal">
+  <div class="full-modal">
+    <div class="full-modal-head">
+      <h2>إدارة الرتب والشارات</h2>
+      <button class="modal-close-btn" onclick="closeModal('rankModal')">✕</button>
+    </div>
+    <div class="full-modal-body" id="rankModalBody"></div>
+  </div>
+</div>
+
+<!-- ══ NOTES MODAL ══ -->
+<div class="full-modal-overlay" id="notesModal">
+  <div class="full-modal">
+    <div class="full-modal-head">
+      <h2>ملاحظات المستخدم</h2>
+      <button class="modal-close-btn" onclick="closeModal('notesModal')">✕</button>
+    </div>
+    <div class="full-modal-body" id="notesModalBody"></div>
+  </div>
+</div>
+
+<!-- ══ SEND NOTIF MODAL ══ -->
+<div class="full-modal-overlay" id="sendNotifModal">
+  <div class="full-modal" style="max-width:500px">
+    <div class="full-modal-head">
+      <h2>إرسال إشعار</h2>
+      <button class="modal-close-btn" onclick="closeModal('sendNotifModal')">✕</button>
+    </div>
+    <div class="full-modal-body">
+      <div id="sendNotifMiniCard"></div>
+      <div class="notif-form">
+        <input type="text" id="notifTitle" placeholder="عنوان الإشعار...">
+        <textarea id="notifMsg" placeholder="نص الإشعار..."></textarea>
+        <input type="text" id="notifLink" placeholder="رابط (اختياري)...">
+        <div style="display:flex;gap:10px">
+          <button class="btn-primary" style="flex:1" onclick="confirmSendNotif()">📤 إرسال</button>
+          <button class="btn-secondary" style="flex:1" onclick="closeModal('sendNotifModal')">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+// ════════════════════════════════════════════════
+// CONFIG & STATE
+// ════════════════════════════════════════════════
+const SCRIPT_URL = AUTH_CONFIG.SCRIPT_URL;
+let _allUsers    = [];
+let _filtered    = [];
+let _activeUser  = null; // المستخدم المحدد حالياً
+
+// التحقق من صلاحية المشرف
+document.addEventListener('DOMContentLoaded', () => {
+  if (!currentUser || currentUser.tier !== 'admin') {
+    document.body.innerHTML = `<div style="text-align:center;padding:100px;font-size:16pt;color:#e74c3c">
+      ⛔ هذه الصفحة للمشرفين فقط</div>`;
+    return;
+  }
+  // عرض بيانات المشرف في الـ topbar
+  const photo = currentUser.profilePhoto
+    ? `<img src="${currentUser.profilePhoto}" alt="">` : '👤';
+  document.getElementById('topbarUser').innerHTML =
+    `${photo} <span>${currentUser.username}</span>`;
+
+  loadUsers();
+});
+
+// ════════════════════════════════════════════════
+// LOAD USERS
+// ════════════════════════════════════════════════
+async function loadUsers() {
+  try {
+    const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+      action: 'admin_get_all_users', requesterId: currentUser.id
+    })});
+    const data = await res.json();
+    if (!data.success) { alert('خطأ: ' + (data.message||'غير معروف')); return; }
+    _allUsers  = data.users || [];
+    _filtered  = [..._allUsers];
+    renderStats();
+    renderGrid(_allUsers);
+  } catch(e) {
+    document.getElementById('usersGrid').innerHTML =
+      `<div class="loading-center" style="grid-column:1/-1">⚠️ تعذر الاتصال</div>`;
+  }
+}
+
+function renderStats() {
+  document.getElementById('totalUsers').textContent   = _allUsers.length;
+  document.getElementById('totalPremium').textContent = _allUsers.filter(u=>u.tier==='premium').length;
+  document.getElementById('totalAdmins').textContent  = _allUsers.filter(u=>u.tier==='admin').length;
+}
+
+function renderGrid(users) {
+  const grid = document.getElementById('usersGrid');
+  if (!users.length) { grid.innerHTML='<div class="empty-msg" style="grid-column:1/-1">لا توجد نتائج</div>'; return; }
+  grid.innerHTML = users.map(u => buildUserCard(u)).join('');
+}
+
+function buildUserCard(u) {
+  const photo    = u.profilePhoto ? `<img src="${u.profilePhoto}" alt="">` : u.username?.[0]||'👤';
+  const tierCls  = { basic:'tier-basic', premium:'tier-premium', elite:'tier-elite', admin:'tier-admin' }[u.tier||'basic'] || 'tier-basic';
+  const tierLbl  = { basic:'عضو', premium:'عضو مميز', elite:'متقدم', admin:'مشرف' }[u.tier||'basic'] || 'عضو';
+  const badges   = (u.badges||[]).map(b => buildBadgeChip(b)).join('');
+
+  return `<div class="user-card">
+    <div class="user-card-cover" style="background:${u.cardColor||'linear-gradient(135deg,#2c3e50,#3498db)'}"></div>
+    <div class="user-avatar-wrap">${u.profilePhoto?`<img src="${u.profilePhoto}" alt="">`:u.username?.[0]||'👤'}</div>
+    <div class="user-info">
+      <div class="user-name">${esc(u.username||'—')}</div>
+      <div class="user-acct">${u.accountName?'@'+esc(u.accountName):''}</div>
+      <span class="user-tier ${tierCls}">${tierLbl}</span>
+      ${badges?`<div class="user-badges">${badges}</div>`:''}
+    </div>
+    <button class="user-card-dots" onclick="openUserMenu('${u.id}',event)" title="خيارات">⋮</button>
+  </div>`;
+}
+
+function buildBadgeChip(b) {
+  const bg  = b.bgColor  || '#e8f5e9';
+  const col = b.txtColor || '#2e7d32';
+  const rad = b.shape === 'square' ? '6px' : '14px';
+  const img = b.img ? `<img src="${b.img}" style="width:18px;height:18px;border-radius:3px">` : '';
+  return `<span class="badge-chip" style="background:${bg};color:${col};border-radius:${rad}">${img}${esc(b.text||'')}</span>`;
+}
+
+// ════════════════════════════════════════════════
+// SEARCH
+// ════════════════════════════════════════════════
+function filterUsers(q) {
+  q = q.trim().toLowerCase();
+  _filtered = q ? _allUsers.filter(u =>
+    (u.username||'').toLowerCase().includes(q) ||
+    (u.accountName||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q)
+  ) : [..._allUsers];
+  renderGrid(_filtered);
+}
+
+// ════════════════════════════════════════════════
+// USER DOTS MENU
+// ════════════════════════════════════════════════
+function openUserMenu(uid, e) {
+  e && e.stopPropagation();
+  _activeUser = _allUsers.find(u => u.id === uid);
+  if (!_activeUser) return;
+
+  document.getElementById('actionModalTitle').textContent = _activeUser.username;
+  document.getElementById('actionModalItems').innerHTML = [
+    { icon:'👤', label:'عرض الملف الشخصي',    fn:`viewProfile('${uid}')` },
+    { icon:'📊', label:'معلومات المستخدم',      fn:`openStatsModal('${uid}')` },
+    { icon:'🏅', label:'إدارة الرتب والشارات',  fn:`openRankModal('${uid}')` },
+    { icon:'📝', label:'ملاحظات المستخدم',      fn:`openNotesModal('${uid}')` },
+    { icon:'📣', label:'إرسال إشعار',           fn:`openSendNotif('${uid}')` },
+  ].map(it => `<div class="am-item" onclick="closeActionModal();${it.fn}">
+    <span class="am-icon">${it.icon}</span>${it.label}</div>`).join('');
+
+  document.getElementById('actionModal').classList.add('open');
+}
+
+function closeActionModal() { document.getElementById('actionModal').classList.remove('open'); }
+document.getElementById('actionModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('actionModal')) closeActionModal();
+});
+
+function viewProfile(uid) { window.open('profile.html?uid=' + uid, '_blank'); }
+
+// ════════════════════════════════════════════════
+// STATS MODAL
+// ════════════════════════════════════════════════
+async function openStatsModal(uid) {
+  const modal = document.getElementById('statsModal');
+  const body  = document.getElementById('statsModalBody');
+  body.innerHTML = '<div class="loading-center">⏳ جاري التحميل...</div>';
+  openModal('statsModal');
+
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+    action:'admin_get_user_stats', requesterId:currentUser.id, targetUserId:uid
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (!data || !data.success) { body.innerHTML='<div class="empty-msg">⚠️ تعذر جلب البيانات</div>'; return; }
+
+  const s    = data.stats;
+  const tabs = ['overview','sharedBooks','viewedBooks','notifications'];
+  const tabsHtml = [
+    { id:'overview',     label:'نظرة عامة' },
+    { id:'sharedBooks',  label:'الكتب المشاركة' },
+    { id:'viewedBooks',  label:'الكتب المشاهدة' },
+    { id:'notifications',label:'الإشعارات' },
+  ].map((t,i) => `<button class="modal-tab ${i===0?'active':''}"
+    onclick="switchModalTab('${t.id}',this)">${t.label}</button>`).join('');
+
+  body.innerHTML = `
+    ${miniCard(s)}
+    <div class="modal-tabs">${tabsHtml}</div>
+
+    <div id="tab_overview" class="modal-tab-content active">
+      <div class="stats-grid">
+        ${[['📚','الكتب المشاركة',s.sharedBooks.length],['📝','المنشورات',s.posts],
+           ['🏅','الوثائق',s.docs],['👥','المتابعون',s.followers],
+           ['🔔','الإشعارات',s.notifications]].map(([e,l,v])=>
+          `<div class="stat-box"><div class="stat-box-num">${v}</div>
+           <div class="stat-box-lbl">${e} ${l}</div></div>`).join('')}
+      </div>
+      <div class="stat-list">
+        ${[['البريد',s.email||'—'],['الرتبة',tierLabel(s.tier)],
+           ['التسجيل',s.registerDate||'—'],['آخر دخول',s.lastLogin||'—']].map(([k,v])=>
+          `<div class="stat-list-item">
+            <span style="color:#888;min-width:90px">${k}</span>
+            <span style="font-weight:bold">${esc(String(v))}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div id="tab_sharedBooks" class="modal-tab-content">
+      ${s.sharedBooks.length
+        ? s.sharedBooks.map(sh=>`<div class="stat-list-item">
+            📖 <a href="s/index.html?id=${sh.shareId}" target="_blank"
+              style="color:var(--blue)">رابط مشاركة: ${esc(sh.bookId||sh.shareId)}</a>
+          </div>`).join('')
+        : '<div class="empty-msg">لا توجد مشاركات</div>'}
+    </div>
+
+    <div id="tab_viewedBooks" class="modal-tab-content">
+      ${s.viewedBooks.length
+        ? s.viewedBooks.map(v=>`<div class="stat-list-item">
+            👁️ <a href="s/index.html?id=${v.shareId}" target="_blank"
+              style="color:var(--blue)">${esc(v.bookData?.title||v.shareId)}</a>
+          </div>`).join('')
+        : '<div class="empty-msg">لا توجد كتب مشاهدة</div>'}
+    </div>
+
+    <div id="tab_notifications" class="modal-tab-content">
+      <div class="empty-msg">— يتم جلب الإشعارات من السحابة —<br>
+        <button class="btn-primary" style="margin-top:12px;padding:8px 20px"
+          onclick="loadUserNotifs('${uid}')">جلب الإشعارات</button>
+        <div id="userNotifsBody"></div>
+      </div>
+    </div>`;
+}
+
+async function loadUserNotifs(uid) {
+  document.getElementById('userNotifsBody').innerHTML='<div class="loading-center">⏳</div>';
+  // يُجلب عبر get_notifications — المشرف يجلب لحسابه فقط حالياً
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_get_notes', requesterId:currentUser.id, targetUserId:uid
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (!data || !data.success) {
+    document.getElementById('userNotifsBody').innerHTML = '<div class="empty-msg">⚠️ تعذر الجلب</div>'; return;
+  }
+  const notifs = (data.notes||[]).filter(n=>n.isNotif);
+  document.getElementById('userNotifsBody').innerHTML = notifs.length
+    ? notifs.map(n=>`<div class="note-card note-isnotif">
+        <div class="note-meta"><span>${n.title||'إشعار'}</span><span>${timeAgo(n.createdAt)}</span></div>
+        <div class="note-text">${esc(n.message||n.text||'')}</div>
+      </div>`).join('')
+    : '<div class="empty-msg">لا توجد إشعارات من الإدارة</div>';
+}
+
+// ════════════════════════════════════════════════
+// RANK MODAL
+// ════════════════════════════════════════════════
+let _rankUser     = null;
+let _badgeBuilder = { text:'', txtColor:'#fff', bgColor:'#2e7d32', shape:'round', img:'' };
+
+function openRankModal(uid) {
+  _rankUser = _allUsers.find(u=>u.id===uid);
+  if (!_rankUser) return;
+  renderRankModal();
+  openModal('rankModal');
+}
+
+function renderRankModal() {
+  const u    = _rankUser;
+  const BASIC_TIERS = [
+    { key:'basic',   label:'عضو',       cls:'tier-basic' },
+    { key:'premium', label:'عضو مميز', cls:'tier-premium' },
+    { key:'admin',   label:'مشرف',      cls:'tier-admin' },
+  ];
+  document.getElementById('rankModalBody').innerHTML = `
+    ${miniCard(u)}
+
+    <!-- الرتبة الأساسية -->
+    <div class="rank-section">
+      <div class="rank-section-title">🏷️ الرتبة الأساسية <small style="color:#888;font-weight:normal">(واحدة فقط)</small></div>
+      <div class="rank-options">
+        ${BASIC_TIERS.map(t=>`
+          <button class="rank-btn ${u.tier===t.key?'selected':''}"
+            onclick="setBasicRank('${t.key}',this)">${t.label}</button>`).join('')}
+      </div>
+    </div>
+
+    <!-- الشارات المخصصة -->
+    <div class="rank-section">
+      <div class="rank-section-title">🎖️ الشارات المخصصة</div>
+      <div class="badges-list" id="badgesList">
+        ${(u.badges||[]).map((b,i)=>`
+          <div class="badge-item">
+            ${buildBadgeChip(b)}
+            <button class="badge-remove" onclick="removeBadge(${i})">✕</button>
+          </div>`).join('') || '<span style="color:#aaa;font-size:10.5pt">لا توجد شارات</span>'}
+      </div>
+    </div>
+
+    <!-- بناء شارة جديدة -->
+    <div class="badge-builder">
+      <div style="font-size:12pt;font-weight:bold;color:#2c3e50;margin-bottom:12px">➕ إضافة شارة جديدة</div>
+
+      <!-- معاينة -->
+      <div class="badge-preview">
+        <span style="font-size:10.5pt;color:#888">معاينة: </span>
+        <div id="badgePreview">${buildBadgeChip(_badgeBuilder)}</div>
+      </div>
+
+      <!-- نوع الشارة -->
+      <div class="form-row">
+        <span class="form-label">النوع:</span>
+        <div class="badge-shape-btns">
+          <button class="shape-btn ${_badgeBuilder.img?'':'active'}" onclick="setBadgeType('text',this)">نصية</button>
+          <button class="shape-btn ${_badgeBuilder.img?'active':''}" onclick="setBadgeType('img',this)">نص + صورة</button>
+        </div>
+      </div>
+
+      <!-- الشكل -->
+      <div class="form-row">
+        <span class="form-label">الشكل:</span>
+        <div class="badge-shape-btns">
+          <button class="shape-btn ${_badgeBuilder.shape==='round'?'active':''}" onclick="setBadgeShape('round',this)">مستدير</button>
+          <button class="shape-btn ${_badgeBuilder.shape==='square'?'active':''}" onclick="setBadgeShape('square',this)">مربع</button>
+        </div>
+      </div>
+
+      <!-- النص -->
+      <div class="form-row">
+        <span class="form-label">النص:</span>
+        <input class="form-input" id="badgeText" placeholder="مثال: مميز ✨"
+          value="${esc(_badgeBuilder.text)}" oninput="updateBadgeBuilder()">
+      </div>
+
+      <!-- الصورة (إن كان نوع img) -->
+      <div class="form-row" id="badgeImgRow" style="${_badgeBuilder.img?'':'display:none'}">
+        <span class="form-label">رابط الصورة:</span>
+        <input class="form-input" id="badgeImg" placeholder="https://..."
+          value="${esc(_badgeBuilder.img||'')}" oninput="updateBadgeBuilder()">
+      </div>
+
+      <!-- الألوان -->
+      <div class="form-row">
+        <span class="form-label">لون النص:</span>
+        <input type="color" class="color-pick" id="badgeTxtColor"
+          value="${_badgeBuilder.txtColor}" oninput="updateBadgeBuilder()">
+        <span class="form-label" style="margin-right:12px">لون الخلفية:</span>
+        <input type="color" class="color-pick" id="badgeBgColor"
+          value="${_badgeBuilder.bgColor}" oninput="updateBadgeBuilder()">
+      </div>
+
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="addBadge()">✅ إضافة الشارة</button>
+    </div>`;
+}
+
+function setBadgeType(type, btn) {
+  document.querySelectorAll('.shape-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const imgRow = document.getElementById('badgeImgRow');
+  if (type==='text') { _badgeBuilder.img=''; imgRow.style.display='none'; }
+  else { imgRow.style.display='flex'; }
+  updateBadgeBuilder();
+}
+
+function setBadgeShape(shape, btn) {
+  _badgeBuilder.shape = shape;
+  document.querySelectorAll('.badge-shape-btns .shape-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateBadgeBuilder();
+}
+
+function updateBadgeBuilder() {
+  _badgeBuilder.text     = document.getElementById('badgeText')?.value     || '';
+  _badgeBuilder.txtColor = document.getElementById('badgeTxtColor')?.value || '#fff';
+  _badgeBuilder.bgColor  = document.getElementById('badgeBgColor')?.value  || '#2e7d32';
+  _badgeBuilder.img      = document.getElementById('badgeImg')?.value       || '';
+  document.getElementById('badgePreview').innerHTML = buildBadgeChip(_badgeBuilder);
+}
+
+async function setBasicRank(tier, btn) {
+  if (!_rankUser) return;
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_set_rank', requesterId:currentUser.id,
+    targetUserId:_rankUser.id, tier
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (data && data.success) {
+    _rankUser.tier = tier;
+    const u = _allUsers.find(u=>u.id===_rankUser.id);
+    if (u) u.tier = tier;
+    document.querySelectorAll('.rank-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    renderGrid(_filtered);
+    showToast('✅ تم تعيين الرتبة');
+  } else { showToast('⚠️ فشل تعيين الرتبة'); }
+}
+
+async function addBadge() {
+  if (!_badgeBuilder.text.trim()) { showToast('⚠️ أدخل نص الشارة'); return; }
+  const badge = Object.assign({}, _badgeBuilder);
+  const res   = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_add_badge', requesterId:currentUser.id,
+    targetUserId:_rankUser.id, badge
+  })}).catch(()=>null);
+  const data  = res ? await res.json().catch(()=>null) : null;
+  if (data && data.success) {
+    if (!_rankUser.badges) _rankUser.badges = [];
+    _rankUser.badges.push(badge);
+    const u = _allUsers.find(u=>u.id===_rankUser.id);
+    if (u) u.badges = _rankUser.badges;
+    renderRankModal();
+    renderGrid(_filtered);
+    showToast('✅ تمت إضافة الشارة');
+  } else { showToast('⚠️ فشل إضافة الشارة'); }
+}
+
+async function removeBadge(idx) {
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_remove_badge', requesterId:currentUser.id,
+    targetUserId:_rankUser.id, badgeIndex:idx
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (data && data.success) {
+    (_rankUser.badges||[]).splice(idx,1);
+    const u = _allUsers.find(u=>u.id===_rankUser.id);
+    if (u) u.badges = _rankUser.badges;
+    renderRankModal();
+    renderGrid(_filtered);
+    showToast('✅ تم حذف الشارة');
+  } else { showToast('⚠️ فشل حذف الشارة'); }
+}
+
+// ════════════════════════════════════════════════
+// NOTES MODAL
+// ════════════════════════════════════════════════
+async function openNotesModal(uid) {
+  _activeUser = _allUsers.find(u=>u.id===uid);
+  const body  = document.getElementById('notesModalBody');
+  body.innerHTML = '<div class="loading-center">⏳</div>';
+  openModal('notesModal');
+
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_get_notes', requesterId:currentUser.id, targetUserId:uid
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  const notes = (data && data.success) ? data.notes : [];
+
+  const NOTIF_TABS = [
+    { id:'notes_tab', label:'الملاحظات' },
+    { id:'notifs_tab', label:'الإشعارات المُرسَلة' }
+  ];
+
+  body.innerHTML = `
+    ${miniCard(_activeUser||{})}
+    <div class="modal-tabs">
+      ${NOTIF_TABS.map((t,i)=>`<button class="modal-tab ${i===0?'active':''}"
+        onclick="switchModalTab('${t.id}',this)">${t.label}</button>`).join('')}
+    </div>
+
+    <div id="tab_notes_tab" class="modal-tab-content active">
+      <div class="notes-compose">
+        <textarea class="notes-textarea" id="noteInput" placeholder="أكتب ملاحظة..."></textarea>
+        <button class="notes-send-btn" onclick="sendNote('${uid}')">إرسال</button>
+      </div>
+      <div id="notesListWrap">
+        ${notes.filter(n=>!n.isNotif).map(n=>`
+          <div class="note-card">
+            <div class="note-meta">
+              <span>${esc(n.authorName||'مشرف')}</span>
+              <span>${timeAgo(n.createdAt)}</span>
+            </div>
+            <div class="note-text">${esc(n.text||n.message||'')}</div>
+          </div>`).join('') || '<div class="empty-msg">لا توجد ملاحظات</div>'}
+      </div>
+    </div>
+
+    <div id="tab_notifs_tab" class="modal-tab-content">
+      ${notes.filter(n=>n.isNotif).map(n=>`
+        <div class="note-card note-isnotif">
+          <div class="note-meta">
+            <span>${esc(n.title||'إشعار')}</span>
+            <span>${timeAgo(n.createdAt)}</span>
+          </div>
+          <div class="note-text">${esc(n.message||n.text||'')}</div>
+          ${n.link?`<a href="${n.link}" target="_blank" style="font-size:10pt;color:var(--blue)">${n.link}</a>`:''}
+        </div>`).join('') || '<div class="empty-msg">لا توجد إشعارات مُرسَلة</div>'}
+    </div>`;
+}
+
+async function sendNote(uid) {
+  const text = document.getElementById('noteInput')?.value.trim();
+  if (!text) { showToast('⚠️ أكتب ملاحظة أولاً'); return; }
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_add_note', requesterId:currentUser.id, targetUserId:uid,
+    note: { text, authorId:currentUser.id, authorName:currentUser.username, createdAt:Date.now() }
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (data && data.success) {
+    document.getElementById('noteInput').value = '';
+    // أضف الملاحظة محلياً
+    const wrap = document.getElementById('notesListWrap');
+    const div  = document.createElement('div');
+    div.className = 'note-card';
+    div.innerHTML = `<div class="note-meta"><span>${esc(currentUser.username)}</span><span>الآن</span></div>
+      <div class="note-text">${esc(text)}</div>`;
+    wrap.prepend(div);
+    showToast('✅ تم إرسال الملاحظة');
+  } else { showToast('⚠️ فشل الإرسال'); }
+}
+
+// ════════════════════════════════════════════════
+// SEND NOTIF MODAL
+// ════════════════════════════════════════════════
+function openSendNotif(uid) {
+  _activeUser = _allUsers.find(u=>u.id===uid);
+  document.getElementById('sendNotifMiniCard').innerHTML = miniCard(_activeUser||{});
+  ['notifTitle','notifMsg','notifLink'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  openModal('sendNotifModal');
+}
+
+async function confirmSendNotif() {
+  if (!_activeUser) return;
+  const title = document.getElementById('notifTitle').value.trim();
+  const msg   = document.getElementById('notifMsg').value.trim();
+  const link  = document.getElementById('notifLink').value.trim();
+  if (!msg) { showToast('⚠️ أكتب نص الإشعار'); return; }
+
+  const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
+    action:'admin_send_notif', requesterId:currentUser.id,
+    targetUserId:_activeUser.id,
+    notification:{ title:title||'إشعار من الموقع', message:msg, link:link||'', type:'site',
+                   sender:{ id:'system', name:'الموقع' }, createdAt:Date.now() }
+  })}).catch(()=>null);
+  const data = res ? await res.json().catch(()=>null) : null;
+  if (data && data.success) {
+    closeModal('sendNotifModal');
+    showToast('✅ تم إرسال الإشعار');
+  } else { showToast('⚠️ فشل إرسال الإشعار'); }
+}
+
+// ════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function switchModalTab(tabId, btn) {
+  const body = btn.closest('.full-modal-body') || btn.closest('.full-modal').querySelector('.full-modal-body');
+  body.querySelectorAll('.modal-tab').forEach(b=>b.classList.remove('active'));
+  body.querySelectorAll('.modal-tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  const tc = document.getElementById('tab_'+tabId);
+  if (tc) tc.classList.add('active');
+}
+
+function miniCard(u) {
+  const photo = u.profilePhoto ? `<img src="${u.profilePhoto}" alt="">` : (u.username?.[0]||'👤');
+  return `<div class="user-mini-card">
+    <div class="user-mini-avatar">${photo}</div>
+    <div>
+      <div class="user-mini-name">${esc(u.username||'—')}</div>
+      <div class="user-mini-acct">${u.accountName?'@'+esc(u.accountName):''}</div>
+      <div class="user-mini-tier">${tierLabel(u.tier)}</div>
+    </div>
+  </div>`;
+}
+
+function tierLabel(t) {
+  return ({ basic:'👤 عضو', premium:'⭐ عضو مميز', elite:'💎 متقدم', admin:'🛡️ مشرف' })[t||'basic'] || '👤 عضو';
+}
+
+function esc(t) {
+  return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const m = Math.floor((Date.now()-ts)/60000);
+  if (m<1)  return 'الآن';
+  if (m<60) return `منذ ${m} دقيقة`;
+  const h=Math.floor(m/60);
+  if (h<24) return `منذ ${h} ساعة`;
+  return `منذ ${Math.floor(h/24)} يوم`;
+}
+
+function showToast(msg) {
+  let t = document.getElementById('_adminToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_adminToast';
+    t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2c3e50;color:#fff;padding:10px 22px;border-radius:20px;font-size:11pt;z-index:9999;transition:.3s;opacity:0;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.opacity='0',2800);
+}
+
+// ── إغلاق المودالات عند النقر خارجها ──
+['statsModal','rankModal','notesModal','sendNotifModal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click', e=>{
+    if (e.target === document.getElementById(id)) closeModal(id);
+  });
+});
+</script>
+</body>
+</html>
