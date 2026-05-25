@@ -304,11 +304,12 @@ let _activeUser  = null; // المستخدم المحدد حالياً
 
 // التحقق من صلاحية المشرف
 document.addEventListener('DOMContentLoaded', () => {
-  if (!currentUser || currentUser.tier !== 'admin') {
+  if (!currentUser || currentUser.tier !== 'admin' || currentUser.id !== 'user_1776619013182') {
     document.body.innerHTML = `<div style="text-align:center;padding:100px;font-size:16pt;color:#e74c3c">
-      ⛔ هذه الصفحة للمشرفين فقط</div>`;
+      ⛔️ هذه الصفحة للمشرفين فقط</div>`;
     return;
   }
+
   // عرض بيانات المشرف في الـ topbar
   const photo = currentUser.profilePhoto
     ? `<img src="${currentUser.profilePhoto}" alt="">` : '👤';
