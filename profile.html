@@ -743,7 +743,273 @@
     .account-tag button{background:none;border:none;cursor:pointer;color:#e74c3c;font-size:11pt;padding:0;}
 
     /* media viewer */
-    /* ══ POST DEEP-LINK OVERLAY ══ */
+    /* ══ POST COMMENTS OVERLAY ══════════════════════════════ */
+    #pcOverlay{
+      position:fixed;inset:0;z-index:1100;background:var(--bg);
+      display:none;flex-direction:column;
+      font-family:'Amiri',serif;
+    }
+    #pcOverlay.open{display:flex;}
+
+    /* topbar */
+    .pc-topbar{
+      position:sticky;top:0;z-index:10;
+      background:var(--card);border-bottom:1px solid var(--border);
+      display:flex;align-items:center;padding:0 14px;
+      height:56px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-shrink:0;
+    }
+    .pc-back{background:none;border:none;font-size:18pt;cursor:pointer;
+      color:var(--green);padding:0 10px 0 0;line-height:1;}
+    .pc-title{flex:1;font-family:'Aref Ruqaa',serif;font-size:14pt;color:var(--green);}
+
+    /* list */
+    #pcList{flex:1;overflow-y:auto;padding:12px 12px 8px;scroll-behavior:smooth;}
+    #pcList::-webkit-scrollbar{width:4px;}
+    #pcList::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+    /* empty */
+    .pc-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:100%;text-align:center;padding:40px;color:#888;}
+    .pc-empty-icon{font-size:56px;opacity:.4;margin-bottom:14px;
+      animation:float 3s ease-in-out infinite;}
+
+    /* reply indicator */
+    #pcReplyInd{
+      display:none;align-items:center;justify-content:space-between;
+      padding:7px 15px;background:rgba(184,134,11,.1);
+      border-bottom:1px solid rgba(184,134,11,.2);flex-shrink:0;
+    }
+    .pc-ri-txt{font-size:10pt;color:#888;flex:1;overflow:hidden;}
+    .pc-ri-txt strong{color:var(--gold);}
+    .pc-ri-pre{display:block;font-size:9pt;overflow:hidden;
+      text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+    .pc-ri-cancel{background:none;border:none;font-size:13pt;
+      color:#aaa;cursor:pointer;padding:3px 7px;}
+
+    /* attachments preview */
+    #pcAttPrev{
+      display:none;gap:7px;padding:7px 14px;
+      overflow-x:auto;border-bottom:1px solid var(--border);flex-shrink:0;
+    }
+    #pcAttPrev::-webkit-scrollbar{height:3px;}
+    .pc-att-thumb{
+      position:relative;flex-shrink:0;width:66px;height:66px;
+      border-radius:8px;overflow:hidden;background:#eee;border:1px solid var(--border);
+    }
+    .pc-att-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .pc-att-icon{width:100%;height:100%;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;font-size:20px;gap:3px;}
+    .pc-att-icon span{font-size:7pt;color:#888;max-width:58px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;}
+    .pc-att-rm{position:absolute;top:2px;left:2px;width:18px;height:18px;
+      background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;
+      font-size:9pt;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+    /* input area */
+    #pcInputArea{
+      background:var(--card);border-top:1px solid var(--border);flex-shrink:0;
+    }
+    .pc-input-bar{display:flex;align-items:flex-end;gap:7px;padding:9px 14px;}
+
+    /* plus button & menu */
+    .pc-plus-wrap{position:relative;flex-shrink:0;}
+    .pc-plus-btn{
+      width:40px;height:40px;border-radius:50%;background:#f0f4ec;border:none;
+      font-size:20pt;color:var(--green);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .2s,transform .3s cubic-bezier(.34,1.56,.64,1);line-height:1;
+    }
+    .pc-plus-btn.open{transform:rotate(45deg);background:#e8f0dc;}
+    .pc-pm-btn{
+      position:absolute;left:50%;transform:translateX(-50%) translateY(10px);
+      width:42px;height:42px;border-radius:50%;background:var(--card);
+      border:1px solid var(--border);cursor:pointer;font-size:18px;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 12px rgba(0,0,0,.15);opacity:0;pointer-events:none;
+      transition:opacity .22s,transform .25s cubic-bezier(.34,1.56,.64,1);
+      bottom:0;
+    }
+    .pc-pm-btn.show{opacity:1;pointer-events:auto;}
+    #pcPmImg.show{transform:translateX(-50%) translateY(0);bottom:50px;}
+    #pcPmAud.show{transform:translateX(-50%) translateY(0);bottom:100px;}
+    .pc-pm-btn.hide{opacity:0;pointer-events:none;
+      transform:translateX(-50%) translateY(10px)!important;bottom:0!important;}
+
+    /* text input */
+    .pc-input{
+      flex:1;background:#f0f2f5;border:1.5px solid var(--border);
+      border-radius:20px;padding:9px 15px;
+      font-family:'Amiri',serif;font-size:13pt;resize:none;outline:none;
+      max-height:120px;overflow-y:auto;line-height:1.5;
+      transition:border-color .2s;
+    }
+    .pc-input:focus{border-color:var(--green);}
+
+    /* send btn */
+    .pc-send-btn{
+      width:40px;height:40px;border-radius:50%;background:var(--green);
+      border:none;cursor:pointer;color:#fff;font-size:17pt;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .18s,transform .12s;flex-shrink:0;
+      position:relative;overflow:hidden;
+    }
+    .pc-send-btn:disabled{background:#ccc;cursor:default;}
+    .pc-send-btn:not(:disabled):active{transform:scale(.88);}
+    .pc-send-btn svg.pc-ring{position:absolute;inset:0;width:40px;height:40px;
+      transform:rotate(-90deg);pointer-events:none;}
+    .pc-send-btn svg.pc-ring circle{fill:none;stroke:rgba(255,255,255,.9);
+      stroke-width:3;stroke-linecap:round;
+      stroke-dasharray:110;stroke-dashoffset:110;
+      transition:stroke-dashoffset .12s linear;r:17;cx:20;cy:20;}
+    .pc-send-btn.sending{background:#4a6e0f;cursor:wait;}
+    .pc-send-btn .pc-send-icon{transition:opacity .18s;}
+    .pc-send-btn.sending .pc-send-icon{opacity:0;}
+
+    /* ─── comment card ─── */
+    .pc-card{background:var(--card);border-radius:13px;margin-bottom:10px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden;}
+    .pc-card.hidden-cmt{opacity:.6;border:1.5px dashed var(--border);}
+    .pc-card.highlighted{animation:pcHL 2s ease;}
+    @keyframes pcHL{0%{background:rgba(107,142,35,.15)}100%{background:var(--card)}}
+
+    .pc-header{display:flex;align-items:flex-start;justify-content:space-between;
+      padding:11px 11px 5px;}
+    .pc-author-row{display:flex;align-items:center;gap:9px;}
+    .pc-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,var(--gold),var(--green));
+      display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:14pt;font-weight:bold;overflow:hidden;}
+    .pc-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+    .pc-name{font-size:12pt;font-weight:bold;line-height:1.3;}
+    .pc-time{font-size:8.5pt;color:#888;}
+    .pc-hidden-badge{font-size:7.5pt;background:rgba(255,152,0,.18);color:#e65100;
+      padding:1px 6px;border-radius:8px;margin-top:2px;display:inline-block;}
+    .pc-3dot{background:none;border:none;font-size:20pt;color:#aaa;
+      cursor:pointer;padding:2px 7px;border-radius:6px;transition:background .18s;line-height:1;}
+    .pc-3dot:hover{background:#f5f5f5;color:#333;}
+
+    .pc-body{padding:0 12px 7px;}
+    .pc-reply-quote{background:rgba(184,134,11,.1);border-inline-end:3px solid var(--gold);
+      border-radius:5px;padding:5px 9px;margin-bottom:7px;font-size:9.5pt;cursor:pointer;}
+    .pc-reply-quote strong{color:var(--gold);display:block;margin-bottom:2px;}
+    .pc-reply-preview{color:#888;font-size:9pt;display:block;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pc-text{font-size:13pt;line-height:1.65;word-break:break-word;margin-bottom:7px;}
+    .pc-text a{color:var(--green);text-decoration:underline;}
+
+    /* images grid */
+    .pc-imgs{margin-bottom:7px;}
+    .pc-imgs-grid{display:grid;gap:3px;border-radius:9px;overflow:hidden;}
+    .pc-grid-1{grid-template-columns:1fr;}
+    .pc-grid-2{grid-template-columns:1fr 1fr;}
+    .pc-grid-3{grid-template-columns:1fr 1fr;}
+    .pc-grid-3 .pc-img-wrap:first-child{grid-column:span 2;}
+    .pc-grid-4{grid-template-columns:1fr 1fr;}
+    .pc-img-wrap{aspect-ratio:4/3;overflow:hidden;cursor:pointer;}
+    .pc-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .2s;display:block;}
+    .pc-img-wrap:hover img{transform:scale(1.04);}
+
+    /* audio */
+    .pc-audios{margin-bottom:7px;}
+    .pc-audio-item{display:flex;align-items:center;gap:9px;
+      background:rgba(107,142,35,.1);border-radius:22px;padding:7px 12px;margin-bottom:5px;}
+    .pc-audio-item audio{flex:1;height:30px;}
+
+    /* reactions */
+    .pc-rx-display{display:flex;align-items:center;gap:5px;padding:2px 12px 7px;}
+    .pc-rx-stack{display:flex;align-items:center;pointer-events:none;}
+    .pc-r-badge{width:20px;height:20px;font-size:12px;background:var(--card);
+      border:2px solid var(--bg);border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;}
+    .pc-r-badge:not(:first-child){margin-inline-end:-8px;}
+    .pc-r-count{font-size:9.5pt;color:#888;}
+
+    /* footer */
+    .pc-footer{display:flex;border-top:1px solid var(--border);margin:0 12px;}
+    .pc-foot-btn{flex:1;background:none;border:none;font-family:'Amiri',serif;
+      font-size:12pt;color:#888;cursor:pointer;padding:8px 0;
+      transition:background .18s,color .18s;border-radius:5px;}
+    .pc-foot-btn:hover{background:#f5f7f5;color:#333;}
+    .pc-foot-btn.reacted{color:var(--gold);font-weight:bold;}
+    .pc-rx-wrap{position:relative;flex:1;display:flex;}
+    .pc-rx-picker{
+      position:absolute;bottom:calc(100% + 6px);right:0;
+      background:var(--card);border-radius:28px;
+      box-shadow:0 4px 16px rgba(0,0,0,.16);
+      padding:6px 10px;display:none;gap:8px;z-index:200;
+      border:1px solid var(--border);
+    }
+    .pc-rx-picker.open{display:flex;animation:pcPopIn .18s ease;}
+    @keyframes pcPopIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+    .pc-r-opt{font-size:24px;cursor:pointer;border:none;background:none;
+      padding:4px;border-radius:50%;transition:transform .15s,background .15s;}
+    .pc-r-opt:hover{transform:scale(1.35);background:#f5f5f5;}
+    .pc-r-opt.selected{background:rgba(184,134,11,.15);outline:2px solid var(--gold);}
+
+    /* replies view */
+    .pc-replies-view{display:none;}
+    .pc-replies-view.show{display:block;}
+    .pc-rep-divider{text-align:center;font-size:10pt;color:#aaa;padding:8px 0;
+      position:relative;}
+    .pc-rep-divider::before,.pc-rep-divider::after{content:'';position:absolute;
+      top:50%;width:38%;height:1px;background:var(--border);}
+    .pc-rep-divider::before{right:0;}
+    .pc-rep-divider::after{left:0;}
+
+    /* bottom sheet menu */
+    .pc-menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1200;display:none;}
+    .pc-menu-overlay.show{display:block;}
+    .pc-menu-sheet{position:fixed;bottom:0;inset-inline:0;background:var(--card);
+      border-radius:16px 16px 0 0;z-index:1201;
+      transform:translateY(100%);transition:transform .28s cubic-bezier(.32,0,.67,0);
+      padding-bottom:max(env(safe-area-inset-bottom),16px);}
+    .pc-menu-sheet.show{transform:translateY(0);
+      transition:transform .28s cubic-bezier(.33,1,.68,1);}
+    .pc-menu-handle{width:40px;height:4px;background:var(--border);
+      border-radius:2px;margin:11px auto 6px;}
+    .pc-menu-item{display:flex;align-items:center;gap:11px;
+      padding:14px 20px;font-family:'Amiri',serif;font-size:13pt;
+      cursor:pointer;background:none;border:none;width:100%;
+      text-align:right;color:#333;transition:background .18s;}
+    .pc-menu-item:hover{background:#f5f5f5;}
+    .pc-menu-item.danger{color:#d32f2f;}
+
+    /* delete confirm modal */
+    .pc-del-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);
+      z-index:1202;display:none;}
+    .pc-del-overlay.show{display:block;}
+    .pc-del-modal{position:fixed;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      background:var(--card);border-radius:14px;overflow:hidden;
+      z-index:1203;width:min(360px,92vw);
+      box-shadow:0 4px 16px rgba(0,0,0,.2);display:none;}
+    .pc-del-modal.show{display:block;animation:pcPopIn .2s ease;}
+    .pc-del-head{background:#d32f2f;color:#fff;padding:14px 20px;
+      font-family:'Aref Ruqaa',serif;font-size:15pt;text-align:center;}
+    .pc-del-body{padding:18px 20px;}
+    .pc-del-body p{font-size:12pt;line-height:1.8;color:#333;margin-bottom:16px;}
+    .pc-del-btns{display:flex;gap:9px;}
+    .pc-btn-red{flex:1;padding:10px;background:#d32f2f;color:#fff;border:none;
+      border-radius:8px;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;}
+    .pc-btn-cancel{flex:1;padding:10px;background:#f0f0f0;color:#333;
+      border:1px solid #ddd;border-radius:8px;font-family:'Amiri',serif;
+      font-size:12pt;cursor:pointer;}
+
+    /* img viewer (reuse existing) */
+    /* toast handled by profile's showToast */
+
+    /* max files warning */
+    .pc-warn{position:fixed;top:16px;left:50%;transform:translateX(-50%);
+      background:var(--card);border-radius:12px;
+      box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1300;
+      width:min(340px,92vw);overflow:hidden;display:none;}
+    .pc-warn.show{display:block;animation:pcSlideDown .28s ease;}
+    @keyframes pcSlideDown{from{opacity:0;transform:translateX(-50%) translateY(-16px)}
+      to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .pc-warn-head{background:#d32f2f;color:#fff;padding:10px 16px;
+      font-family:'Aref Ruqaa',serif;font-size:15pt;text-align:center;}
+    .pc-warn-body{background:#fff8f8;padding:12px 16px;font-size:11pt;
+      line-height:1.8;color:#333;white-space:pre-line;}
     #postDeepOverlay{
       position:fixed;inset:0;z-index:1200;background:var(--bg);
       display:none;flex-direction:column;overflow-y:auto;
@@ -969,6 +1235,84 @@
                background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:#555">إلغاء</button>
     </div>
   </div>
+</div>
+
+<!-- ══════════ POST COMMENTS OVERLAY ══════════ -->
+<div id="pcOverlay">
+  <!-- Topbar -->
+  <div class="pc-topbar">
+    <button class="pc-back" onclick="pcHandleBack()">→</button>
+    <span class="pc-title" id="pcTitle">التعليقات</span>
+  </div>
+  <!-- List -->
+  <div id="pcList">
+    <div id="pcMainView">
+      <div id="pcEmpty" class="pc-empty" style="display:none">
+        <div class="pc-empty-icon">💬</div>
+        <div style="font-size:16pt;color:#aaa">لا توجد تعليقات</div>
+        <div style="font-size:11pt;color:#bbb;margin-top:6px">كن أول من يعلق!</div>
+      </div>
+      <div id="pcCommentsList"></div>
+    </div>
+    <div id="pcRepliesView" class="pc-replies-view">
+      <div id="pcRepParent"></div>
+      <div class="pc-rep-divider">الردود</div>
+      <div id="pcRepEmpty" style="display:none;text-align:center;padding:24px;color:#aaa;font-size:11pt">↩ لا توجد ردود بعد</div>
+      <div id="pcRepList"></div>
+    </div>
+  </div>
+  <!-- Reply indicator -->
+  <div id="pcReplyInd">
+    <div class="pc-ri-txt">رداً على <strong id="pcRiName"></strong>
+      <span class="pc-ri-pre" id="pcRiPre"></span>
+    </div>
+    <button class="pc-ri-cancel" onclick="pcCancelSubReply()">✕</button>
+  </div>
+  <!-- Attachments preview -->
+  <div id="pcAttPrev"></div>
+  <!-- Input area -->
+  <div id="pcInputArea">
+    <div class="pc-input-bar">
+      <div class="pc-plus-wrap" id="pcPlusWrap">
+        <button class="pc-pm-btn" id="pcPmAud" title="صوت" onclick="pcTriggerUpload('audio')" onmousedown="event.preventDefault()">🎵</button>
+        <button class="pc-pm-btn" id="pcPmImg" title="صورة" onclick="pcTriggerUpload('image')" onmousedown="event.preventDefault()">🖼️</button>
+        <button class="pc-plus-btn" id="pcPlusBtn" onclick="pcTogglePlus()" onmousedown="event.preventDefault()">+</button>
+      </div>
+      <textarea class="pc-input" id="pcInput" placeholder="اكتب تعليقاً..." rows="1"
+        oninput="pcOnInput(this)" onkeydown=""></textarea>
+      <button class="pc-send-btn" id="pcSendBtn" onclick="pcDoSend()" disabled>
+        <span class="pc-send-icon">↑</span>
+        <svg class="pc-ring" viewBox="0 0 40 40"><circle/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- hidden inputs for post comments -->
+<input type="file" id="pcInpImg" accept="image/*" multiple style="display:none" onchange="pcOnFileSelect(event,'image')">
+<input type="file" id="pcInpAud" accept="audio/*" style="display:none" onchange="pcOnFileSelect(event,'audio')">
+
+<!-- bottom sheet menu -->
+<div class="pc-menu-overlay" id="pcMenuOvl" onclick="pcCloseMenu()"></div>
+<div class="pc-menu-sheet" id="pcMenuSheet"><div class="pc-menu-handle"></div><div id="pcMenuItems"></div></div>
+
+<!-- delete confirm -->
+<div class="pc-del-overlay" id="pcDelOvl" onclick="pcCloseDelModal()"></div>
+<div class="pc-del-modal" id="pcDelModal">
+  <div class="pc-del-head">تحذير!</div>
+  <div class="pc-del-body">
+    <p>هل أنت متأكد من حذف هذا التعليق؟</p>
+    <div class="pc-del-btns">
+      <button class="pc-btn-red" onclick="pcConfirmDelete()">حذف</button>
+      <button class="pc-btn-cancel" onclick="pcCloseDelModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- max files warning -->
+<div class="pc-warn" id="pcWarn">
+  <div class="pc-warn-head">تنبيه!</div>
+  <div class="pc-warn-body" id="pcWarnBody"></div>
 </div>
 
 <!-- ══════════ POST DEEP-LINK OVERLAY ══════════ -->
@@ -2530,9 +2874,823 @@ function sharePostLink(postId) {
   navigator.clipboard.writeText(url).then(() => showToast('✅ تم نسخ رابط المنشور'));
 }
 
-function openPostComments(postId) {
-  showToast('💬 نظام التعليقات على المنشورات — قريباً');
+// ══════════════════════════════════════════════════════════
+// نظام تعليقات المنشورات — مطابق لـ s_comments_v3
+// ══════════════════════════════════════════════════════════
+const PC = (() => {
+  /* حالة */
+  let _ownerId   = '';
+  let _ownerName = '';
+  let _postId    = '';
+  let _postType  = 'post';
+  let _postTitle = '';
+  let _isPostOwner = false;
+
+  let _comments   = [];
+  let _syncHash   = '';
+  let _syncIvId   = null;
+  let _isSyncing  = false;
+  let _viewMode   = 'main';           // 'main' | 'replies'
+  let _parentCmt  = null;
+  let _subReply   = null;
+  let _attachFiles= [];
+  let _pendingDel = null;
+  let _openRxId   = null;
+  let _plusOpen   = false;
+  let _plusAnim   = false;
+  let _warnTimer  = null;
+  const MAX_SLOTS = 4;
+
+  /* ───── API helper ───── */
+  async function api(action, payload) {
+    const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, ...payload })
+    });
+    return res.json();
+  }
+
+  /* ───── helpers ───── */
+  function me()    { return currentUser && currentUser.id   || ''; }
+  function myName(){ return currentUser && currentUser.username || 'مجهول'; }
+  function myPhoto(){ return currentUser && currentUser.profilePhoto || ''; }
+
+  function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function relTime(ts) {
+    if (!ts) return '';
+    const d=Date.now()-ts, m=Math.floor(d/60000), h=Math.floor(d/3600000), dy=Math.floor(d/86400000);
+    if (m<1)  return 'الآن';
+    if (m<60) return `منذ ${m} دقيقة`;
+    if (h<24) return `منذ ${h} ساعة`;
+    if (dy<30)return `منذ ${dy} يوم`;
+    return new Date(ts).toLocaleDateString('ar-SA');
+  }
+
+  function renderLinks(txt) {
+    if (!txt) return '';
+    return esc(txt).replace(/(https?:\/\/[^\s<>"]+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  }
+
+  function canSee(c) {
+    if (c.deleted) return false;
+    if (!c.hidden) return true;
+    return c.authorId === me() || _isPostOwner;
+  }
+
+  function myReact(c) {
+    const rx = c.reactions||{};
+    if ((rx.heart||[]).includes(me())) return 'heart';
+    if ((rx.laugh||[]).includes(me())) return 'laugh';
+    if ((rx.like ||[]).includes(me())) return 'like';
+    return null;
+  }
+
+  function rxEmoji(k){ return ({heart:'❤️',laugh:'😂',like:'👍'})[k]||'🙂'; }
+  function rxLabel(k){ return ({heart:'أحببته',laugh:'أضحكني',like:'أعجبني'})[k]||''; }
+
+  function buildSyncHash(cmts) {
+    let h = cmts.length+'|';
+    cmts.forEach(c => {
+      const rx=c.reactions||{};
+      h += [c.id,c.timestamp||0,c.editedAt||0,c.hidden?1:0,
+            (c.replies||[]).length,
+            (rx.heart||[]).length,(rx.laugh||[]).length,(rx.like||[]).length].join(':')+'|';
+    });
+    return h;
+  }
+
+  /* ───── RENDER CARD ───── */
+  function buildCard(c, isReply) {
+    const card = document.createElement('div');
+    card.className = 'pc-card' + (c.hidden?' hidden-cmt':'');
+    card.id = 'comment-' + c.id;
+
+    const isOwn = me() === c.authorId;
+    const canOpenProf = c.authorId && c.authorId !== me();
+    const profClick   = canOpenProf ? `onclick="window.location.href='profile.html?uid=${encodeURIComponent(c.authorId)}'"` : '';
+
+    /* header */
+    let html = `<div class="pc-header">
+      <div class="pc-author-row">
+        <div class="pc-avatar" ${profClick} style="${canOpenProf?'cursor:pointer':''}">
+          ${c.authorPhoto?`<img src="${esc(c.authorPhoto)}" alt="">`
+            : esc((c.authorName||'?')[0].toUpperCase())}
+        </div>
+        <div>
+          <div class="pc-name" ${profClick} style="${canOpenProf?'cursor:pointer;text-decoration:underline dotted':''}">${esc(c.authorName||'مجهول')}</div>
+          <div class="pc-time">${relTime(c.timestamp)}</div>
+          ${c.hidden?'<div class="pc-hidden-badge">مخفي</div>':''}
+        </div>
+      </div>
+      <button class="pc-3dot" onclick="openPcMenu(${c.id},'${isReply?'reply':'comment'}',${isOwn},${_isPostOwner})">⋮</button>
+    </div>`;
+
+    /* body */
+    html += '<div class="pc-body">';
+
+    if (isReply && c.replyTo != null) {
+      html += `<div class="pc-reply-quote" onclick="pcScrollTo(${c.replyTo})">
+        <strong>${esc(c.replyToName||'')}</strong>
+        <span class="pc-reply-preview">${esc((c.replyToText||'').slice(0,70))}${(c.replyToText||'').length>70?'…':''}</span>
+      </div>`;
+    }
+
+    html += `<div class="pc-text">${renderLinks(c.text)}</div>`;
+
+    /* صور */
+    const imgs = (c.files||[]).filter(f=>f.type==='image');
+    const auds = (c.files||[]).filter(f=>f.type==='audio');
+
+    if (imgs.length) {
+      const gc = `pc-grid-${Math.min(imgs.length,4)}`;
+      html += `<div class="pc-imgs"><div class="pc-imgs-grid ${gc}">`;
+      imgs.slice(0,4).forEach(img=>{
+        html += `<div class="pc-img-wrap" onclick="openMediaViewer('${esc(img.data)}','image')">
+          <img src="${esc(img.data)}" alt="" loading="lazy"></div>`;
+      });
+      html += '</div></div>';
+    }
+
+    /* صوتيات */
+    if (auds.length) {
+      html += '<div class="pc-audios">';
+      auds.forEach(a=>{
+        html += `<div class="pc-audio-item"><span>🎵</span>
+          <audio controls preload="none"><source src="${esc(a.data)}"></audio></div>`;
+      });
+      html += '</div>';
+    }
+
+    html += '</div>'; /* /body */
+
+    /* تفاعلات - عرض */
+    const rx    = c.reactions||{};
+    const rList = [{k:'heart',e:'❤️'},{k:'laugh',e:'😂'},{k:'like',e:'👍'}]
+      .filter(r=>(rx[r.k]||[]).length>0)
+      .sort((a,b)=>(rx[b.k]||[]).length-(rx[a.k]||[]).length);
+    const total = rList.reduce((s,r)=>s+(rx[r.k]||[]).length,0);
+
+    if (total>0) {
+      html += `<div class="pc-rx-display"><div class="pc-rx-stack">`;
+      rList.slice(0,3).forEach(r=>{html+=`<span class="pc-r-badge">${r.e}</span>`;});
+      html += `</div><span class="pc-r-count">${total}</span></div>`;
+    }
+
+    /* footer */
+    const mr = myReact(c);
+    const rBtnLbl = mr ? `${rxEmoji(mr)} ${rxLabel(mr)}` : '🙂 تفاعل';
+    const repCnt  = (c.replies||[]).filter(r=>!r.deleted).length;
+
+    html += `<div class="pc-footer">
+      <div class="pc-rx-wrap">
+        <button class="pc-foot-btn${mr?' reacted':''}"
+          onclick="pcToggleRx(event,${c.id},${isReply?1:0})">${rBtnLbl}</button>
+        <div id="rxp-${c.id}" class="pc-rx-picker">
+          <button class="pc-r-opt${mr==='heart'?' selected':''}"
+            onclick="pcPickRx(event,${c.id},'heart',${isReply?1:0})">❤️</button>
+          <button class="pc-r-opt${mr==='laugh'?' selected':''}"
+            onclick="pcPickRx(event,${c.id},'laugh',${isReply?1:0})">😂</button>
+          <button class="pc-r-opt${mr==='like'?' selected':''}"
+            onclick="pcPickRx(event,${c.id},'like',${isReply?1:0})">👍</button>
+        </div>
+      </div>`;
+
+    if (!isReply) {
+      html += `<button class="pc-foot-btn" onclick="pcOpenReplies(${c.id})">↩ رد${repCnt?' ('+repCnt+')':''}</button>`;
+    } else {
+      html += `<button class="pc-foot-btn" onclick="pcSetSubReply(${c.id})">↩ رد</button>`;
+    }
+
+    html += '</div>';
+    card.innerHTML = html;
+    return card;
+  }
+
+  /* ───── RENDER MAIN ───── */
+  function renderMain() {
+    const list  = document.getElementById('pcCommentsList');
+    const empty = document.getElementById('pcEmpty');
+    const rv    = document.getElementById('pcRepliesView');
+
+    list.innerHTML = '';
+    rv.classList.remove('show');
+    document.getElementById('pcTitle').textContent = `تعليقات · ${_postTitle}`;
+
+    const visible = _comments.filter(canSee);
+    empty.style.display = visible.length ? 'none' : 'flex';
+    visible.forEach(c => list.appendChild(buildCard(c, false)));
+  }
+
+  /* ───── REPLIES ───── */
+  function renderReplies() {
+    const pp = document.getElementById('pcRepParent');
+    const rl = document.getElementById('pcRepList');
+    const re = document.getElementById('pcRepEmpty');
+    pp.innerHTML = ''; rl.innerHTML = '';
+
+    pp.appendChild(buildCard(_parentCmt, false));
+    const vis = (_parentCmt.replies||[]).filter(canSee);
+    re.style.display = vis.length ? 'none' : 'block';
+    vis.forEach(r => rl.appendChild(buildCard(r, true)));
+  }
+
+  function pcOpenReplies(cid) {
+    _parentCmt = _comments.find(c=>c.id===cid);
+    if (!_parentCmt) return;
+    _viewMode = 'replies';
+    document.getElementById('pcTitle').textContent = `الردود · ${_postTitle}`;
+    document.getElementById('pcMainView').style.display  = 'none';
+    document.getElementById('pcRepliesView').classList.add('show');
+    renderReplies();
+    document.getElementById('pcList').scrollTop = 0;
+  }
+
+  function pcCloseReplies() {
+    _viewMode = 'main';
+    _parentCmt = null;
+    pcCancelSubReply();
+    document.getElementById('pcMainView').style.display  = '';
+    document.getElementById('pcRepliesView').classList.remove('show');
+    renderMain();
+  }
+
+  /* ───── SUB-REPLY ───── */
+  function pcSetSubReply(rid) {
+    if (!_parentCmt) return;
+    const r = (_parentCmt.replies||[]).find(x=>x.id===rid);
+    if (!r) return;
+    _subReply = { id:rid, authorName:r.authorName, text:r.text };
+    document.getElementById('pcRiName').textContent = r.authorName;
+    document.getElementById('pcRiPre').textContent  = (r.text||'').slice(0,60)+((r.text||'').length>60?'…':'');
+    document.getElementById('pcReplyInd').style.display = 'flex';
+    document.getElementById('pcInput').focus();
+    pcUpdateBottom();
+  }
+
+  function pcCancelSubReply() {
+    _subReply = null;
+    document.getElementById('pcReplyInd').style.display = 'none';
+    pcUpdateBottom();
+  }
+
+  function pcScrollTo(id) {
+    const el = document.getElementById('comment-'+id);
+    if (!el) return;
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.classList.add('highlighted');
+    setTimeout(()=>el.classList.remove('highlighted'),2500);
+  }
+
+  /* ───── PLUS MENU ───── */
+  function pcTogglePlus() {
+    if (_plusAnim) return;
+    _plusAnim = true;
+    const btn = document.getElementById('pcPlusBtn');
+    const ids = ['pcPmImg','pcPmAud'];
+    if (_plusOpen) {
+      ids.forEach(id=>{
+        const b=document.getElementById(id);
+        b.classList.remove('show'); b.classList.add('hide');
+      });
+      btn.classList.remove('open');
+      setTimeout(()=>{
+        ids.forEach(id=>{
+          const b=document.getElementById(id);
+          b.classList.remove('hide');
+        });
+        _plusAnim=false; _plusOpen=false;
+      },280);
+    } else {
+      _plusOpen=true; btn.classList.add('open');
+      ids.forEach((id,i)=>{
+        setTimeout(()=>document.getElementById(id).classList.add('show'),i*60);
+      });
+      setTimeout(()=>{_plusAnim=false;},350);
+    }
+  }
+
+  function pcTriggerUpload(type) {
+    if (_plusAnim) return;
+    if (_plusOpen) pcTogglePlus();
+    setTimeout(()=>{
+      if (type==='image') document.getElementById('pcInpImg').click();
+      else document.getElementById('pcInpAud').click();
+    }, _plusOpen?320:0);
+  }
+
+  /* ───── FILE HANDLING ───── */
+  function usedSlots() {
+    return _attachFiles.reduce((s,f)=>s+(f.type==='image'?1:0),0);
+  }
+
+  function pcOnFileSelect(event, type) {
+    let files = Array.from(event.target.files);
+    event.target.value = '';
+
+    if (type==='image') {
+      const cur = _attachFiles.filter(f=>f.type==='image').length;
+      const canAdd = MAX_SLOTS - cur;
+      if (canAdd <= 0) { pcShowWarn('image'); return; }
+      files = files.slice(0, canAdd);
+    }
+    if (type==='audio' && _attachFiles.some(f=>f.type==='audio')) {
+      pcShowWarn('audio_dup'); return;
+    }
+
+    files.forEach(file=>{
+      const reader = new FileReader();
+      reader.onload = e=>{
+        _attachFiles.push({ type, data:e.target.result, name:file.name });
+        pcRenderAtt(); pcCheckSend();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function pcRenderAtt() {
+    const wrap = document.getElementById('pcAttPrev');
+    if (!_attachFiles.length) { wrap.style.display='none'; pcUpdateBottom(); return; }
+    wrap.style.display = 'flex';
+    wrap.innerHTML = '';
+    _attachFiles.forEach((f,i)=>{
+      const d = document.createElement('div');
+      d.className = 'pc-att-thumb';
+      d.innerHTML = f.type==='image'
+        ? `<img src="${esc(f.data)}" alt="">`
+        : `<div class="pc-att-icon">🎵<span>${esc(f.name)}</span></div>`;
+      d.innerHTML += `<button class="pc-att-rm" onclick="PC.removeAtt(${i})">✕</button>`;
+      wrap.appendChild(d);
+    });
+    pcUpdateBottom();
+  }
+
+  function removeAtt(i) {
+    _attachFiles.splice(i,1);
+    pcRenderAtt(); pcCheckSend();
+  }
+
+  function pcShowWarn(type) {
+    if (_warnTimer) clearTimeout(_warnTimer);
+    const msg = type==='audio_dup'
+      ? 'يمكن إرفاق ملف صوتي واحد فقط في التعليق الواحد.'
+      : 'وصلت إلى الحد الأقصى للصور المرفقة (4 صور).';
+    document.getElementById('pcWarnBody').textContent = msg;
+    const w = document.getElementById('pcWarn');
+    w.classList.add('show');
+    _warnTimer = setTimeout(()=>w.classList.remove('show'),5000);
+  }
+
+  /* ───── INPUT ───── */
+  function pcOnInput(el) {
+    el.style.height='auto';
+    el.style.height = Math.min(el.scrollHeight,120)+'px';
+    pcCheckSend(); pcUpdateBottom();
+  }
+
+  function pcCheckSend() {
+    const hasText = document.getElementById('pcInput').value.trim().length>0;
+    document.getElementById('pcSendBtn').disabled = !hasText;
+  }
+
+  function pcUpdateBottom() {
+    const ia = document.getElementById('pcInputArea');
+    const ri = document.getElementById('pcReplyInd');
+    const ap = document.getElementById('pcAttPrev');
+    requestAnimationFrame(()=>{
+      document.getElementById('pcList').style.paddingBottom =
+        (ia.offsetHeight + ri.offsetHeight + ap.offsetHeight) + 'px';
+    });
+  }
+
+  /* ───── SEND ───── */
+  function pcSetSendProgress(pct) {
+    const circle = document.querySelector('#pcSendBtn .pc-ring circle');
+    if (!circle) return;
+    const circ = 2*Math.PI*17;
+    circle.style.strokeDashoffset = circ*(1-Math.min(1,pct));
+  }
+
+  function pcStartProgress() {
+    const btn = document.getElementById('pcSendBtn');
+    btn.disabled=true; btn.classList.add('sending');
+    let p=0;
+    const iv = setInterval(()=>{ p+=0.02; if(p>=.6)clearInterval(iv); pcSetSendProgress(p); },80);
+    return iv;
+  }
+
+  function pcFinishProgress(iv) {
+    clearInterval(iv);
+    pcSetSendProgress(.95);
+    setTimeout(()=>{
+      pcSetSendProgress(1);
+      setTimeout(()=>{
+        const btn=document.getElementById('pcSendBtn');
+        btn.classList.remove('sending'); pcSetSendProgress(0); pcCheckSend();
+      },280);
+    },120);
+  }
+
+  async function pcDoSend() {
+    const input = document.getElementById('pcInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    if (!me()) { showToast('يجب تسجيل الدخول للتعليق'); return; }
+
+    const iv = pcStartProgress();
+    const files = _attachFiles.map(f=>({type:f.type,data:f.data,name:f.name}));
+
+    try {
+      let res;
+      if (_viewMode==='replies' && _parentCmt) {
+        res = await api('save_post_reply', {
+          ownerId:_ownerId, ownerName:_ownerName,
+          postId:_postId, postType:_postType,
+          commentId:_parentCmt.id,
+          text, authorId:me(), authorName:myName(), authorPhoto:myPhoto(),
+          files,
+          replyTo:    _subReply ? _subReply.id         : null,
+          replyToName:_subReply ? _subReply.authorName : null,
+          replyToText:_subReply ? _subReply.text       : null
+        });
+        if (res.success) {
+          if (!_parentCmt.replies) _parentCmt.replies=[];
+          _parentCmt.replies.push(res.reply);
+          const idx=_comments.findIndex(c=>c.id===_parentCmt.id);
+          if (idx>=0) _comments[idx]=_parentCmt;
+          _syncHash = buildSyncHash(_comments);
+          pcClearInput();
+          const rl=document.getElementById('pcRepList');
+          rl.appendChild(buildCard(res.reply,true));
+          setTimeout(()=>{ document.getElementById('pcList').scrollTop=99999; },80);
+        }
+      } else {
+        res = await api('save_post_comment', {
+          ownerId:_ownerId, ownerName:_ownerName,
+          postId:_postId, postType:_postType,
+          text, authorId:me(), authorName:myName(), authorPhoto:myPhoto(), files
+        });
+        if (res.success) {
+          _comments.push(res.comment);
+          _syncHash = buildSyncHash(_comments);
+          pcClearInput();
+          const cl=document.getElementById('pcCommentsList');
+          cl.appendChild(buildCard(res.comment,false));
+          document.getElementById('pcEmpty').style.display='none';
+          setTimeout(()=>{ document.getElementById('pcList').scrollTop=99999; },80);
+        }
+      }
+      pcFinishProgress(iv);
+      if (!res.success) showToast('فشل الإرسال');
+    } catch(e) {
+      pcFinishProgress(iv); showToast('حدث خطأ أثناء الإرسال');
+    }
+  }
+
+  function pcClearInput() {
+    const inp=document.getElementById('pcInput');
+    inp.value=''; inp.style.height='auto';
+    _attachFiles=[]; pcRenderAtt(); pcCancelSubReply(); pcCheckSend();
+  }
+
+  /* ───── CONTEXT MENU ───── */
+  function openPcMenu(id, type, isOwn, isBO) {
+    const items=document.getElementById('pcMenuItems');
+    items.innerHTML='';
+    const isRep=type==='reply';
+
+    addPcMenuItem(items,'🔗 نسخ رابط التعليق', ()=>{
+      const url=`${location.href.split('?')[0]}?uid=${_ownerId}&post=${_postId}&cmt=${id}`;
+      navigator.clipboard.writeText(url).then(()=>showToast('تم نسخ الرابط'));
+      pcCloseMenu();
+    });
+
+    addPcMenuItem(items,'📋 نسخ النص', ()=>{
+      const c=pcGetCmt(id,isRep);
+      if (c) navigator.clipboard.writeText(c.text||'').then(()=>showToast('تم نسخ النص'));
+      pcCloseMenu();
+    });
+
+    if (isOwn) {
+      addPcMenuItem(items,'✏️ تعديل', ()=>{ pcDoEdit(id,isRep); pcCloseMenu(); });
+      const c=pcGetCmt(id,isRep);
+      addPcMenuItem(items, c?.hidden?'👁️ إظهار':'🙈 إخفاء', ()=>{ pcDoHide(id,isRep); pcCloseMenu(); });
+      addPcMenuItem(items,'🗑️ حذف', ()=>{
+        _pendingDel={ commentId:isRep?_parentCmt.id:id, replyId:isRep?id:null };
+        pcCloseMenu(); pcOpenDelModal();
+      }, true);
+    }
+
+    if (!isOwn) {
+      addPcMenuItem(items,'🚩 إبلاغ', ()=>{ showToast('تم إرسال البلاغ — شكراً'); pcCloseMenu(); }, true);
+    }
+
+    document.getElementById('pcMenuOvl').classList.add('show');
+    document.getElementById('pcMenuSheet').classList.add('show');
+  }
+
+  function addPcMenuItem(cont,label,action,danger=false) {
+    const btn=document.createElement('button');
+    btn.className='pc-menu-item'+(danger?' danger':'');
+    btn.textContent=label; btn.onclick=action;
+    cont.appendChild(btn);
+  }
+
+  function pcCloseMenu() {
+    document.getElementById('pcMenuOvl').classList.remove('show');
+    document.getElementById('pcMenuSheet').classList.remove('show');
+  }
+
+  function pcGetCmt(id,isReply) {
+    if (isReply && _parentCmt) return (_parentCmt.replies||[]).find(r=>r.id===id);
+    return _comments.find(c=>c.id===id);
+  }
+
+  /* ───── EDIT / HIDE / DELETE ───── */
+  function pcDoEdit(id,isReply) {
+    const c=pcGetCmt(id,isReply);
+    const el=document.getElementById('comment-'+id);
+    if (!c||!el) return;
+    const textEl=el.querySelector('.pc-text');
+    if (!textEl) return;
+    const orig=textEl.innerHTML;
+    textEl.contentEditable='plaintext-only';
+    textEl.style.cssText='border:1.5px solid var(--green);border-radius:5px;padding:4px 7px;outline:none;';
+    textEl.focus();
+    if (!el.querySelector('.pc-edit-actions')) {
+      const ea=document.createElement('div');
+      ea.className='pc-edit-actions';
+      ea.style.cssText='display:flex;gap:7px;margin:7px 0 0';
+      const sv=document.createElement('button');
+      sv.className='btn-primary'; sv.style.flex='1'; sv.style.padding='6px';
+      sv.textContent='حفظ';
+      sv.onclick=async ()=>{
+        const newText=textEl.textContent.trim();
+        if (!newText) { showToast('النص لا يمكن أن يكون فارغاً'); return; }
+        const res=await api('edit_post_comment',{
+          ownerId:_ownerId,ownerName:_ownerName,postId:_postId,postType:_postType,
+          commentId:isReply?_parentCmt.id:id, replyId:isReply?id:null,
+          userId:me(), text:newText
+        });
+        if (res.success) { c.text=newText; textEl.textContent=newText; showToast('تم التعديل'); }
+        else { textEl.innerHTML=orig; showToast('فشل التعديل'); }
+        cleanup();
+      };
+      const cx=document.createElement('button');
+      cx.className='btn-secondary'; cx.style.flex='1'; cx.style.padding='6px';
+      cx.textContent='إلغاء';
+      cx.onclick=()=>{ textEl.innerHTML=orig; cleanup(); };
+      function cleanup() {
+        textEl.contentEditable='false'; textEl.style.cssText=''; ea.remove();
+      }
+      ea.appendChild(sv); ea.appendChild(cx);
+      textEl.insertAdjacentElement('afterend',ea);
+    }
+  }
+
+  async function pcDoHide(id,isReply) {
+    const res=await api('hide_post_comment',{
+      ownerId:_ownerId,ownerName:_ownerName,postId:_postId,postType:_postType,
+      commentId:isReply?_parentCmt.id:id, replyId:isReply?id:null, userId:me()
+    });
+    if (res.success) {
+      const c=pcGetCmt(id,isReply);
+      if (c) c.hidden=!c.hidden;
+      isReply ? renderReplies() : renderMain();
+      showToast('تم التحديث');
+    }
+  }
+
+  function pcOpenDelModal() {
+    document.getElementById('pcDelOvl').classList.add('show');
+    document.getElementById('pcDelModal').classList.add('show');
+  }
+
+  function pcCloseDelModal() {
+    document.getElementById('pcDelOvl').classList.remove('show');
+    document.getElementById('pcDelModal').classList.remove('show');
+    _pendingDel=null;
+  }
+
+  async function pcConfirmDelete() {
+    if (!_pendingDel) return;
+    const {commentId,replyId}=_pendingDel;
+    const res=await api('delete_post_comment',{
+      ownerId:_ownerId,ownerName:_ownerName,postId:_postId,postType:_postType,
+      commentId, replyId, userId:me()
+    });
+    pcCloseDelModal();
+    if (res.success) {
+      if (replyId!==null && replyId!==undefined) {
+        if (_parentCmt) {
+          _parentCmt.replies=(_parentCmt.replies||[]).filter(r=>r.id!==replyId);
+          const idx=_comments.findIndex(c=>c.id===_parentCmt.id);
+          if (idx>=0) _comments[idx]=_parentCmt;
+          renderReplies();
+        }
+      } else {
+        _comments=_comments.filter(c=>c.id!==commentId);
+        if (_viewMode==='replies'&&_parentCmt?.id===commentId) pcCloseReplies();
+        else renderMain();
+      }
+      showToast('تم الحذف');
+    }
+  }
+
+  /* ───── REACTIONS ───── */
+  function pcToggleRx(event,cid,isReply) {
+    event.stopPropagation();
+    const picker=document.getElementById('rxp-'+cid);
+    if (!picker) return;
+    if (picker.classList.contains('open')) {
+      picker.classList.remove('open'); _openRxId=null;
+    } else {
+      if (_openRxId!==null) {
+        const old=document.getElementById('rxp-'+_openRxId);
+        if (old) old.classList.remove('open');
+      }
+      picker.classList.add('open'); _openRxId=cid;
+      setTimeout(()=>{
+        function close(e) {
+          if (!picker.contains(e.target)) {
+            picker.classList.remove('open');
+            if (_openRxId===cid) _openRxId=null;
+            document.removeEventListener('click',close);
+          }
+        }
+        document.addEventListener('click',close);
+      },0);
+    }
+  }
+
+  async function pcPickRx(event,cid,reaction,isReply) {
+    event.stopPropagation();
+    if (!me()) { showToast('يجب تسجيل الدخول للتفاعل'); return; }
+    const c=pcGetCmt(cid,isReply===1);
+    if (!c) return;
+    const cur=myReact(c), deselect=cur===reaction;
+    if (!c.reactions) c.reactions={heart:[],laugh:[],like:[]};
+    ['heart','laugh','like'].forEach(k=>{
+      if (!c.reactions[k]) c.reactions[k]=[];
+      c.reactions[k]=c.reactions[k].filter(id=>id!==me());
+    });
+    if (!deselect) c.reactions[reaction].push(me());
+    const picker=document.getElementById('rxp-'+cid);
+    if (picker) { picker.classList.remove('open'); _openRxId=null; }
+    isReply===1 ? renderReplies() : renderMain();
+    _syncHash=buildSyncHash(_comments);
+    await api('react_post_comment',{
+      ownerId:_ownerId,ownerName:_ownerName,postId:_postId,postType:_postType,
+      commentId:isReply===1?_parentCmt.id:cid, replyId:isReply===1?cid:null,
+      userId:me(), reaction:deselect?null:reaction
+    });
+  }
+
+  /* ───── SYNC ───── */
+  async function syncPoll() {
+    if (_isSyncing) return;
+    _isSyncing=true;
+    try {
+      const res=await api('get_post_comments',{
+        ownerId:_ownerId, ownerName:_ownerName, postId:_postId, postType:_postType
+      });
+      if (res.success) {
+        const newHash=buildSyncHash(res.comments||[]);
+        if (newHash!==_syncHash) {
+          _syncHash=newHash;
+          _comments=res.comments||[];
+          _viewMode==='main' ? renderMain() : renderReplies();
+        }
+      }
+    } catch(_) {}
+    finally { _isSyncing=false; }
+  }
+
+  function startSync() {
+    if (_syncIvId) return;
+    _syncIvId=setInterval(syncPoll,3000);
+  }
+  function stopSync() {
+    clearInterval(_syncIvId); _syncIvId=null;
+  }
+
+  /* ───── OPEN / CLOSE ───── */
+  async function open(post, ownerId, ownerName, isPostOwner) {
+    _ownerId     = ownerId;
+    _ownerName   = ownerName;
+    _postId      = post.id;
+    _postType    = post.type || 'post';
+    _postTitle   = (post.text||'').slice(0,25) || 'المنشور';
+    _isPostOwner = !!isPostOwner;
+    _comments=[]; _syncHash=''; _viewMode='main';
+    _parentCmt=null; _subReply=null; _attachFiles=[];
+    _pendingDel=null; _plusOpen=false;
+
+    /* reset UI */
+    document.getElementById('pcCommentsList').innerHTML='';
+    document.getElementById('pcRepList').innerHTML='';
+    document.getElementById('pcMainView').style.display='';
+    document.getElementById('pcRepliesView').classList.remove('show');
+    document.getElementById('pcEmpty').style.display='none';
+    document.getElementById('pcAttPrev').style.display='none';
+    document.getElementById('pcAttPrev').innerHTML='';
+    document.getElementById('pcReplyInd').style.display='none';
+    document.getElementById('pcInput').value='';
+    document.getElementById('pcInput').style.height='auto';
+    document.getElementById('pcTitle').textContent=`تعليقات · ${_postTitle}`;
+    document.getElementById('pcOverlay').classList.add('open');
+    document.body.style.overflow='hidden';
+
+    /* جلب */
+    try {
+      const res=await api('get_post_comments',{
+        ownerId:_ownerId, ownerName:_ownerName, postId:_postId, postType:_postType
+      });
+      if (res.success) {
+        _comments=res.comments||[];
+        _syncHash=buildSyncHash(_comments);
+      }
+    } catch(_) {}
+    renderMain();
+    startSync();
+  }
+
+  function close() {
+    stopSync();
+    document.getElementById('pcOverlay').classList.remove('open');
+    document.body.style.overflow='';
+    if (_plusOpen) pcTogglePlus();
+  }
+
+  function handleBack() {
+    if (_viewMode==='replies') pcCloseReplies();
+    else close();
+  }
+
+  /* ─── إضافة listeners خارجية ─── */
+  document.addEventListener('click', e=>{
+    if (_plusOpen && !e.target.closest('#pcPlusWrap')) {
+      if (!_plusAnim) pcTogglePlus();
+    }
+  });
+
+  window.visualViewport?.addEventListener('resize', ()=>{
+    const offset=window.innerHeight-window.visualViewport.height;
+    const ia=document.getElementById('pcInputArea');
+    if (ia) ia.style.bottom=offset>50?offset+'px':'0';
+  });
+
+  /* الوحة المرئية */
+  document.addEventListener('visibilitychange', ()=>{
+    if (!document.getElementById('pcOverlay').classList.contains('open')) return;
+    document.hidden ? stopSync() : (syncPoll(), startSync());
+  });
+
+  /* expose public */
+  return {
+    open, close, handleBack,
+    removeAtt,
+    openPcMenu, pcCloseMenu,
+    pcOpenDelModal, pcCloseDelModal, pcConfirmDelete,
+    pcToggleRx, pcPickRx,
+    pcOpenReplies, pcSetSubReply, pcCancelSubReply, pcScrollTo,
+    pcTogglePlus, pcTriggerUpload,
+    pcOnFileSelect, pcOnInput, pcCheckSend, pcDoSend
+  };
+})();
+
+/* shortcuts للـ HTML onclick */
+function openPostComments(postId, ownerIdOverride) {
+  const post = (() => {
+    // ابحث في كل مصادر المنشورات المحلية
+    const allPosts = [
+      ...JSON.parse(localStorage.getItem('royal_posts')||'[]'),
+      ...JSON.parse(localStorage.getItem('royal_docs') ||'[]')
+    ];
+    return allPosts.find(p=>p.id===postId) || { id:postId, type:'post', text:'' };
+  })();
+  const ownerId   = ownerIdOverride || (_isOwner ? currentUser.id : _targetUid) || '';
+  const ownerName = _isOwner ? (currentUser.username||'') : (_visitorProfile&&_visitorProfile.username||'');
+  const isOwner   = _isOwner;
+  PC.open(post, ownerId, ownerName, isOwner);
 }
+
+function pcHandleBack()    { PC.handleBack(); }
+function pcDoSend()        { PC.pcDoSend(); }
+function pcOnInput(el)     { PC.pcOnInput(el); }
+function pcTogglePlus()    { PC.pcTogglePlus(); }
+function pcTriggerUpload(t){ PC.pcTriggerUpload(t); }
+function pcOnFileSelect(e,t){ PC.pcOnFileSelect(e,t); }
+function openPcMenu(a,b,c,d){ PC.openPcMenu(a,b,c,d); }
+function pcCloseMenu()     { PC.pcCloseMenu(); }
+function pcConfirmDelete() { PC.pcConfirmDelete(); }
+function pcCloseDelModal() { PC.pcCloseDelModal(); }
+function pcToggleRx(e,a,b) { PC.pcToggleRx(e,a,b); }
+function pcPickRx(e,a,b,c) { PC.pcPickRx(e,a,b,c); }
+function pcOpenReplies(id) { PC.pcOpenReplies(id); }
+function pcSetSubReply(id) { PC.pcSetSubReply(id); }
+function pcCancelSubReply(){ PC.pcCancelSubReply(); }
+function pcScrollTo(id)    { PC.pcScrollTo(id); }
 
 // ══════════════════════════════════════════════
 // MEDIA HELPERS: slider + gallery + youtube
