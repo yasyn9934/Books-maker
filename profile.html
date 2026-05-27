@@ -536,7 +536,52 @@
       touch-action:none;  /* يسمح بالسحب على اللمس */
     }
 
-    /* ══ POST CARD — هيكل مطابق لكروت التعليقات ══ */
+    /* ══ COMPRESSION UI ══ */
+    #compressOverlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      z-index:9998;display:none;align-items:center;justify-content:center;
+    }
+    #compressOverlay.show{display:flex;}
+    .compress-card{
+      background:var(--card);border-radius:16px;padding:22px 20px;
+      width:min(360px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.25);
+      font-family:'Amiri',serif;
+    }
+    .compress-title{font-family:'Aref Ruqaa',serif;font-size:15pt;
+      color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+    .compress-file{font-size:10pt;color:#888;margin-bottom:14px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .compress-stage{font-size:11pt;color:#555;margin-bottom:8px;min-height:20px;}
+    .compress-track{background:#eee;border-radius:7px;height:9px;overflow:hidden;margin-bottom:6px;}
+    .compress-fill{height:100%;background:var(--green);width:0%;
+      border-radius:7px;transition:width .3s linear;}
+    .compress-stats{display:flex;justify-content:space-between;
+      font-size:9.5pt;color:#888;margin-bottom:14px;}
+    .compress-cancel{width:100%;padding:10px;background:#f0f0f0;border:1px solid #ddd;
+      border-radius:10px;font-family:'Amiri',serif;font-size:12pt;
+      cursor:pointer;color:#555;transition:.18s;}
+    .compress-cancel:hover{background:#e0e0e0;}
+
+    /* رسالة تأكيد الجهاز الضعيف */
+    #weakDeviceConfirm{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      z-index:9999;display:none;align-items:center;justify-content:center;
+    }
+    #weakDeviceConfirm.show{display:flex;}
+    .weak-card{background:var(--card);border-radius:16px;padding:22px 20px;
+      width:min(340px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.25);
+      font-family:'Amiri',serif;text-align:center;}
+    .weak-icon{font-size:36pt;margin-bottom:8px;}
+    .weak-title{font-family:'Aref Ruqaa',serif;font-size:14pt;
+      color:#e67e22;margin-bottom:10px;}
+    .weak-msg{font-size:11pt;color:#555;line-height:1.7;margin-bottom:16px;}
+    .weak-btns{display:flex;gap:9px;}
+    .weak-btn-ok{flex:1;padding:10px;background:var(--green);color:#fff;
+      border:none;border-radius:10px;font-family:'Amiri',serif;
+      font-size:12pt;cursor:pointer;}
+    .weak-btn-cancel{flex:1;padding:10px;background:#f0f0f0;
+      border:1px solid #ddd;border-radius:10px;font-family:'Amiri',serif;
+      font-size:12pt;cursor:pointer;color:#555;}
     .post-card{
       background:var(--card);border-radius:13px;margin-bottom:12px;
       box-shadow:0 1px 4px rgba(0,0,0,.10);overflow:hidden;transition:box-shadow .2s;
@@ -1187,6 +1232,34 @@
       <button onclick="closeHideModal()"
         style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);
                background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:#555">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMPRESSION OVERLAY ══ -->
+<div id="compressOverlay">
+  <div class="compress-card">
+    <div class="compress-title">⚙️ جاري ضغط الملف</div>
+    <div class="compress-file" id="compressFileName"></div>
+    <div class="compress-stage" id="compressStage">تحميل المحرك...</div>
+    <div class="compress-track"><div class="compress-fill" id="compressFill"></div></div>
+    <div class="compress-stats">
+      <span id="compressPct">0%</span>
+      <span id="compressSizes"></span>
+    </div>
+    <button class="compress-cancel" onclick="cancelCompression()">إلغاء</button>
+  </div>
+</div>
+
+<!-- ══ WEAK DEVICE CONFIRM ══ -->
+<div id="weakDeviceConfirm">
+  <div class="weak-card">
+    <div class="weak-icon">⚠️</div>
+    <div class="weak-title">جهازك قد يكون بطيئاً</div>
+    <div class="weak-msg" id="weakDeviceMsg"></div>
+    <div class="weak-btns">
+      <button class="weak-btn-ok"     id="weakBtnOk">استمرار</button>
+      <button class="weak-btn-cancel" id="weakBtnCancel">إلغاء</button>
     </div>
   </div>
 </div>
@@ -4074,20 +4147,264 @@ async function uploadLargeFile(file, onProgress) {
 
 // معالجة اختيار الملف — كل الملفات ترفع مباشرة إلى Drive عبر GAS
 // المُرفقات تُخزَّن كـ { fileId } فقط — لا base64 ولا Drive URLs
+// ══════════════════════════════════════════════════════════
+// محرك الضغط — FFmpeg.wasm
+// ══════════════════════════════════════════════════════════
+const Compressor = (() => {
+  let _ffmpeg   = null;
+  let _loaded   = false;
+  let _loading  = false;
+  let _cancelled= false;
+  let _weakRes  = null;  // resolve لرسالة الجهاز الضعيف
+
+  /* كشف أداء الجهاز */
+  function _isWeakDevice() {
+    const cores = navigator.hardwareConcurrency || 2;
+    const mem   = navigator.deviceMemory        || 2; // GB (Chrome فقط)
+    return cores <= 2 || mem <= 2;
+  }
+
+  function _fmt(bytes) {
+    if (bytes >= 1048576) return (bytes/1048576).toFixed(1) + ' MB';
+    return (bytes/1024).toFixed(0) + ' KB';
+  }
+
+  /* واجهة التقدم */
+  function _show(fileName) {
+    document.getElementById('compressFileName').textContent = fileName;
+    document.getElementById('compressStage').textContent   = 'تحميل المحرك...';
+    document.getElementById('compressFill').style.width    = '0%';
+    document.getElementById('compressPct').textContent     = '0%';
+    document.getElementById('compressSizes').textContent   = '';
+    document.getElementById('compressOverlay').classList.add('show');
+  }
+  function _hide()  { document.getElementById('compressOverlay').classList.remove('show'); }
+  function _stage(txt) { document.getElementById('compressStage').textContent = txt; }
+  function _prog(pct, origSize, outSize) {
+    const p = Math.min(100, Math.round(pct));
+    document.getElementById('compressFill').style.width = p + '%';
+    document.getElementById('compressPct').textContent  = p + '%';
+    if (origSize && outSize) {
+      document.getElementById('compressSizes').textContent =
+        `${_fmt(origSize)} → ${_fmt(outSize)}`;
+    }
+  }
+
+  /* رسالة الجهاز الضعيف */
+  function _askWeakDevice(fileName, origSize) {
+    return new Promise(resolve => {
+      _weakRes = resolve;
+      const msg = `حجم الملف "${fileName}" كبير (${_fmt(origSize)}) ` +
+        `وجهازك يمتلك موارد محدودة.\n` +
+        `قد تستغرق عملية الضغط وقتاً طويلاً.\n\nهل تريد الاستمرار؟`;
+      document.getElementById('weakDeviceMsg').textContent = msg;
+      document.getElementById('weakDeviceConfirm').classList.add('show');
+      document.getElementById('weakBtnOk').onclick     = () => { _closeWeak(); resolve(true);  };
+      document.getElementById('weakBtnCancel').onclick = () => { _closeWeak(); resolve(false); };
+    });
+  }
+  function _closeWeak() {
+    document.getElementById('weakDeviceConfirm').classList.remove('show');
+    _weakRes = null;
+  }
+
+  /* تحميل FFmpeg مرة واحدة */
+  async function _loadFFmpeg() {
+    if (_loaded) return true;
+    if (_loading) {
+      // انتظر حتى يكتمل التحميل
+      while (_loading) await new Promise(r => setTimeout(r, 200));
+      return _loaded;
+    }
+    _loading = true;
+    try {
+      const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
+      const { fetchFile, toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+
+      _ffmpeg = new FFmpeg();
+
+      // تحميل core و wasm من CDN
+      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      await _ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`,   'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      _loaded  = true;
+      _loading = false;
+      return true;
+    } catch(err) {
+      _loading = false;
+      console.error('FFmpeg load failed:', err);
+      return false;
+    }
+  }
+
+  /* الضغط الرئيسي */
+  async function compress(file) {
+    _cancelled = false;
+    const origSize = file.size;
+    const isVideo  = file.type.startsWith('video/');
+    const isAudio  = file.type.startsWith('audio/');
+    const isImage  = file.type.startsWith('image/');
+
+    // الملفات الصغيرة (< 5MB) لا حاجة للضغط
+    if (origSize < 5 * 1024 * 1024) return file;
+
+    // كشف الجهاز الضعيف وملفات > 50MB
+    if (_isWeakDevice() && origSize > 50 * 1024 * 1024) {
+      const proceed = await _askWeakDevice(file.name, origSize);
+      if (!proceed) throw new Error('إلغاء المستخدم');
+    }
+
+    _show(file.name);
+
+    try {
+      /* ── صور: Canvas API (لا تحتاج FFmpeg) ── */
+      if (isImage) {
+        _stage('ضغط الصورة...');
+        const compressed = await _compressImage(file, p => _prog(p, origSize, 0));
+        _hide();
+        return compressed;
+      }
+
+      /* ── صوت وفيديو: FFmpeg.wasm ── */
+      _stage('تحميل المحرك...');
+      const loaded = await _loadFFmpeg();
+      if (!loaded) {
+        _hide();
+        showToast('⚠️ فشل تحميل محرك الضغط — سيُرفع الملف كما هو');
+        return file;
+      }
+      if (_cancelled) throw new Error('إلغاء');
+
+      /* ربط تقدم FFmpeg */
+      const { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+      _ffmpeg.on('progress', ({ progress }) => {
+        _prog(progress * 100, origSize, 0);
+        _stage(`ضغط ${isVideo?'الفيديو':'الصوت'}... ${Math.round(progress*100)}%`);
+      });
+
+      const ext    = isVideo ? 'mp4'  : 'mp3';
+      const inName = 'input.'  + file.name.split('.').pop();
+      const outName= 'output.' + ext;
+
+      _stage('تحضير الملف...');
+      await _ffmpeg.writeFile(inName, await fetchFile(file));
+      if (_cancelled) throw new Error('إلغاء');
+
+      const args = isVideo
+        ? ['-i', inName,
+           '-c:v', 'libx264',
+           '-crf', '28',          // جودة CRF: 18=عالية، 28=ضغط أكثر، 35=ضغط قصوى
+           '-preset', 'fast',
+           '-c:a', 'aac',
+           '-b:a', '96k',
+           '-movflags', '+faststart',
+           '-y', outName]
+        : ['-i', inName,
+           '-c:a', 'libmp3lame',
+           '-b:a', '96k',
+           '-y', outName];
+
+      await _ffmpeg.exec(args);
+      if (_cancelled) throw new Error('إلغاء');
+
+      const data      = await _ffmpeg.readFile(outName);
+      const outSize   = data.byteLength;
+      const mimeType  = isVideo ? 'video/mp4' : 'audio/mp3';
+      const outBlob   = new Blob([data.buffer], { type: mimeType });
+      const outFile   = new File([outBlob], outName, { type: mimeType });
+
+      _prog(100, origSize, outSize);
+      _stage(`✅ تم: ${_fmt(origSize)} → ${_fmt(outSize)} (وُفِّر ${Math.round((1-outSize/origSize)*100)}%)`);
+      await new Promise(r => setTimeout(r, 800)); // أظهر النتيجة لحظة
+
+      // تنظيف
+      await _ffmpeg.deleteFile(inName).catch(()=>{});
+      await _ffmpeg.deleteFile(outName).catch(()=>{});
+      _ffmpeg.off('progress');
+
+      _hide();
+
+      // إن كان الضغط زاد الحجم (نادر)، أرجع الأصلي
+      return outSize < origSize ? outFile : file;
+
+    } catch(err) {
+      _hide();
+      if (err.message === 'إلغاء' || err.message === 'إلغاء المستخدم')
+        throw err;
+      // أي خطأ آخر: تحذير وأرجع الأصلي
+      showToast('⚠️ فشل الضغط — سيُرفع الملف بحجمه الأصلي');
+      return file;
+    }
+  }
+
+  /* ضغط الصور عبر Canvas */
+  function _compressImage(file, onProg) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        if (onProg) onProg(30);
+
+        // تقليل الأبعاد إن كانت > 2000px
+        let { width, height } = img;
+        const maxDim = 2000;
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim/width, maxDim/height);
+          width  = Math.round(width  * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width  = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        if (onProg) onProg(70);
+
+        canvas.toBlob(blob => {
+          if (!blob) { resolve(file); return; }
+          if (onProg) onProg(100);
+          const outFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type:'image/jpeg' });
+          resolve(outFile.size < file.size ? outFile : file);
+        }, 'image/jpeg', 0.82);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
+  function cancelCompression() {
+    _cancelled = true;
+    try { if (_ffmpeg) _ffmpeg.terminate(); } catch(_) {}
+    _ffmpeg  = null;
+    _loaded  = false;
+    _loading = false;
+    _hide();
+    showToast('⚠️ تم إلغاء الضغط');
+  }
+
+  return { compress, cancelCompression };
+})();
+
+/* دالة الإلغاء المكشوفة لـ HTML */
+function cancelCompression() { Compressor.cancelCompression(); }
+
 async function handlePeFileEnhanced(e) {
   const file     = e.target.files[0];
   if (!file) return;
   const fileType = e.target.dataset.filetype || 'pdf';
-  // لا حد للحجم
-  const counts = {};
+  const counts   = {};
   _peAttachments.forEach(a => counts[a.type] = (counts[a.type]||0)+1);
   if ((counts[fileType]||0) >= (PE_LIMITS[fileType]||6)) {
     showToast(`⚠️ الحد الأقصى ${PE_LIMITS[fileType]||6} من نوع ${fileType}`); return;
   }
 
-  // ── التحقق من مدة الفيديو قبل الرفع ──
+  // التحقق من مدة الفيديو
   if (fileType === 'video') {
-    const durLimit = getVideoDurationLimit(); // Infinity للمشرف
+    const durLimit = getVideoDurationLimit();
     if (isFinite(durLimit)) {
       try {
         const dur = await new Promise((res, rej) => {
@@ -4098,12 +4415,11 @@ async function handlePeFileEnhanced(e) {
           vid.src = URL.createObjectURL(file);
         });
         if (dur > durLimit) {
-          showToast(`⚠️ الفيديو يتجاوز الحد المسموح به (${Math.floor(durLimit/60)} دقيقة). مدته: ${Math.ceil(dur/60)} دقيقة`);
+          showToast(`⚠️ الفيديو يتجاوز ${Math.floor(durLimit/60)} دقيقة. مدته: ${Math.ceil(dur/60)} دقيقة`);
           e.target.value = ''; return;
         }
-      } catch(_) { /* إن لم يمكن تحميل البيانات الوصفية، نتابع الرفع */ }
+      } catch(_) {}
     }
-    // Infinity → مشرف أو elite → لا حد، لا تحقق
   }
 
   const btnId  = 'pe' + fileType[0].toUpperCase() + fileType.slice(1) + 'Btn';
@@ -4117,23 +4433,36 @@ async function handlePeFileEnhanced(e) {
     e.target.value = ''; return;
   }
 
-  _showUploadProgress(file.name);
+  let fileToUpload = file;
+
+  // ── ضغط تلقائي (صور + صوت + فيديو) ──
+  if (['image','audio','video'].includes(fileType)) {
+    try {
+      fileToUpload = await Compressor.compress(file);
+    } catch(err) {
+      if (err.message === 'إلغاء المستخدم' || err.message === 'إلغاء') {
+        if (btn) { btn.disabled = false; btn.textContent = labels[fileType] || '📎'; }
+        e.target.value = ''; return;
+      }
+      // أي خطأ آخر → ارفع الأصلي
+      fileToUpload = file;
+    }
+  }
+
+  _showUploadProgress(fileToUpload.name);
   try {
-    const result = await uploadLargeFile(file, pct => _updateUploadProgress(pct));
+    const result = await uploadLargeFile(fileToUpload, pct => _updateUploadProgress(pct));
     _hideUploadProgress();
 
-    // تخزين fileId فقط — لا base64 ولا Drive URLs أبداً
     const att = {
       type:     fileType,
       fileId:   result.fileId,
-      mimeType: result.mimeType || file.type,
-      name:     file.name,
-      size:     file.size,
+      mimeType: result.mimeType || fileToUpload.type,
+      name:     fileToUpload.name,
+      size:     fileToUpload.size,
       isCloud:  true
     };
     _peAttachments.push(att);
-
-    // معاينة فورية عبر MediaProxy (blob:// لا Drive)
     await _addPreviewForAtt(att, _peAttachments.length - 1);
     renderPeAttachments();
     updatePeAttachBtns();
