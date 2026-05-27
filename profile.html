@@ -4148,59 +4148,51 @@ async function uploadLargeFile(file, onProgress) {
 // معالجة اختيار الملف — كل الملفات ترفع مباشرة إلى Drive عبر GAS
 // المُرفقات تُخزَّن كـ { fileId } فقط — لا base64 ولا Drive URLs
 // ══════════════════════════════════════════════════════════
-// محرك الضغط — FFmpeg.wasm
+// محرك الضغط — APIs مدمجة في المتصفح (بدون مكتبات خارجية)
+// فيديو: MediaRecorder | صور: Canvas | صوت: Web Audio API
 // ══════════════════════════════════════════════════════════
 const Compressor = (() => {
-  let _ffmpeg   = null;
-  let _loaded   = false;
-  let _loading  = false;
-  let _cancelled= false;
-  let _weakRes  = null;  // resolve لرسالة الجهاز الضعيف
+  let _cancelled  = false;
+  let _recorder   = null;
+  let _weakRes    = null;
 
-  /* كشف أداء الجهاز */
+  function _fmt(b) {
+    return b >= 1048576 ? (b/1048576).toFixed(1)+' MB' : (b/1024).toFixed(0)+' KB';
+  }
   function _isWeakDevice() {
-    const cores = navigator.hardwareConcurrency || 2;
-    const mem   = navigator.deviceMemory        || 2; // GB (Chrome فقط)
-    return cores <= 2 || mem <= 2;
+    return (navigator.hardwareConcurrency||2) <= 2 || (navigator.deviceMemory||4) <= 2;
   }
 
-  function _fmt(bytes) {
-    if (bytes >= 1048576) return (bytes/1048576).toFixed(1) + ' MB';
-    return (bytes/1024).toFixed(0) + ' KB';
-  }
-
-  /* واجهة التقدم */
-  function _show(fileName) {
-    document.getElementById('compressFileName').textContent = fileName;
-    document.getElementById('compressStage').textContent   = 'تحميل المحرك...';
+  /* ── واجهة التقدم ── */
+  function _show(name) {
+    document.getElementById('compressFileName').textContent = name;
+    document.getElementById('compressStage').textContent   = 'جاري الضغط...';
     document.getElementById('compressFill').style.width    = '0%';
     document.getElementById('compressPct').textContent     = '0%';
     document.getElementById('compressSizes').textContent   = '';
     document.getElementById('compressOverlay').classList.add('show');
   }
-  function _hide()  { document.getElementById('compressOverlay').classList.remove('show'); }
-  function _stage(txt) { document.getElementById('compressStage').textContent = txt; }
-  function _prog(pct, origSize, outSize) {
+  function _hide() { document.getElementById('compressOverlay').classList.remove('show'); }
+  function _stage(t) { document.getElementById('compressStage').textContent = t; }
+  function _prog(pct, orig, out) {
     const p = Math.min(100, Math.round(pct));
-    document.getElementById('compressFill').style.width = p + '%';
-    document.getElementById('compressPct').textContent  = p + '%';
-    if (origSize && outSize) {
+    document.getElementById('compressFill').style.width = p+'%';
+    document.getElementById('compressPct').textContent  = p+'%';
+    if (orig && out)
       document.getElementById('compressSizes').textContent =
-        `${_fmt(origSize)} → ${_fmt(outSize)}`;
-    }
+        `${_fmt(orig)} → ${_fmt(out)}`;
   }
 
-  /* رسالة الجهاز الضعيف */
-  function _askWeakDevice(fileName, origSize) {
-    return new Promise(resolve => {
-      _weakRes = resolve;
-      const msg = `حجم الملف "${fileName}" كبير (${_fmt(origSize)}) ` +
-        `وجهازك يمتلك موارد محدودة.\n` +
-        `قد تستغرق عملية الضغط وقتاً طويلاً.\n\nهل تريد الاستمرار؟`;
-      document.getElementById('weakDeviceMsg').textContent = msg;
+  /* ── رسالة الجهاز الضعيف ── */
+  function _askWeak(fileName, size) {
+    return new Promise(res => {
+      _weakRes = res;
+      document.getElementById('weakDeviceMsg').textContent =
+        `الملف "${fileName}" (${_fmt(size)}) كبير وجهازك محدود الموارد.\n`+
+        `ستُشغَّل عملية الضغط في الوقت الحقيقي.\n\nهل تريد الاستمرار؟`;
       document.getElementById('weakDeviceConfirm').classList.add('show');
-      document.getElementById('weakBtnOk').onclick     = () => { _closeWeak(); resolve(true);  };
-      document.getElementById('weakBtnCancel').onclick = () => { _closeWeak(); resolve(false); };
+      document.getElementById('weakBtnOk').onclick     = ()=>{_closeWeak(); res(true);};
+      document.getElementById('weakBtnCancel').onclick = ()=>{_closeWeak(); res(false);};
     });
   }
   function _closeWeak() {
@@ -4208,169 +4200,33 @@ const Compressor = (() => {
     _weakRes = null;
   }
 
-  /* تحميل FFmpeg مرة واحدة */
-  async function _loadFFmpeg() {
-    if (_loaded) return true;
-    if (_loading) {
-      while (_loading) await new Promise(r => setTimeout(r, 200));
-      return _loaded;
-    }
-    _loading = true;
-    try {
-      const { FFmpeg }               = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
-      const { fetchFile, toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-
-      _ffmpeg = new FFmpeg();
-
-      const cdnBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-
-      await _ffmpeg.load({
-        // core.js و ffmpeg-core.wasm من CDN عبر toBlobURL — لا مشكلة (ليست Worker)
-        coreURL: await toBlobURL(`${cdnBase}/ffmpeg-core.js`,   'text/javascript'),
-        wasmURL: await toBlobURL(`${cdnBase}/ffmpeg-core.wasm`, 'application/wasm'),
-        // worker.js محلي فقط — هو الوحيد الذي يحتاج نفس الأصل
-        workerURL: location.origin + '/ffmpeg/worker.js',
-      });
-
-      _loaded  = true;
-      _loading = false;
-      return true;
-    } catch(err) {
-      _loading = false;
-      console.error('FFmpeg load failed:', err);
-      return false;
-    }
-  }
-
-  /* الضغط الرئيسي */
-  async function compress(file) {
-    _cancelled = false;
-    const origSize = file.size;
-    const isVideo  = file.type.startsWith('video/');
-    const isAudio  = file.type.startsWith('audio/');
-    const isImage  = file.type.startsWith('image/');
-
-    // الملفات الصغيرة (< 5MB) لا حاجة للضغط
-    if (origSize < 5 * 1024 * 1024) return file;
-
-    // كشف الجهاز الضعيف وملفات > 50MB
-    if (_isWeakDevice() && origSize > 50 * 1024 * 1024) {
-      const proceed = await _askWeakDevice(file.name, origSize);
-      if (!proceed) throw new Error('إلغاء المستخدم');
-    }
-
-    _show(file.name);
-
-    try {
-      /* ── صور: Canvas API (لا تحتاج FFmpeg) ── */
-      if (isImage) {
-        _stage('ضغط الصورة...');
-        const compressed = await _compressImage(file, p => _prog(p, origSize, 0));
-        _hide();
-        return compressed;
-      }
-
-      /* ── صوت وفيديو: FFmpeg.wasm ── */
-      _stage('تحميل المحرك...');
-      const loaded = await _loadFFmpeg();
-      if (!loaded) {
-        _hide();
-        showToast('⚠️ فشل تحميل محرك الضغط — سيُرفع الملف كما هو');
-        return file;
-      }
-      if (_cancelled) throw new Error('إلغاء');
-
-      /* ربط تقدم FFmpeg */
-      const { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-      _ffmpeg.on('progress', ({ progress }) => {
-        _prog(progress * 100, origSize, 0);
-        _stage(`ضغط ${isVideo?'الفيديو':'الصوت'}... ${Math.round(progress*100)}%`);
-      });
-
-      const ext    = isVideo ? 'mp4'  : 'mp3';
-      const inName = 'input.'  + file.name.split('.').pop();
-      const outName= 'output.' + ext;
-
-      _stage('تحضير الملف...');
-      await _ffmpeg.writeFile(inName, await fetchFile(file));
-      if (_cancelled) throw new Error('إلغاء');
-
-      const args = isVideo
-        ? ['-i', inName,
-           '-c:v', 'libx264',
-           '-crf', '28',          // جودة CRF: 18=عالية، 28=ضغط أكثر، 35=ضغط قصوى
-           '-preset', 'fast',
-           '-c:a', 'aac',
-           '-b:a', '96k',
-           '-movflags', '+faststart',
-           '-y', outName]
-        : ['-i', inName,
-           '-c:a', 'libmp3lame',
-           '-b:a', '96k',
-           '-y', outName];
-
-      await _ffmpeg.exec(args);
-      if (_cancelled) throw new Error('إلغاء');
-
-      const data      = await _ffmpeg.readFile(outName);
-      const outSize   = data.byteLength;
-      const mimeType  = isVideo ? 'video/mp4' : 'audio/mp3';
-      const outBlob   = new Blob([data.buffer], { type: mimeType });
-      const outFile   = new File([outBlob], outName, { type: mimeType });
-
-      _prog(100, origSize, outSize);
-      _stage(`✅ تم: ${_fmt(origSize)} → ${_fmt(outSize)} (وُفِّر ${Math.round((1-outSize/origSize)*100)}%)`);
-      await new Promise(r => setTimeout(r, 800)); // أظهر النتيجة لحظة
-
-      // تنظيف
-      await _ffmpeg.deleteFile(inName).catch(()=>{});
-      await _ffmpeg.deleteFile(outName).catch(()=>{});
-      _ffmpeg.off('progress');
-
-      _hide();
-
-      // إن كان الضغط زاد الحجم (نادر)، أرجع الأصلي
-      return outSize < origSize ? outFile : file;
-
-    } catch(err) {
-      _hide();
-      if (err.message === 'إلغاء' || err.message === 'إلغاء المستخدم')
-        throw err;
-      // أي خطأ آخر: تحذير وأرجع الأصلي
-      showToast('⚠️ فشل الضغط — سيُرفع الملف بحجمه الأصلي');
-      return file;
-    }
-  }
-
-  /* ضغط الصور عبر Canvas */
+  /* ════════════════════════════════════
+     ضغط الصور — Canvas API
+  ════════════════════════════════════ */
   function _compressImage(file, onProg) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(url);
         if (onProg) onProg(30);
-
-        // تقليل الأبعاد إن كانت > 2000px
-        let { width, height } = img;
+        let { width:w, height:h } = img;
         const maxDim = 2000;
-        if (width > maxDim || height > maxDim) {
-          const ratio = Math.min(maxDim/width, maxDim/height);
-          width  = Math.round(width  * ratio);
-          height = Math.round(height * ratio);
+        if (w > maxDim || h > maxDim) {
+          const r = Math.min(maxDim/w, maxDim/h);
+          w = Math.round(w*r); h = Math.round(h*r);
         }
-
-        const canvas = document.createElement('canvas');
-        canvas.width  = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const c = document.createElement('canvas');
+        c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
         if (onProg) onProg(70);
-
-        canvas.toBlob(blob => {
+        c.toBlob(blob => {
           if (!blob) { resolve(file); return; }
           if (onProg) onProg(100);
-          const outFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type:'image/jpeg' });
-          resolve(outFile.size < file.size ? outFile : file);
+          const out = new File([blob],
+            file.name.replace(/\.[^.]+$/, '.jpg'),
+            { type:'image/jpeg' });
+          resolve(out.size < file.size ? out : file);
         }, 'image/jpeg', 0.82);
       };
       img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
@@ -4378,12 +4234,221 @@ const Compressor = (() => {
     });
   }
 
+  /* ════════════════════════════════════
+     ضغط الصوت — Web Audio API
+  ════════════════════════════════════ */
+  function _compressAudio(file, onProg) {
+    return new Promise(async (resolve) => {
+      try {
+        if (onProg) onProg(10);
+        const arrayBuf  = await file.arrayBuffer();
+        const audioCtx  = new (window.AudioContext||window.webkitAudioContext)();
+        const audioBuf  = await audioCtx.decodeAudioData(arrayBuf);
+        if (onProg) onProg(40);
+
+        // إعادة الترميز بـ OfflineAudioContext بنفس المدة
+        const offline = new OfflineAudioContext(
+          Math.min(audioBuf.numberOfChannels, 2), // stereo كحد أقصى
+          audioBuf.sampleRate * audioBuf.duration,
+          audioBuf.sampleRate
+        );
+        const src = offline.createBufferSource();
+        src.buffer = audioBuf;
+        src.connect(offline.destination);
+        src.start();
+        const rendered = await offline.startRendering();
+        if (onProg) onProg(80);
+
+        // تحويل لـ WAV وتصغير العينات
+        const wav = _audioBufferToWav(rendered);
+        const out = new File([wav],
+          file.name.replace(/\.[^.]+$/, '.wav'),
+          { type:'audio/wav' });
+        if (onProg) onProg(100);
+        resolve(out.size < file.size ? out : file);
+        audioCtx.close();
+      } catch(_) { resolve(file); }
+    });
+  }
+
+  function _audioBufferToWav(buffer) {
+    const numCh  = buffer.numberOfChannels;
+    const sr     = buffer.sampleRate;
+    const len    = buffer.length * numCh * 2;
+    const ab     = new ArrayBuffer(44 + len);
+    const view   = new DataView(ab);
+    const w      = (o,v) => view.setUint32(o,v,true);
+    const ws     = (o,v) => view.setUint16(o,v,true);
+    // WAV header
+    [0x52494646,44+len,0x57415645,0x666d7420,16,1,numCh,sr,
+     sr*numCh*2,numCh*2,16,0x64617461,len].forEach((v,i)=>{
+      if(i<2||i===4||i===12) w([0,4,8,12,16,20,24,28,32,36,40,44][i]||i*4, v);
+    });
+    // RIFF
+    'RIFF'.split('').forEach((c,i)=>view.setUint8(i,c.charCodeAt(0)));
+    view.setUint32(4,36+len,true);
+    'WAVE'.split('').forEach((c,i)=>view.setUint8(8+i,c.charCodeAt(0)));
+    'fmt '.split('').forEach((c,i)=>view.setUint8(12+i,c.charCodeAt(0)));
+    view.setUint32(16,16,true); view.setUint16(20,1,true);
+    view.setUint16(22,numCh,true); view.setUint32(24,sr,true);
+    view.setUint32(28,sr*numCh*2,true); view.setUint16(32,numCh*2,true);
+    view.setUint16(34,16,true);
+    'data'.split('').forEach((c,i)=>view.setUint8(36+i,c.charCodeAt(0)));
+    view.setUint32(40,len,true);
+    let offset = 44;
+    for (let i=0;i<buffer.length;i++) {
+      for (let ch=0;ch<numCh;ch++) {
+        const s = Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]));
+        view.setInt16(offset, s<0?s*0x8000:s*0x7FFF, true);
+        offset+=2;
+      }
+    }
+    return ab;
+  }
+
+  /* ════════════════════════════════════
+     ضغط الفيديو — MediaRecorder API
+     (يعمل في الوقت الحقيقي، بدون مكتبات)
+  ════════════════════════════════════ */
+  function _compressVideo(file, onProg, onStage) {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'
+        +'width:1px;height:1px;top:-999px;left:-999px;';
+      document.body.appendChild(video);
+      const url = URL.createObjectURL(file);
+      video.src = url; video.muted = true; video.preload='auto';
+
+      video.onloadedmetadata = () => {
+        const { videoWidth:vw, videoHeight:vh, duration } = video;
+        const px = vw * vh;
+
+        // معدل البتات حسب دقة الفيديو
+        const vBR = px > 1920*1080 ? 3_500_000
+                  : px > 1280*720  ? 2_000_000
+                  : px > 854*480   ? 1_200_000
+                  :                    700_000;
+
+        const mime = ['video/webm;codecs=vp9,opus',
+                       'video/webm;codecs=vp8,opus',
+                       'video/webm']
+          .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+
+        let stream;
+        try { stream = video.captureStream(); }
+        catch(_) {
+          cleanup(); resolve(file); return;
+        }
+
+        const chunks = [];
+        _recorder = new MediaRecorder(stream, {
+          mimeType: mime,
+          videoBitsPerSecond: vBR,
+          audioBitsPerSecond: 96_000
+        });
+
+        _recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+
+        _recorder.onstop = () => {
+          cleanup();
+          if (_cancelled) { resolve(file); return; }
+          const blob    = new Blob(chunks,{type:'video/webm'});
+          const outFile = new File([blob],
+            file.name.replace(/\.[^.]+$/,'.webm'),
+            {type:'video/webm'});
+          if (onProg) onProg(100, file.size, blob.size);
+          resolve(outFile.size < file.size ? outFile : file);
+        };
+
+        _recorder.onerror = () => { cleanup(); resolve(file); };
+
+        video.ontimeupdate = () => {
+          if (_cancelled) { _recorder.stop(); video.pause(); return; }
+          const pct = duration ? (video.currentTime/duration)*100 : 0;
+          if (onProg) onProg(pct, file.size, 0);
+          if (onStage) onStage(
+            `ضغط الفيديو... ${Math.round(pct)}% (${_fmt(vBR/1000)}k)`
+          );
+        };
+
+        video.onended = () => { if(_recorder.state!=='inactive') _recorder.stop(); };
+        video.onerror = () => { cleanup(); resolve(file); };
+
+        video.play().catch(()=>{ cleanup(); resolve(file); });
+        _recorder.start(200);
+      };
+
+      video.onerror = () => { cleanup(); resolve(file); };
+
+      function cleanup() {
+        URL.revokeObjectURL(url);
+        if (video.parentNode) video.parentNode.removeChild(video);
+        _recorder = null;
+      }
+    });
+  }
+
+  /* ════════════════════════════════════
+     الدالة الرئيسية
+  ════════════════════════════════════ */
+  async function compress(file) {
+    _cancelled = false;
+    const isVideo = file.type.startsWith('video/');
+    const isAudio = file.type.startsWith('audio/');
+    const isImage = file.type.startsWith('image/');
+
+    // ملفات صغيرة (< 5MB) — لا ضغط
+    if (file.size < 5*1024*1024) return file;
+
+    // جهاز ضعيف + ملف كبير
+    if (_isWeakDevice() && file.size > 30*1024*1024) {
+      const go = await _askWeak(file.name, file.size);
+      if (!go) throw new Error('إلغاء المستخدم');
+    }
+
+    _show(file.name);
+
+    try {
+      if (isImage) {
+        _stage('ضغط الصورة...');
+        const out = await _compressImage(file, p => _prog(p, file.size, 0));
+        _prog(100, file.size, out.size);
+        await new Promise(r=>setTimeout(r,600));
+        _hide(); return out;
+      }
+
+      if (isAudio) {
+        _stage('ضغط الصوت...');
+        const out = await _compressAudio(file, p => _prog(p, file.size, 0));
+        _prog(100, file.size, out.size);
+        await new Promise(r=>setTimeout(r,600));
+        _hide(); return out;
+      }
+
+      if (isVideo) {
+        _stage('ضغط الفيديو...');
+        const out = await _compressVideo(
+          file,
+          (p,orig,outSz) => _prog(p, orig||file.size, outSz),
+          t => _stage(t)
+        );
+        await new Promise(r=>setTimeout(r,600));
+        _hide(); return out;
+      }
+
+      _hide(); return file; // PDF وغيره — كما هو
+
+    } catch(err) {
+      _hide();
+      if (err.message==='إلغاء المستخدم'||err.message==='إلغاء') throw err;
+      showToast('⚠️ فشل الضغط — سيُرفع الملف بحجمه الأصلي');
+      return file;
+    }
+  }
+
   function cancelCompression() {
     _cancelled = true;
-    try { if (_ffmpeg) _ffmpeg.terminate(); } catch(_) {}
-    _ffmpeg  = null;
-    _loaded  = false;
-    _loading = false;
+    try { if(_recorder && _recorder.state!=='inactive') _recorder.stop(); } catch(_){}
     _hide();
     showToast('⚠️ تم إلغاء الضغط');
   }
@@ -4391,9 +4456,7 @@ const Compressor = (() => {
   return { compress, cancelCompression };
 })();
 
-/* دالة الإلغاء المكشوفة لـ HTML */
 function cancelCompression() { Compressor.cancelCompression(); }
-
 async function handlePeFileEnhanced(e) {
   const file     = e.target.files[0];
   if (!file) return;
