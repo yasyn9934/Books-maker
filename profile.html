@@ -536,171 +536,125 @@
       touch-action:none;  /* يسمح بالسحب على اللمس */
     }
 
-    /* ══════════ صور / slider / صوتيات ══════════ */
-    .post-imgs-grid{
-      display:grid; gap:2px; margin-top:8px; border-radius:10px; overflow:hidden;
-      width:100%; aspect-ratio:auto;
+    /* ══ POST CARD — هيكل مطابق لكروت التعليقات ══ */
+    .post-card{
+      background:var(--card);border-radius:13px;margin-bottom:12px;
+      box-shadow:0 1px 4px rgba(0,0,0,.10);overflow:hidden;transition:box-shadow .2s;
     }
-    /* 1 صورة */
-    .post-imgs-grid[data-count="1"]{ grid-template-columns:1fr; }
-    .post-imgs-grid[data-count="1"] img{ height:280px; }
-    /* 2 صورتان */
-    .post-imgs-grid[data-count="2"]{ grid-template-columns:1fr 1fr; }
-    .post-imgs-grid[data-count="2"] img{ height:200px; }
-    /* 3 صور */
-    .post-imgs-grid[data-count="3"]{
-      grid-template-columns:1fr 1fr; grid-template-rows:auto auto;
-    }
-    .post-imgs-grid[data-count="3"] img:nth-child(1){
-      grid-column:1/3; height:200px;
-    }
-    .post-imgs-grid[data-count="3"] img:nth-child(2),
-    .post-imgs-grid[data-count="3"] img:nth-child(3){ height:150px; }
-    /* 4 صور */
-    .post-imgs-grid[data-count="4"]{ grid-template-columns:1fr 1fr; }
-    .post-imgs-grid[data-count="4"] img{ height:160px; }
-    /* 5 صور */
-    .post-imgs-grid[data-count="5"]{ grid-template-columns:1fr 1fr; }
-    .post-imgs-grid[data-count="5"] img:nth-child(1){ grid-column:1/3; height:200px; }
-    .post-imgs-grid[data-count="5"] img:nth-child(2),
-    .post-imgs-grid[data-count="5"] img:nth-child(3){ height:140px; }
-    /* 6 صور */
-    .post-imgs-grid[data-count="6"]{ grid-template-columns:repeat(3,1fr); }
-    .post-imgs-grid[data-count="6"] img{ height:140px; }
-    /* مشترك */
-    .post-imgs-grid img{
-      width:100%; object-fit:cover; cursor:pointer; display:block;
-    }
-    /* صورة "+" */
-    .post-img-more{
-      position:relative; cursor:pointer; display:block; width:100%;
-    }
-    .post-img-more img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .post-img-more-overlay{
-      position:absolute; inset:0; background:rgba(0,0,0,.55);
-      display:flex; align-items:center; justify-content:center;
-      color:#fff; font-size:22pt; font-weight:bold;
-    }
+    .post-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.13);}
+    .post-card.post-hidden{opacity:.62;border:1.5px dashed var(--border);}
+    .post-card.highlighted{animation:postHL 2.2s ease;}
+    @keyframes postHL{0%{background:rgba(107,142,35,.15)}100%{background:var(--card)}}
 
-    /* media frames للصوت/الفيديو من Drive */
-    .drive-media-frame{
-      width:100%; border:none; border-radius:10px; display:block;
-      background:#000;
+    /* header */
+    .post-card-head{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 11px 5px;}
+    .post-author-row{display:flex;align-items:center;gap:9px;}
+    .post-author-avatar{
+      width:40px;height:40px;border-radius:50%;flex-shrink:0;overflow:hidden;
+      background:linear-gradient(135deg,var(--gold),var(--green));
+      display:flex;align-items:center;justify-content:center;color:#fff;font-size:16pt;font-weight:bold;
     }
-    .drive-media-frame.audio-frame{ height:80px; }
-    .drive-media-frame.video-frame{ height:240px; }
+    .post-author-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+    .post-author-info{line-height:1.3;}
+    .post-author-name{font-size:12pt;font-weight:bold;}
+    .post-time{font-size:8.5pt;color:#888;display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+    .post-visibility-badge{font-size:10pt;}
+    .post-hidden-badge{font-size:7.5pt;background:rgba(255,152,0,.18);color:#e65100;padding:1px 6px;border-radius:8px;}
 
-    /* files grid — مثل الصور لكن بأيقونات */
-    .post-files-grid{
-      display:grid; gap:2px; margin-top:8px; border-radius:10px; overflow:hidden;
-    }
-    .post-file-thumb{
-      background:#f0f4ec; padding:16px; cursor:pointer;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      gap:4px; font-size:10pt; text-align:center;
-    }
-    .post-file-thumb:hover{ background:#e0ede0; }
-    .post-file-thumb .file-icon{ font-size:26pt; }
+    /* body */
+    .post-body{padding:0 12px 8px;}
+    .post-text{font-size:13pt;line-height:1.70;word-break:break-word;white-space:pre-wrap;margin-bottom:8px;}
+    .post-text a{color:var(--green);text-decoration:underline;}
+
+    /* images grid */
+    .post-imgs{margin-bottom:8px;}
+    .post-imgs-grid{display:grid;gap:3px;border-radius:9px;overflow:hidden;}
+    .post-imgs-grid[data-count="1"]{grid-template-columns:1fr;}
+    .post-imgs-grid[data-count="1"] .post-img-wrap{aspect-ratio:16/9;}
+    .post-imgs-grid[data-count="2"]{grid-template-columns:1fr 1fr;}
+    .post-imgs-grid[data-count="3"]{grid-template-columns:1fr 1fr;}
+    .post-imgs-grid[data-count="3"] .post-img-wrap:first-child{grid-column:span 2;}
+    .post-imgs-grid[data-count="4"]{grid-template-columns:1fr 1fr;}
+    .post-imgs-grid[data-count="5"]{grid-template-columns:1fr 1fr;}
+    .post-imgs-grid[data-count="5"] .post-img-wrap:first-child{grid-column:span 2;}
+    .post-imgs-grid[data-count="6"]{grid-template-columns:repeat(3,1fr);}
+    .post-img-wrap{aspect-ratio:4/3;overflow:hidden;cursor:pointer;}
+    .post-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;
+      opacity:0;transition:opacity .3s,transform .22s;}
+    .post-img-wrap img.loaded{opacity:1;}
+    .post-img-wrap:hover img{transform:scale(1.04);}
+
+    /* video / audio / files / youtube */
+    .post-video-wrap{border-radius:9px;overflow:hidden;margin-bottom:8px;background:#000;min-height:180px;}
+    .post-audios{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
+    .post-audio-item{display:flex;align-items:center;gap:9px;
+      background:rgba(107,142,35,.1);border-radius:22px;padding:7px 12px;}
+    .post-audio-item audio{flex:1;height:30px;}
+    .post-files{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+    .post-file-item{display:flex;align-items:center;gap:9px;background:#f5f7f5;
+      border-radius:10px;padding:9px 12px;border:1px solid var(--border);}
+    .post-file-icon{font-size:18pt;flex-shrink:0;}
+    .post-file-name{font-size:11pt;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .post-yt{border-radius:9px;overflow:hidden;aspect-ratio:16/9;margin-bottom:8px;}
+    .post-yt iframe{width:100%;height:100%;border:none;display:block;}
 
     /* gallery overlay */
-    .gallery-overlay{
-      position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;
-      display:none;align-items:center;justify-content:center;
-    }
-    .gallery-overlay.open{ display:flex; }
-    .gallery-img{ max-width:95vw;max-height:90vh;border-radius:8px;object-fit:contain; }
-    .gallery-arrow{
-      position:absolute;top:50%;transform:translateY(-50%);
+    .gallery-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:3000;
+      display:none;align-items:center;justify-content:center;}
+    .gallery-overlay.open{display:flex;}
+    .gallery-img{max-width:95vw;max-height:90vh;border-radius:8px;object-fit:contain;}
+    .gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);
       background:rgba(255,255,255,.18);border:none;color:#fff;
-      font-size:22pt;cursor:pointer;padding:8px 14px;border-radius:10px;
-    }
-    .gallery-arrow.right{ right:10px; }
-    .gallery-arrow.left{ left:10px; }
-    .gallery-close{
-      position:absolute;top:14px;left:14px;background:rgba(255,255,255,.2);
+      font-size:22pt;cursor:pointer;padding:8px 14px;border-radius:10px;}
+    .gallery-arrow.right{right:10px;}.gallery-arrow.left{left:10px;}
+    .gallery-close{position:absolute;top:14px;left:14px;background:rgba(255,255,255,.2);
       border:none;color:#fff;font-size:18pt;cursor:pointer;
-      border-radius:50%;width:40px;height:40px;
-      display:flex;align-items:center;justify-content:center;
-    }
+      border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;}
 
-    /* video slider */
-    .post-vid-slider{ position:relative;margin-top:10px; }
-    .post-vid-slider video{
-      width:100%;border-radius:10px;max-height:300px;display:none;
-    }
-    .post-vid-slider video.active{ display:block; }
-    .slider-arrows{
-      display:flex;justify-content:center;gap:12px;margin-top:6px;
-    }
-    .slider-arr{
-      background:var(--green);color:#fff;border:none;border-radius:8px;
-      padding:4px 14px;font-size:14pt;cursor:pointer;
-    }
+    /* reactions display */
+    .post-rx-display{display:flex;align-items:center;gap:5px;padding:2px 12px 6px;}
+    .post-rx-stack{display:flex;align-items:center;}
+    .post-rx-badge{width:20px;height:20px;font-size:12px;background:var(--card);
+      border:2px solid var(--bg);border-radius:50%;
+      display:inline-flex;align-items:center;justify-content:center;}
+    .post-rx-badge:not(:first-child){margin-inline-end:-8px;}
+    .post-rx-count{font-size:9.5pt;color:#888;margin-inline-start:6px;}
 
-    /* post audios */
-    .post-audios{ display:flex;flex-direction:column;gap:6px;margin-top:10px; }
-    .post-media-audio{ width:100%; }
+    /* footer / actions */
+    .post-actions{display:flex;border-top:1px solid var(--border);margin:0 12px;}
+    .post-action-btn{flex:1;background:none;border:none;font-family:'Amiri',serif;
+      font-size:12pt;color:#888;cursor:pointer;padding:8px 4px;
+      transition:background .18s,color .18s;border-radius:5px;}
+    .post-action-btn:hover{background:#f5f7f5;color:#333;}
+    .post-action-btn.reacted{color:var(--gold);font-weight:bold;}
+    .post-rx-wrap{position:relative;flex:1;display:flex;}
+    .post-rx-picker{position:absolute;bottom:calc(100% + 6px);right:0;
+      background:var(--card);border-radius:28px;
+      box-shadow:0 4px 16px rgba(0,0,0,.16);
+      padding:6px 10px;display:none;gap:8px;z-index:200;border:1px solid var(--border);}
+    .post-rx-picker.open{display:flex;animation:postRxPop .18s ease;}
+    @keyframes postRxPop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+    .post-rx-opt{font-size:24px;cursor:pointer;border:none;background:none;
+      padding:4px;border-radius:50%;transition:transform .15s,background .15s;}
+    .post-rx-opt:hover{transform:scale(1.35);background:#f5f5f5;}
+    .post-rx-opt.selected{background:rgba(184,134,11,.15);outline:2px solid var(--gold);}
 
-    /* ══════════ POSTS / DOCS FEED ══════════ */
-    .post-card{
-      background:var(--card);border-radius:14px;margin-bottom:14px;
-      box-shadow:0 2px 10px rgba(0,0,0,.06);border:1px solid var(--border);
-      overflow:hidden;
-    }
-    .post-card-head{
-      display:flex;align-items:center;gap:10px;padding:12px 14px;
-      border-bottom:1px solid var(--border);
-    }
-    .post-author-avatar{
-      width:38px;height:38px;border-radius:50%;overflow:hidden;
-      background:#eee;display:flex;align-items:center;justify-content:center;
-      font-size:16pt;flex-shrink:0;
-    }
-    .post-author-avatar img{width:100%;height:100%;object-fit:cover;}
-    .post-author-info{flex:1;min-width:0;}
-    .post-author-name{font-size:11pt;font-weight:bold;color:#2c3e50;}
-    .post-time{font-size:9pt;color:#aaa;}
-    .post-body{padding:14px;}
-    .post-text{font-size:12pt;line-height:1.8;white-space:pre-wrap;word-break:break-word;}
-    .post-media{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
-    .post-media-img{
-      border-radius:10px;object-fit:cover;cursor:pointer;
-      max-width:100%;max-height:320px;
-    }
-    .post-media-video{border-radius:10px;max-width:100%;max-height:320px;}
-    .post-media-audio{width:100%;margin-top:6px;}
-    .post-file-chip{
-      display:flex;align-items:center;gap:6px;padding:8px 14px;
-      background:#f5f5f5;border-radius:8px;text-decoration:none;
-      font-size:10.5pt;color:#333;border:1px solid #e0e0e0;transition:.2s;
-    }
-    .post-file-chip:hover{background:#e8f0e8;}
-    .post-actions{
-      display:flex;gap:6px;padding:8px 14px;border-top:1px solid var(--border);
-    }
-    .post-action-btn{
-      display:flex;align-items:center;gap:5px;padding:6px 12px;
-      border:none;background:none;border-radius:8px;cursor:pointer;
-      font-family:'Amiri',serif;font-size:10.5pt;color:#555;transition:.2s;
-    }
-    .post-action-btn:hover{background:#f0f4ec;}
-    .post-action-btn.liked{color:var(--gold);}
-    .post-reaction-row{display:flex;gap:4px;padding:0 14px 8px;}
-    .reaction-btn{
-      background:none;border:1.5px solid #eee;border-radius:20px;
-      padding:3px 10px;font-size:11pt;cursor:pointer;transition:.2s;
-    }
-    .reaction-btn:hover{background:#fff8e1;border-color:var(--gold);}
-    .reaction-btn.active{background:#fff3cd;border-color:var(--gold);}
-    .post-hidden-badge{
-      display:inline-block;background:#fff3cd;color:#856404;
-      padding:2px 8px;border-radius:6px;font-size:9pt;margin-right:8px;
-    }
-    .post-visibility-badge{
-      font-size:9pt;color:#888;display:flex;align-items:center;gap:4px;
-    }
+    /* upload progress */
+    .upload-progress-bar{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);
+      background:#2c3e50;color:#fff;padding:12px 16px;border-radius:14px;
+      z-index:9999;min-width:220px;max-width:320px;
+      box-shadow:0 4px 20px rgba(0,0,0,.4);font-family:'Amiri',serif;font-size:10.5pt;display:none;}
+    .upload-progress-bar.show{display:block;}
+    .upload-bar-name{margin-bottom:5px;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .upload-bar-track{background:rgba(255,255,255,.2);border-radius:6px;height:7px;overflow:hidden;margin-bottom:6px;}
+    .upload-bar-fill{height:100%;background:#6db33f;width:0%;border-radius:6px;transition:width .25s linear;}
+    .upload-bar-row{display:flex;justify-content:space-between;align-items:center;}
+    .upload-bar-pct{font-size:9.5pt;}
+    .upload-bar-cancel{background:#e74c3c;border:none;color:#fff;border-radius:8px;
+      padding:3px 10px;cursor:pointer;font-family:'Amiri',serif;font-size:9.5pt;}
 
-    /* نافذة الإخفاء */
+    /* hide modal */
+        /* نافذة الإخفاء */
     .hide-modal-overlay{
       position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1100;
       display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);
@@ -1234,6 +1188,16 @@
         style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);
                background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:#555">إلغاء</button>
     </div>
+  </div>
+</div>
+
+<!-- upload progress bar (shared) -->
+<div class="upload-progress-bar" id="uploadProgressBar">
+  <div class="upload-bar-name" id="uploadBarName"></div>
+  <div class="upload-bar-track"><div class="upload-bar-fill" id="uploadBarFill"></div></div>
+  <div class="upload-bar-row">
+    <span class="upload-bar-pct" id="uploadBarPct">0%</span>
+    <button class="upload-bar-cancel" onclick="_cancelUpload()">إلغاء</button>
   </div>
 </div>
 
@@ -2679,15 +2643,12 @@ function loadFeed(type) {
 }
 
 function buildPostCard(post, isOwner) {
-  const u       = isOwner ? currentUser : _visitorProfile;
-  const photo   = u && u.profilePhoto ? `<img src="${u.profilePhoto}" alt="">` : '👤';
-  const name    = u ? (u.username || '—') : '—';
-  const ts      = post.createdAt ? timeAgo(post.createdAt) : '';
+  const u     = isOwner ? currentUser : _visitorProfile;
+  const photo = u && u.profilePhoto ? `<img src="${u.profilePhoto}" alt="">` : '👤';
+  const name  = u ? (u.username || '—') : '—';
+  const ts    = post.createdAt ? timeAgo(post.createdAt) : '';
+  const pid   = post.id;
 
-  // معرف المنشور — يجب تعريفه أولاً قبل أي استخدام
-  const pid = post.id;
-
-  // تجميع الوسائط حسب النوع
   const atts   = post.attachments || [];
   const images = atts.filter(a => a.type==='image');
   const videos = atts.filter(a => a.type==='video');
@@ -2695,104 +2656,267 @@ function buildPostCard(post, isOwner) {
   const files  = atts.filter(a => !['image','video','audio','youtube'].includes(a.type));
   const ytbs   = atts.filter(a => a.type==='youtube');
 
-  // ── الصور: grid ذكي — تُحمَّل عبر MediaProxy بعد الرسم ──
-  const imgsHtml = images.length ? buildImgGrid(images, pid) : '';
+  /* ── صور grid ── */
+  let imgsHtml = '';
+  if (images.length) {
+    const cnt = Math.min(images.length, 6);
+    const cells = images.slice(0, cnt).map((img, i) =>
+      `<div class="post-img-wrap" onclick="openGallery('${pid}',${i})">
+        <img data-file-id="${img.fileId||''}" src="" alt="" loading="lazy">
+       </div>`
+    ).join('');
+    imgsHtml = `<div class="post-imgs"><div class="post-imgs-grid" data-count="${cnt}">${cells}</div></div>`;
+  }
 
-  // ── الفيديوهات: container يُملأ بـ MediaProxy.render ──
-  const vidsHtml = videos.length
-    ? `<div class="post-media-group" id="vids_${pid}">
-        ${videos.map((_,i) => `<div class="media-proxy-container video-proxy"
-          id="vproxy_${pid}_${i}" data-file-id="${_.fileId||''}"
-          style="min-height:180px;background:#000;border-radius:8px;margin-bottom:6px">
-          <div class="media-loading">⏳</div></div>`).join('')}
-      </div>` : '';
+  /* ── فيديوهات ── */
+  let vidsHtml = '';
+  if (videos.length) {
+    vidsHtml = videos.map((v, i) =>
+      `<div class="post-video-wrap media-proxy-container video-proxy"
+        id="vproxy_${pid}_${i}" data-file-id="${v.fileId||''}">
+        <div class="media-loading"><div class="hg-wrap">
+          <svg class="hg-svg" viewBox="0 0 60 80" fill="none">
+            <path d="M10 4h40M10 76h40M14 4 C14 30 46 50 46 76 M46 4 C46 30 14 50 14 76"
+              stroke="#aaa" stroke-width="3" stroke-linecap="round"/>
+          </svg><div class="hg-sand"></div></div></div>
+      </div>`
+    ).join('');
+  }
 
-  // ── الصوتيات ──
-  const audsHtml = audios.length
-    ? `<div class="post-audios" id="auds_${pid}">
-        ${audios.map((_,i) => `<div class="media-proxy-container audio-proxy"
-          id="aproxy_${pid}_${i}" data-file-id="${_.fileId||''}"
-          style="min-height:54px;padding:4px 0">
-          <div class="media-loading">⏳</div></div>`).join('')}
-      </div>` : '';
+  /* ── صوتيات ── */
+  let audsHtml = '';
+  if (audios.length) {
+    const items = audios.map((a, i) =>
+      `<div class="post-audio-item">
+        <span>🎵</span>
+        <div class="media-proxy-container audio-proxy"
+          id="aproxy_${pid}_${i}" data-file-id="${a.fileId||''}"
+          style="flex:1">
+          <div style="color:#888;font-size:9.5pt;padding:4px">⏳</div>
+        </div>
+       </div>`
+    ).join('');
+    audsHtml = `<div class="post-audios">${items}</div>`;
+  }
 
-  // ── الملفات ──
-  const filesHtml = files.length ? buildFileGrid(files, pid) : '';
+  /* ── ملفات ── */
+  let filesHtml = '';
+  if (files.length) {
+    const items = files.map(f =>
+      `<div class="post-file-item">
+        <span class="post-file-icon">${postFileIcon(f.name)}</span>
+        <span class="post-file-name">${escHtml(f.name||'ملف')}</span>
+       </div>`
+    ).join('');
+    filesHtml = `<div class="post-files">${items}</div>`;
+  }
 
-  // ── يوتيوب ──
+  /* ── يوتيوب ── */
   const ytHtml = ytbs.map(a =>
-    `<div class="pe-yt-preview"><iframe src="https://www.youtube.com/embed/${a.ytId}"
+    `<div class="post-yt"><iframe src="https://www.youtube.com/embed/${a.ytId}"
       allowfullscreen loading="lazy"></iframe></div>`
   ).join('');
 
-  const mediaHtml = imgsHtml + vidsHtml + audsHtml + filesHtml + ytHtml;
+  /* ── تفاعلات — عرض ── */
+  const rx    = post.reactions || {};
+  const rList = [{k:'heart',e:'❤️'},{k:'laugh',e:'😂'},{k:'like',e:'👍'}]
+    .filter(r => (rx[r.k]||[]).length > 0)
+    .sort((a,b) => (rx[b.k]||[]).length - (rx[a.k]||[]).length);
+  const total = rList.reduce((s,r) => s + (rx[r.k]||[]).length, 0);
 
-  // الردود والتفاعلات
-  const hearts = (post.reactions && post.reactions.heart) ? post.reactions.heart.length : 0;
-  const likes  = (post.reactions && post.reactions.like)  ? post.reactions.like.length  : 0;
-  const visIcon = post.visibility
-    ? ({ all:'🌍', specific:'👥', hidden:'🔒' }[post.visibility.mode] || '🌍') : '🌍';
+  let rxDisplay = '';
+  if (total > 0) {
+    rxDisplay = `<div class="post-rx-display"><div class="post-rx-stack">
+      ${rList.slice(0,3).map(r=>`<span class="post-rx-badge">${r.e}</span>`).join('')}
+      </div><span class="post-rx-count">${total}</span></div>`;
+  }
 
-  const ownerActions = isOwner ? `
-    <button class="post-action-btn" onclick="editPost('${post.id}','${post.type||'post'}')">✏️ تعديل</button>
-    <button class="post-action-btn" onclick="openHideModal('${post.id}')">👁️ رؤية</button>
-    <button class="post-action-btn" onclick="deletePost('${post.id}','${post.type||'post'}')">🗑️</button>` : `
-    <button class="post-action-btn" onclick="copyPostText('${post.id}')">📋 نسخ</button>`;
+  /* ── التفاعل الحالي للمستخدم ── */
+  const myId  = currentUser && currentUser.id;
+  const myRx  = myId
+    ? (['heart','laugh','like'].find(k => (rx[k]||[]).includes(myId)) || null)
+    : null;
+  const rxEmojis = {heart:'❤️',laugh:'😂',like:'👍'};
+  const rxLabels = {heart:'أحببته',laugh:'أضحكني',like:'أعجبني'};
+  const rxBtnLbl = myRx ? `${rxEmojis[myRx]} ${rxLabels[myRx]}` : '🙂 تفاعل';
 
-  return `<div class="post-card" id="pc_${post.id}" data-post-id="${post.id}">
+  /* ── أزرار المالك / الزائر ── */
+  const visIcon = ({all:'🌍',specific:'👥',hidden:'🔒'}[(post.visibility||{}).mode]||'🌍');
+  const cmtCnt  = post.commentCount || 0;
+
+  const ownerBtns = isOwner ? `
+    <button class="post-action-btn" onclick="editPost('${pid}','${post.type||'post'}')">✏️ تعديل</button>
+    <button class="post-action-btn" onclick="openHideModal('${pid}')">👁️ رؤية</button>
+    <button class="post-action-btn" onclick="deletePost('${pid}','${post.type||'post'}')">🗑️</button>` : `
+    <button class="post-action-btn" onclick="copyPostText('${pid}')">📋 نسخ</button>`;
+
+  return `<div class="post-card${post.hidden?' post-hidden':''}" id="pc_${pid}" data-post-id="${pid}">
+
+    <!-- header -->
     <div class="post-card-head">
-      <div class="post-author-avatar">${photo}</div>
-      <div class="post-author-info">
-        <div class="post-author-name">${name}</div>
-        <div class="post-time">${ts} <span class="post-visibility-badge">${visIcon}</span>
-          ${post.hidden ? '<span class="post-hidden-badge">مخفي</span>' : ''}
+      <div class="post-author-row">
+        <div class="post-author-avatar">${photo}</div>
+        <div class="post-author-info">
+          <div class="post-author-name">${escHtml(name)}</div>
+          <div class="post-time">
+            ${ts}
+            <span class="post-visibility-badge">${visIcon}</span>
+            ${post.hidden?'<span class="post-hidden-badge">مخفي</span>':''}
+          </div>
         </div>
       </div>
-      <button class="dots-btn" onclick="openPostMenu('${post.id}','${post.type||'post'}',${isOwner},event)"
-        style="width:32px;height:32px;font-size:13pt;flex-shrink:0">⋮</button>
+      <button class="pc-3dot" onclick="openPostMenu('${pid}','${post.type||'post'}',${isOwner},event)">⋮</button>
     </div>
+
+    <!-- body -->
     <div class="post-body">
-      ${post.text ? `<div class="post-text">${escHtml(post.text)}</div>` : ''}
-      ${mediaHtml ? `<div class="post-media">${mediaHtml}</div>` : ''}
+      ${post.text?`<div class="post-text">${escHtml(post.text)}</div>`:''}
+      ${imgsHtml}${vidsHtml}${audsHtml}${filesHtml}${ytHtml}
     </div>
-    <div class="post-reaction-row">
-      <button class="reaction-btn" onclick="reactPost('${post.id}','heart')">❤️ ${hearts}</button>
-      <button class="reaction-btn" onclick="reactPost('${post.id}','like')">👍 ${likes}</button>
-    </div>
+
+    <!-- reactions display -->
+    ${rxDisplay}
+
+    <!-- footer actions -->
     <div class="post-actions">
-      <button class="post-action-btn" onclick="openPostComments('${post.id}')">💬 تعليق</button>
-      <button class="post-action-btn" onclick="sharePostLink('${post.id}')">🔗 مشاركة</button>
-      ${ownerActions}
+      <div class="post-rx-wrap">
+        <button class="post-action-btn${myRx?' reacted':''}"
+          onclick="postToggleRx(event,'${pid}')">${rxBtnLbl}</button>
+        <div id="prxp_${pid}" class="post-rx-picker">
+          <button class="post-rx-opt${myRx==='heart'?' selected':''}"
+            onclick="postPickRx(event,'${pid}','heart')">❤️</button>
+          <button class="post-rx-opt${myRx==='laugh'?' selected':''}"
+            onclick="postPickRx(event,'${pid}','laugh')">😂</button>
+          <button class="post-rx-opt${myRx==='like'?' selected':''}"
+            onclick="postPickRx(event,'${pid}','like')">👍</button>
+        </div>
+      </div>
+      <button class="post-action-btn" onclick="openPostComments('${pid}')">💬 تعليق${cmtCnt?' ('+cmtCnt+')':''}</button>
+      <button class="post-action-btn" onclick="sharePostLink('${pid}')">🔗 مشاركة</button>
+      ${ownerBtns}
     </div>
   </div>`;
 }
 
+/* أيقونة نوع الملف */
+function postFileIcon(name) {
+  if (!name) return '📎';
+  const e = name.split('.').pop().toLowerCase();
+  return ({pdf:'📕',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📋',pptx:'📋',
+           zip:'🗜️',rar:'🗜️',txt:'📄',mp3:'🎵',wav:'🎵',ogg:'🎵'})[e] || '📎';
+}
+
+/* ── Post Reactions ── */
+let _openPostRxId = null;
+
+function postToggleRx(event, pid) {
+  event.stopPropagation();
+  const picker = document.getElementById('prxp_'+pid);
+  if (!picker) return;
+  if (picker.classList.contains('open')) {
+    picker.classList.remove('open'); _openPostRxId = null;
+  } else {
+    if (_openPostRxId) {
+      const old = document.getElementById('prxp_'+_openPostRxId);
+      if (old) old.classList.remove('open');
+    }
+    picker.classList.add('open'); _openPostRxId = pid;
+    setTimeout(() => {
+      function close(e) {
+        if (!picker.contains(e.target)) {
+          picker.classList.remove('open');
+          if (_openPostRxId===pid) _openPostRxId=null;
+          document.removeEventListener('click',close);
+        }
+      }
+      document.addEventListener('click', close);
+    }, 0);
+  }
+}
+
+async function postPickRx(event, pid, reaction) {
+  event.stopPropagation();
+  if (!currentUser) { showToast('يجب تسجيل الدخول للتفاعل'); return; }
+
+  // أغلق picker
+  const picker = document.getElementById('prxp_'+pid);
+  if (picker) { picker.classList.remove('open'); _openPostRxId=null; }
+
+  // جلب المنشور محلياً
+  const storageKey = _isOwner ? 'royal_posts' : null;
+  let posts = storageKey ? JSON.parse(localStorage.getItem(storageKey)||'[]') : [];
+  let post  = posts.find(p=>p.id===pid);
+
+  if (!post) return;
+  if (!post.reactions) post.reactions={heart:[],laugh:[],like:[]};
+
+  const me  = currentUser.id;
+  const cur = ['heart','laugh','like'].find(k=>(post.reactions[k]||[]).includes(me));
+  const deselect = cur === reaction;
+
+  ['heart','laugh','like'].forEach(k=>{
+    if (!post.reactions[k]) post.reactions[k]=[];
+    post.reactions[k]=post.reactions[k].filter(id=>id!==me);
+  });
+  if (!deselect) post.reactions[reaction].push(me);
+
+  // تحديث localStorage وإعادة رسم الكارد
+  if (storageKey) {
+    const idx = posts.findIndex(p=>p.id===pid);
+    if (idx>=0) { posts[idx]=post; localStorage.setItem(storageKey,JSON.stringify(posts)); }
+  }
+
+  // تحديث جزئي: rx display + زر
+  const card = document.getElementById('pc_'+pid);
+  if (card) {
+    const newCard = document.createElement('div');
+    newCard.innerHTML = buildPostCard(post, _isOwner);
+    const fresh = newCard.firstElementChild;
+    card.replaceWith(fresh);
+    await initPostCardMedia(post);
+  }
+
+  // إرسال للخادم
+  const ownerId = _isOwner ? currentUser.id : _targetUid;
+  await fetch(AUTH_CONFIG.SCRIPT_URL, {
+    method:'POST',
+    body: JSON.stringify({
+      action:'save_post', userId:ownerId,
+      post: { ...post, reactions: post.reactions }
+    })
+  }).catch(()=>{});
+}
+
+
 // تُستدعى بعد رسم كل post card لتحميل الوسائط عبر MediaProxy
 async function initPostCardMedia(post) {
-  const atts   = post.attachments || [];
-  const pid    = post.id;
+  const atts = post.attachments || [];
+  const pid  = post.id;
 
-  // الصور — تُحمَّل عبر MediaProxy وتُحدَّث الـ src
+  // الصور — تُحمَّل عبر MediaProxy وتُحدَّث الـ src مع lazy fade-in
   const imgEls = document.querySelectorAll(`#pc_${pid} img[data-file-id]`);
   imgEls.forEach(async img => {
     const fileId = img.getAttribute('data-file-id');
     if (!fileId) return;
     const result = await MediaProxy.getUrl(fileId);
-    if (result) { img.src = result.url; img.style.opacity = '1'; }
+    if (result) {
+      img.src = result.url;
+      img.onload = () => img.classList.add('loaded');
+    }
   });
 
   // الفيديوهات
   atts.filter(a => a.type === 'video').forEach(async (a, i) => {
     const container = document.getElementById(`vproxy_${pid}_${i}`);
     if (!container || !a.fileId) return;
-    await MediaProxy.render(a.fileId, container, { height: '240px' });
+    await MediaProxy.render(a.fileId, container);
   });
 
   // الصوتيات
   atts.filter(a => a.type === 'audio').forEach(async (a, i) => {
     const container = document.getElementById(`aproxy_${pid}_${i}`);
     if (!container || !a.fileId) return;
-    await MediaProxy.render(a.fileId, container, { height: '54px' });
+    await MediaProxy.render(a.fileId, container);
   });
 }
 
@@ -2837,25 +2961,6 @@ async function deletePost(postId, type) {
     loadFeed(type);
     showToast('✅ تم الحذف');
   });
-}
-
-function reactPost(postId, reaction) {
-  // [FIX] استخدام flag لتجنب استدعاء loadFeed مرتين إن وُجد المنشور في كلا المفاتيحين
-  let feedType = null;
-  ['royal_posts','royal_docs'].forEach(key => {
-    const feed = JSON.parse(localStorage.getItem(key) || '[]');
-    const post = feed.find(p => p.id === postId);
-    if (!post || feedType) return;  // تجاهل إن وُجد في المفتاح الأول بالفعل
-    if (!post.reactions) post.reactions = { heart:[], like:[], laugh:[] };
-    const uid  = currentUser && currentUser.id || 'guest';
-    const arr  = post.reactions[reaction] || [];
-    const idx  = arr.indexOf(uid);
-    if (idx > -1) arr.splice(idx, 1); else arr.push(uid);
-    post.reactions[reaction] = arr;
-    localStorage.setItem(key, JSON.stringify(feed));
-    feedType = post.type || 'post';
-  });
-  if (feedType) loadFeed(feedType);
 }
 
 function copyPostText(postId) {
@@ -3198,12 +3303,23 @@ const PC = (() => {
       pcShowWarn('audio_dup'); return;
     }
 
-    files.forEach(file=>{
+    files.forEach(file => {
+      // للصور والصوتيات: اقرأ base64 مباشرة (لا ترفع للخادم)
+      // أظهر شريط تحميل واقعي أثناء قراءة FileReader
+      _showUploadProgress(file.name);
+      _updateUploadProgress(5);
+
       const reader = new FileReader();
-      reader.onload = e=>{
+      reader.onprogress = e => {
+        if (e.lengthComputable) _updateUploadProgress(5 + (e.loaded/e.total)*90);
+      };
+      reader.onload = e => {
+        _updateUploadProgress(100);
+        setTimeout(() => _hideUploadProgress(), 400);
         _attachFiles.push({ type, data:e.target.result, name:file.name });
         pcRenderAtt(); pcCheckSend();
       };
+      reader.onerror = () => { _hideUploadProgress(); showToast('فشل قراءة الملف'); };
       reader.readAsDataURL(file);
     });
   }
@@ -3881,46 +3997,20 @@ function extractYoutubeId(url) {
 let _uploadController = null; // AbortController للإلغاء
 
 function _showUploadProgress(fileName) {
-  let wrap = document.getElementById('_uploadProgressWrap');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.id = '_uploadProgressWrap';
-    wrap.style.cssText = `
-      position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
-      background:#2c3e50;color:#fff;padding:12px 18px;border-radius:14px;
-      z-index:9999;min-width:240px;max-width:340px;
-      box-shadow:0 4px 20px rgba(0,0,0,.4);
-      font-family:'Amiri',serif;font-size:11pt;
-    `;
-    document.body.appendChild(wrap);
-  }
-  wrap.innerHTML = `
-    <div style="margin-bottom:6px;font-size:10pt;opacity:.8;overflow:hidden;
-                text-overflow:ellipsis;white-space:nowrap">📤 ${fileName}</div>
-    <div style="background:rgba(255,255,255,.2);border-radius:6px;height:8px;overflow:hidden">
-      <div id="_uploadBar" style="height:100%;background:#6db33f;width:0%;transition:width .3s;border-radius:6px"></div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-      <span id="_uploadPct" style="font-size:10pt">0%</span>
-      <button id="_uploadCancelBtn" onclick="_cancelUpload()"
-        style="background:#e74c3c;border:none;color:#fff;border-radius:8px;
-               padding:4px 12px;cursor:pointer;font-family:'Amiri',serif;font-size:10pt">
-        إلغاء
-      </button>
-    </div>`;
-  wrap.style.display = 'block';
+  document.getElementById('uploadBarName').textContent = '📤 ' + fileName;
+  document.getElementById('uploadBarFill').style.width = '0%';
+  document.getElementById('uploadBarPct').textContent = '0%';
+  document.getElementById('uploadProgressBar').classList.add('show');
 }
 
 function _updateUploadProgress(pct) {
-  const bar = document.getElementById('_uploadBar');
-  const pctEl = document.getElementById('_uploadPct');
-  if (bar) bar.style.width = pct + '%';
-  if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+  const p = Math.round(Math.min(100, pct));
+  document.getElementById('uploadBarFill').style.width = p + '%';
+  document.getElementById('uploadBarPct').textContent  = p + '%';
 }
 
 function _hideUploadProgress() {
-  const wrap = document.getElementById('_uploadProgressWrap');
-  if (wrap) wrap.style.display = 'none';
+  document.getElementById('uploadProgressBar').classList.remove('show');
 }
 
 function _cancelUpload() {
