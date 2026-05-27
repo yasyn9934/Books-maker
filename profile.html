@@ -4212,22 +4212,24 @@ const Compressor = (() => {
   async function _loadFFmpeg() {
     if (_loaded) return true;
     if (_loading) {
-      // انتظر حتى يكتمل التحميل
       while (_loading) await new Promise(r => setTimeout(r, 200));
       return _loaded;
     }
     _loading = true;
     try {
-      const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
-      const { fetchFile, toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+      const { FFmpeg }              = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
+      const { fetchFile, toBlobURL }= await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
 
       _ffmpeg = new FFmpeg();
 
-      // تحميل core و wasm من CDN
-      const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      const coreBase   = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      const workerBase = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
+
+      // لفّ كل الملفات في blob URLs محلية لتجاوز حظر Cross-Origin Worker
       await _ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`,   'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL:   await toBlobURL(`${coreBase}/ffmpeg-core.js`,    'text/javascript'),
+        wasmURL:   await toBlobURL(`${coreBase}/ffmpeg-core.wasm`,  'application/wasm'),
+        workerURL: await toBlobURL(`${workerBase}/worker.js`,        'text/javascript'),
       });
 
       _loaded  = true;
