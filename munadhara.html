@@ -6,1013 +6,897 @@
 <title>مناظرة: هل القرآن صفة لله أم أثر صفة؟</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0f0e0c;
-  --surface: #181510;
-  --surface2: #201c15;
-  --border: #38322a;
-  --gold: #c9a84c;
-  --gold-light: #e0c46e;
-  --gold-dim: #7a6230;
-  --athary: #6aabdd;
-  --athary-dim: #2e5a80;
-  --athary-bg: rgba(106,171,221,0.06);
-  --ibadhi: #7ec46e;
-  --ibadhi-dim: #3a6532;
-  --ibadhi-bg: rgba(126,196,110,0.06);
-  --text: #e2d9c5;
-  --text-dim: #9e9080;
-  --text-faint: #60554a;
-  --intro: #9a7a5a;
-  --tag-h: #c9a84c;
-  --tag-i: #d97868;
-  --tag-r: #8899cc;
-  --tag-q: #4ab8b0;
-  --tag-f: #bb88dd;
-  --tag-s: #88cc99;
-  --tag-t: #888;
-  --tag-e: #aaa;
-}
-* { box-sizing:border-box; margin:0; padding:0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Cairo', sans-serif;
-  font-size: 15px;
-  line-height: 1.85;
-}
-body::before {
-  content:'';
-  position:fixed; inset:0;
-  background: radial-gradient(ellipse 80% 50% at 15% 5%, rgba(201,168,76,.04) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 70% at 85% 95%, rgba(106,171,221,.03) 0%, transparent 55%);
-  pointer-events:none; z-index:0;
-}
-.wrap { max-width:900px; margin:0 auto; padding:40px 20px 80px; position:relative; z-index:1; }
+:root{--bg:#0f0e0c;--s:#181510;--s2:#201c15;--br:#38322a;--g:#c9a84c;--gl:#e0c46e;--gd:#7a6230;--at:#6aabdd;--atd:#2e5a80;--atb:rgba(106,171,221,.06);--ib:#7ec46e;--ibd:#3a6532;--ibb:rgba(126,196,110,.06);--t:#e2d9c5;--td:#9e9080;--tf:#60554a;--io:#9a7a5a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--t);font-family:'Cairo',sans-serif;font-size:15px;line-height:1.85;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 15% 5%,rgba(201,168,76,.04) 0%,transparent 55%),radial-gradient(ellipse 60% 70% at 85% 95%,rgba(106,171,221,.03) 0%,transparent 55%);pointer-events:none;z-index:0;}
+.wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1;}
+/* HEADER */
+.site-header{text-align:center;padding:52px 0 44px;border-bottom:1px solid var(--br);margin-bottom:48px;}
+.site-header::after{content:'❧';display:block;color:var(--gd);font-size:20px;margin-top:16px;}
+.site-title{font-family:'Amiri',serif;font-size:clamp(20px,4vw,34px);color:var(--gl);line-height:1.45;font-weight:700;}
+.site-sub{font-size:12.5px;color:var(--tf);margin-top:9px;letter-spacing:.06em;}
+/* PARTICIPANTS */
+.parts{display:flex;gap:14px;margin-bottom:46px;flex-wrap:wrap;}
+.part{flex:1;min-width:210px;background:var(--s);border:1px solid var(--br);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;}
+.part::before{content:'';position:absolute;top:0;inset-inline:0;height:3px;}
+.part.at::before{background:linear-gradient(90deg,transparent,var(--at),transparent);}
+.part.ib::before{background:linear-gradient(90deg,transparent,var(--ib),transparent);}
+.pname{font-family:'Amiri',serif;font-size:17px;font-weight:700;margin-bottom:5px;}
+.part.at .pname{color:var(--at);}
+.part.ib .pname{color:var(--ib);}
+.pdesc{font-size:12.5px;color:var(--td);line-height:1.6;}
+/* SECTION */
+.sec{text-align:center;font-size:10.5px;letter-spacing:.18em;color:var(--tf);text-transform:uppercase;margin:46px 0 22px;display:flex;align-items:center;gap:12px;}
+.sec::before,.sec::after{content:'';flex:1;height:1px;background:var(--br);}
+/* OUTER */
+.outer,.outer-block{background:var(--s);border:1px solid #2a2520;border-right:3px solid var(--io);border-radius:8px;padding:20px 22px;margin-bottom:18px;font-size:13.5px;color:#a08868;font-style:italic;line-height:1.85;}
+.outer strong{color:var(--io);font-style:normal;}
+/* CARD */
+.card{background:var(--s);border:1px solid var(--br);border-radius:12px;margin-bottom:22px;overflow:hidden;transition:box-shadow .2s;opacity:0;transform:translateY(10px);animation:fu .35s ease forwards;}
+.card:hover{box-shadow:0 4px 28px rgba(0,0,0,.35);}
+.card.at{border-right:3px solid var(--atd);background:linear-gradient(160deg,var(--atb) 0%,var(--s) 70px);}
+.card.ib{border-right:3px solid var(--ibd);background:linear-gradient(160deg,var(--ibb) 0%,var(--s) 70px);}
+@keyframes fu{to{opacity:1;transform:none;}}
+/* CARD HEADER */
+.ch{padding:13px 18px 10px;border-bottom:1px solid var(--br);}
+.ch-row1{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.ch-row2{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-right:32px;}
+.help-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--br);background:var(--s2);color:var(--tf);font-size:11.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-family:'Cairo',sans-serif;font-weight:700;line-height:1;}
+.help-btn:hover{border-color:var(--gd);color:var(--g);background:rgba(201,168,76,.08);}
+.speaker{font-family:'Amiri',serif;font-size:14.5px;font-weight:700;padding:3px 11px;border-radius:20px;white-space:nowrap;}
+.at .speaker{background:rgba(106,171,221,.12);color:var(--at);border:1px solid var(--atd);}
+.ib .speaker{background:rgba(126,196,110,.1);color:var(--ib);border:1px solid var(--ibd);}
+.ctitle{font-size:13px;font-weight:600;color:var(--t);flex:1;}
+/* REPLY BADGE */
+.reply-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--tf);background:rgba(255,255,255,.03);border:1px solid var(--br);padding:2px 9px;border-radius:10px;white-space:nowrap;}
+.reply-badge::before{content:'↩';}
+/* TAGS */
+.tags{display:flex;gap:5px;flex-wrap:wrap;}
+.tag{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;letter-spacing:.03em;white-space:nowrap;}
+.th{background:rgba(201,168,76,.12);color:#c9a84c;border:1px solid rgba(201,168,76,.25);}
+.ti{background:rgba(217,120,104,.12);color:#d97868;border:1px solid rgba(217,120,104,.25);}
+.tr{background:rgba(136,153,204,.12);color:#8899cc;border:1px solid rgba(136,153,204,.25);}
+.tq{background:rgba(74,184,176,.1);color:#4ab8b0;border:1px solid rgba(74,184,176,.2);}
+.tf2{background:rgba(187,136,221,.1);color:#bb88dd;border:1px solid rgba(187,136,221,.2);}
+.ts2{background:rgba(136,204,153,.1);color:#88cc99;border:1px solid rgba(136,204,153,.2);}
+.tt{background:rgba(136,136,136,.12);color:#888;border:1px solid rgba(136,136,136,.25);}
+.te{background:rgba(170,170,170,.1);color:#aaa;border:1px solid rgba(170,170,170,.2);}
+/* CARD BODY */
+.cb{padding:20px 22px;}
+.cb p{margin-bottom:11px;font-size:14.5px;color:var(--t);}
+.cb p:last-child{margin-bottom:0;}
+.cs{border-top:1px dashed var(--br);padding-top:15px;margin-top:15px;}
+.cs-title{font-size:11px;letter-spacing:.12em;color:var(--tf);text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:8px;}
+.cst::after{content:'';flex:1;height:1px;background:var(--br);}
+.verse{font-family:'Amiri',serif;font-size:16.5px;color:#e0c46e;background:rgba(201,168,76,.05);border-right:2px solid #7a6230;padding:8px 13px;margin:10px 0;border-radius:4px;line-height:2.1;}
+.hadith{font-family:'Amiri',serif;font-size:15px;color:#a0c8a0;background:rgba(126,196,110,.04);border-right:2px solid #3a6532;padding:8px 13px;margin:10px 0;border-radius:4px;line-height:2.1;}
+/* MODAL */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:900;backdrop-filter:blur(3px);}
+.mbg.open{display:block;}
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);background:#1c1a14;border:1px solid #7a6230;border-radius:14px;padding:26px 26px 22px;max-width:500px;width:calc(100vw - 36px);max-height:82vh;overflow-y:auto;z-index:901;box-shadow:0 16px 60px rgba(0,0,0,.75);display:none;transition:transform .15s;}
+.modal.open{display:block;transform:translate(-50%,-50%) scale(1);}
+.mtitle{font-family:'Amiri',serif;font-size:17px;color:#c9a84c;margin-bottom:16px;font-weight:700;padding-bottom:11px;border-bottom:1px solid #38322a;}
+.mclose{position:absolute;top:14px;left:16px;font-size:17px;color:var(--tf);cursor:pointer;background:none;border:none;transition:color .15s;line-height:1;}
+.mclose:hover{color:var(--t);}
+/* TOOLTIP SECTIONS */
+.ts{margin-bottom:13px;padding-bottom:13px;border-bottom:1px dashed #2a2520;}
+.ts:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.ts-label{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:#7a6230;margin-bottom:7px;font-weight:700;}
+.ts-body{font-size:13px;color:#9e9080;line-height:1.8;}
+.tsb ol,.tsb ul{padding-right:16px;margin:4px 0;}
+.tsb li{margin-bottom:6px;}
+.ts-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px;}
+.gterm{display:inline-block;background:rgba(201,168,76,.1);color:#c9a84c;padding:1px 6px;border-radius:3px;font-size:12px;}
+/* FOOTER */
+.ftr{text-align:center;margin-top:52px;padding-top:28px;border-top:1px solid var(--br);color:var(--tf);font-size:12px;font-style:italic;}
+@media(max-width:600px){.ch-row2{padding-right:0;}.cb{padding:15px 14px;}.cb p{font-size:14px;}.ctitle{font-size:12.5px;}}
 
-/* ── HEADER ── */
-.site-header { text-align:center; padding:52px 0 44px; border-bottom:1px solid var(--border); margin-bottom:48px; }
-.site-header::after { content:'❧'; display:block; color:var(--gold-dim); font-size:20px; margin-top:16px; }
-.site-title { font-family:'Amiri',serif; font-size:clamp(20px,4vw,34px); color:var(--gold-light); line-height:1.45; font-weight:700; }
-.site-sub { font-size:12.5px; color:var(--text-faint); margin-top:9px; letter-spacing:.06em; }
-
-/* ── PARTICIPANTS ── */
-.participants { display:flex; gap:14px; margin-bottom:46px; flex-wrap:wrap; }
-.part { flex:1; min-width:210px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px 20px; position:relative; overflow:hidden; }
-.part::before { content:''; position:absolute; top:0; inset-inline:0; height:3px; }
-.part.at::before { background:linear-gradient(90deg,transparent,var(--athary),transparent); }
-.part.ib::before { background:linear-gradient(90deg,transparent,var(--ibadhi),transparent); }
-.part-name { font-family:'Amiri',serif; font-size:17px; font-weight:700; margin-bottom:5px; }
-.part.at .part-name { color:var(--athary); }
-.part.ib .part-name { color:var(--ibadhi); }
-.part-desc { font-size:12.5px; color:var(--text-dim); line-height:1.6; }
-
-/* ── SECTION DIVIDER ── */
-.sec { text-align:center; font-size:10.5px; letter-spacing:.18em; color:var(--text-faint); text-transform:uppercase; margin:46px 0 22px; display:flex; align-items:center; gap:12px; }
-.sec::before,.sec::after { content:''; flex:1; height:1px; background:var(--border); }
-
-/* ── OUTER BLOCK (non-debate) ── */
-.outer-block { background:var(--surface); border:1px solid #2a2520; border-right:3px solid var(--intro); border-radius:8px; padding:20px 22px; margin-bottom:18px; font-size:13.5px; color:#a08868; font-style:italic; line-height:1.85; }
-.outer-block strong { color:var(--intro); font-style:normal; }
-
-/* ── CARD ── */
-.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:24px; overflow:hidden; transition:box-shadow .2s; }
-.card:hover { box-shadow:0 4px 28px rgba(0,0,0,.35); }
-.card.at { border-right:3px solid var(--athary-dim); background:linear-gradient(180deg, var(--athary-bg) 0%, var(--surface) 60px); }
-.card.ib { border-right:3px solid var(--ibadhi-dim); background:linear-gradient(180deg, var(--ibadhi-bg) 0%, var(--surface) 60px); }
-
-/* ── CARD HEADER ── */
-.ch {
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  padding: 13px 18px 11px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: nowrap;
-}
-.help-btn {
-  width:22px; height:22px; border-radius:50%;
-  border:1px solid var(--border); background:var(--surface2);
-  color:var(--text-faint); font-size:11.5px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; transition:all .15s;
-  font-family:'Cairo',sans-serif; font-weight:700; line-height:1;
-  grid-column: 1;
-}
-.help-btn:hover { border-color:var(--gold-dim); color:var(--gold); background:rgba(201,168,76,.08); }
-.speaker { font-family:'Amiri',serif; font-size:14.5px; font-weight:700; padding:3px 11px; border-radius:20px; white-space:nowrap; grid-column:2; }
-.at .speaker { background:rgba(106,171,221,.12); color:var(--athary); border:1px solid var(--athary-dim); }
-.ib .speaker { background:rgba(126,196,110,.1); color:var(--ibadhi); border:1px solid var(--ibadhi-dim); }
-.ctitle { font-size:13px; font-weight:600; color:var(--text); grid-column:3; min-width:0; }
-.tags { display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; grid-column:4; }
-.tag { font-size:10px; padding:2px 8px; border-radius:12px; font-weight:600; letter-spacing:.03em; white-space:nowrap; }
-.th { background:rgba(201,168,76,.12); color:var(--tag-h); border:1px solid rgba(201,168,76,.25); }
-.ti { background:rgba(217,120,104,.12); color:var(--tag-i); border:1px solid rgba(217,120,104,.25); }
-.tr { background:rgba(136,153,204,.12); color:var(--tag-r); border:1px solid rgba(136,153,204,.25); }
-.tq { background:rgba(74,184,176,.1); color:var(--tag-q); border:1px solid rgba(74,184,176,.2); }
-.tf { background:rgba(187,136,221,.1); color:var(--tag-f); border:1px solid rgba(187,136,221,.2); }
-.ts { background:rgba(136,204,153,.1); color:var(--tag-s); border:1px solid rgba(136,204,153,.2); }
-.tt { background:rgba(136,136,136,.12); color:var(--tag-t); border:1px solid rgba(136,136,136,.25); }
-.te { background:rgba(170,170,170,.1); color:var(--tag-e); border:1px solid rgba(170,170,170,.2); }
-.reply-to-badge {
-  display:inline-flex; align-items:center; gap:5px;
-  font-size:10px; color:var(--text-faint);
-  background:rgba(255,255,255,.03); border:1px solid var(--border);
-  padding:2px 8px; border-radius:10px; white-space:nowrap;
-  grid-column: 4;
-}
-.reply-to-badge::before { content:'↩'; font-size:11px; }
-
-/* ── CARD BODY ── */
-.cb { padding:20px 22px; }
-.cb p { margin-bottom:11px; font-size:14.5px; color:var(--text); }
-.cb p:last-child { margin-bottom:0; }
-.cb pre { font-family:'Cairo',sans-serif; white-space:pre-wrap; font-size:14.5px; color:var(--text); line-height:1.9; margin-bottom:11px; }
-
-/* Section inside card */
-.cs { border-top:1px dashed var(--border); padding-top:15px; margin-top:15px; }
-.cs-title { font-size:11px; letter-spacing:.12em; color:var(--text-faint); text-transform:uppercase; margin-bottom:9px; display:flex; align-items:center; gap:8px; }
-.cs-title::after { content:''; flex:1; height:1px; background:var(--border); }
-
-/* Quran / Hadith */
-.verse { font-family:'Amiri',serif; font-size:16.5px; color:var(--gold-light); background:rgba(201,168,76,.05); border-right:2px solid var(--gold-dim); padding:8px 13px; margin:10px 0; border-radius:4px; line-height:2.1; }
-.hadith { font-family:'Amiri',serif; font-size:15px; color:#a0c8a0; background:rgba(126,196,110,.04); border-right:2px solid var(--ibadhi-dim); padding:8px 13px; margin:10px 0; border-radius:4px; line-height:2.1; }
-
-/* ── MODAL ── */
-.modal-bg {
-  display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,.65); z-index:900;
-  backdrop-filter:blur(3px);
-}
-.modal-bg.open { display:block; }
-.modal {
-  position:fixed;
-  top:50%; left:50%; transform:translate(-50%,-50%);
-  background:#1c1a14;
-  border:1px solid var(--gold-dim);
-  border-radius:14px;
-  padding:26px 28px 22px;
-  max-width:480px; width:calc(100vw - 40px);
-  max-height:80vh; overflow-y:auto;
-  z-index:901;
-  box-shadow:0 16px 60px rgba(0,0,0,.7);
-  font-size:13.5px; line-height:1.85; color:var(--text-dim);
-  display:none;
-}
-.modal.open { display:block; }
-.modal-title { font-family:'Amiri',serif; font-size:16px; color:var(--gold); margin-bottom:13px; font-weight:700; padding-bottom:10px; border-bottom:1px solid var(--border); }
-.modal-close {
-  position:absolute; top:14px; left:16px;
-  font-size:17px; color:var(--text-faint);
-  cursor:pointer; line-height:1; background:none; border:none;
-  transition:color .15s;
-}
-.modal-close:hover { color:var(--text); }
-.gterm { display:inline-block; background:rgba(201,168,76,.1); color:var(--gold); padding:1px 6px; border-radius:3px; font-size:12px; }
-
-/* ── FADE IN ── */
-.card { opacity:0; transform:translateY(12px); animation:fu .35s ease forwards; }
-@keyframes fu { to { opacity:1; transform:none; } }
-
-@media(max-width:600px){
-  .ch { grid-template-columns: auto auto 1fr; gap:7px; }
-  .tags, .reply-to-badge { grid-column: 1 / -1; justify-content:flex-start; }
-  .cb { padding:15px 14px; }
-  .cb p, .cb pre { font-size:14px; }
-}
+/* ========= MODAL TABS ========= */
+.mtabs{display:flex;border-bottom:1px solid var(--br);margin:0 -26px 16px;padding:0 26px;}
+.mtab{flex:1;padding:9px 0;background:none;border:none;border-bottom:2px solid transparent;color:var(--td);font-family:'Cairo',sans-serif;font-size:12.5px;cursor:pointer;transition:all .15s;margin-bottom:-1px;letter-spacing:.02em;}
+.mtab:hover{color:var(--t);}
+.mtab.active{color:var(--g);border-bottom-color:var(--g);font-weight:600;}
+/* ========= AI ANALYSIS ========= */
+.ai-loading{display:flex;align-items:center;gap:10px;padding:32px;justify-content:center;color:var(--td);font-size:13px;}
+.ai-spinner{width:18px;height:18px;border:2px solid var(--br);border-top-color:var(--g);border-radius:50%;animation:spin .75s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-error{color:#c77;padding:18px;text-align:center;font-size:13px;line-height:1.8;}
+.ai-error button{background:none;border:1px solid #c77;color:#c77;padding:4px 12px;border-radius:6px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:12px;margin-top:8px;display:inline-block;}
+.an-sec{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed #2a2520;}
+.an-sec:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.an-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#7a6230;margin-bottom:9px;font-weight:700;}
+.an-body{font-size:13px;color:var(--td);}
+.rule-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:9px;}
+.rule-item:last-child{margin-bottom:0;}
+.rule-badge{flex-shrink:0;font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:.03em;margin-top:3px;white-space:nowrap;}
+.rule-explicit{background:rgba(201,168,76,.12);color:#c9a84c;border:1px solid rgba(201,168,76,.3);}
+.rule-implicit{background:rgba(106,171,221,.1);color:#6aabdd;border:1px solid rgba(106,171,221,.25);}
+.rule-content{flex:1;}
+.rule-text{color:var(--t);line-height:1.75;font-size:13px;}
+.rule-note{font-size:11px;color:var(--tf);margin-top:3px;font-style:italic;}
+.disc-item{margin-bottom:8px;padding:9px 12px;background:rgba(255,255,255,.015);border-radius:7px;border:1px solid #2a2520;}
+.disc-header{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.disc-name{font-size:13px;color:var(--t);font-weight:600;}
+.disc-level{font-size:9px;padding:1px 7px;border-radius:8px;font-weight:700;letter-spacing:.04em;}
+.level-low{background:rgba(136,136,136,.1);color:#888;border:1px solid rgba(136,136,136,.2);}
+.level-mid{background:rgba(201,168,76,.1);color:#c9a84c;border:1px solid rgba(201,168,76,.2);}
+.level-high{background:rgba(126,196,110,.1);color:#7ec46e;border:1px solid rgba(126,196,110,.2);}
+.disc-note{font-size:11.5px;color:var(--tf);line-height:1.6;}
+.level-header{display:flex;align-items:center;gap:14px;margin-bottom:11px;}
+.level-grade{font-family:'Amiri',serif;font-size:19px;font-weight:700;}
+.level-score{flex:1;display:flex;align-items:center;gap:9px;}
+.score-bar{flex:1;height:5px;background:var(--br);border-radius:3px;overflow:hidden;}
+.score-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.score-num{font-size:12px;color:var(--td);white-space:nowrap;font-family:'Amiri',serif;}
+.level-row{font-size:12.5px;color:var(--td);margin-top:7px;line-height:1.75;}
+.level-row strong{color:var(--t);}
 </style>
 </head>
 <body>
 <div class="wrap">
-
-<!-- HEADER -->
 <header class="site-header">
   <div class="site-title">مناظرة في القرآن الكريم<br>هل هو صفة لله أم أثر صفة مخلوق؟</div>
   <div class="site-sub">مناظرة كتابية بين أثري وإباضي · غير مكتملة</div>
 </header>
-
-<!-- PARTICIPANTS -->
-<div class="participants">
+<div class="parts">
   <div class="part at">
-    <div class="part-name">عبد الرحمن</div>
-    <div class="part-desc">أثري العقيدة. يرى أن القرآن صفةٌ لله حقيقية غير مخلوق، تكلّم الله به بحرفٍ وصوت.</div>
+    <div class="pname">عبد الرحمن</div>
+    <div class="pdesc">أثري العقيدة. يرى أن القرآن صفةٌ لله حقيقية غير مخلوق، تكلّم الله به بحرفٍ وصوت.</div>
   </div>
   <div class="part ib">
-    <div class="part-name">الإباضي</div>
-    <div class="part-desc">إباضي المذهب. يرى أن القرآن أثرٌ لصفة التكلم لا الصفة ذاتها، وهو مخلوق.</div>
+    <div class="pname">الإباضي</div>
+    <div class="pdesc">إباضي المذهب. يرى أن القرآن أثرٌ لصفة التكلم لا الصفة ذاتها، وهو مخلوق.</div>
   </div>
 </div>
-
-<!-- ═══════════ مقدمة ═══════════ -->
-<div class="sec">المقدمة · كلام خارج المناظرة</div>
-<div class="outer-block">
-  <strong>سياق المناظرة:</strong><br>
-  كتبت أنا منشورًا عن ردٍّ بسيط مختصر على مسألة خلق القرآن ليكون جوابًا بسيطًا لكل عالِم، فجاء أحدهم وهو إباضي المذهب كما صرّح، واعترض على قولي وقال إن القرآن مخلوق وليس صفةً لله، فدار بيننا بعض الحديث ثم قررنا الدخول في مناظرة، ثم قررنا تحسين طريقتها، ومن هنا بدأت المناظرة الحقيقية.
-</div>
-
-<!-- ═══════════ افتتاح ═══════════ -->
-<div class="sec">افتتاح المناظرة</div>
-
-<!-- ر١: سلام عبد الرحمن -->
-<div class="card at" style="animation-delay:.04s">
+<div class="sec"><span>المقدمة · كلام خارج المناظرة</span></div><div class="outer-block"><strong>سياق المناظرة:</strong> كتبت أنا منشورًا عن ردٍّ بسيط مختصر على مسألة خلق القرآن ليكون جوابًا بسيطًا لكل عالِم، فجاء أحدهم وهو إباضي المذهب كما صرّح، واعترض على قولي وقال إن القرآن مخلوق وليس صفةً لله، فدار بيننا بعض الحديث ثم قررنا الدخول في مناظرة، ثم قررنا تحسين طريقتها، ومن هنا بدأت المناظرة الحقيقية.</div><div class="sec"><span>المناظرة الأولية</span></div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m1')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">السلام الافتتاحي</span>
-    <div class="tags"><span class="tag tt">تنظيمي</span></div>
-  </div>
-  <div class="cb">
-    <p>"السلام عليكم ورحمة الله وبركاته"</p>
-  </div>
-</div>
-
-<!-- ر٢: رد الإباضي الأول + أدلته الأربعة -->
-<div class="card ib" style="animation-delay:.08s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m2')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">عرض محلّ النزاع وأربعة أدلة قرآنية على خلق القرآن</span>
-    <div class="tags"><span class="tag tt">تحرير المحلّ</span><span class="tag th">أدلة</span></div>
-  </div>
-  <div class="cb">
-    <div class="cs-title">تحرير محلّ النزاع</div>
-    <p>"وعليكم السلام ورحمة الله وبركاته<br>
-    المهم أنت كنت طلبت الحجج الي معنا<br><br>
-    المهم أظنك تعرف أن المسألة صارت بعد عهد الصحابة<br>
-    لذلك هي محدثة اصلا.. والمتفق عليه أن القرآن كلام الله المنزل المخلوق.<br>
-    ولو الكل قال بهذا دون التطرق لكونها مخلوقة أو غير مخلوقة لارتحنا من الفتنة<br><br>
-    المتفق عليه أن القرآن كلام الله المنزل على نبيه***<br><br>
-    المخلوق بالغلط كتبتها<br><br>
-    طيب ما الأختلاف بيننا الأن؟<br>
-    أنتم قلتم أن القرآن صفة لذلك هو ليس بمخلوق<br><br>
-    ونحن قلنا القرآن يستحيل أن يكون صفة<br><br>
-    فهنا الأختلاف هل القرآن صفة ام أثر لصفة.<br><br>
-    والفرق بين الصفة وأثرها هي مثل الخالق والخلق<br>
-    والرحمن وآثار رحمته مثل المطر<br>
-    والمتكلم والكلام<br><br>
-    طيب ليش أئمة يكفروننا؟ لأنهم يظنون أننا نقول أن الصفة مخلوقة<br>
-    بينما نحن نقول أن الصفة غير مخلوقة اصلا.. ونفرق بين القرآن والصفة<br><br>
-    واعطيك مثلا<br><br>
-    من المعلوم أن الصفة تلازم موصوفها<br><br>
-    مثل الشجاعة<br>
-    فالشجاعة هي صفة<br>
-    من موصوفها؟ الإنسان<br>
-    مثال..<br>
-    سالم شجاع<br><br>
-    سالم 👈 اسم مبتدأ موصوف<br>
-    الشجاعة 👈 صفة<br><br>
-    لكن هل نستطيع أو هل يستطيع سالم أن يفك الصفة عنده؟<br>
-    لا طبعا لأن الصفة تلازم موصوفها<br>
-    مثلا عندما يذهب للمسجد يخلع صفة الشجاعة عنه؟<br>
-    طبعا لا.<br>
-    لأن الصفة تلازم موصوفها.<br><br>
-    ونحن نرى آثار الصفة فقط.<br><br>
-    والقرآن لا يمكن أن يكون صفة<br>
-    لان الصفة لا تنفك عن موصوفها كما هو متفق عليه بيننا<br><br>
-    بينما القرآن في اللوح المحفوظ<br><br>
-    وقال عنه تعالى نزل به الروح الأمين<br>
-    أي جبريل<br>
-    فهل جبريل نزل بصفة الله؟"</p>
-
-    <div class="cs">
-      <div class="cs-title">الدليل الأول — لفظ "جعلناه"</div>
-      <p>"١-- قوله تعالى (إنا جعلناه قرآنا عربيا لعلكم تعقلون الزخرف) (٣) ، والاستدلال على هذا بأن الاخبار عنه أنه مجعول والمجعول هو المصير من حال إلى حال ، وهذا لا يكون إلا في المخلوق .<br>
-      ومثل هذه الآية سائر الآيات الناصة على أنه مجعول كقوله تعالى (ولكن جعلناه نورا نهدي به من نشاء من عبادنا) الشورى (٥٢)<br><br>
-      واستدل على أن الجعل إذا أسند إلى الله كان بمعنى الخلق بكثير من الآيات الدالة عليه كقوله تعالى (وجعل الظلمات والنور) الأنعام 1 ، وقوله (وجعل منها زوجها) الأعراف ١٨٩ ، وقوله (هو الذي جعل لكم الليل لتسكنوا فيه والنهار مبصرا) يونس ٦٧  وقوله (وجعل لكم من الجبال أكنانا) النحل ٨١ ، وقوله (وجعل لكم من الفلك والأنعام ما تركبون) الزخرف (١٢)<br>
-      أي بمعنى خلق.<br>
-      وتوجد الكثير من الآيات غيرها<br><br>
-      والجعل في الآية هو جعل تكويني.. أي أنشأناه، خلقناه، أوجدناه<br><br>
-      وفكر في صفات الله تعالى الأزلية الواجبة ، وعدم إمكان تعدي الجعل إليها فإنه من المستحيل عقلا الممتنع شرعا أن يقول قائل جعل الله علمه محيطا بكل شيء ، أو قدرته شاملة لكل شيء ، أو جعل الله وجوده أزليا أبديا ، أو جعل سمعه مدركاً لجميع الأصوات ، أو جعل بصره محيطا بكل المرئيات ، لما في هذه العبارات من اقتضاء أن يكون الله محدثا لهذه الصفات."</p>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c01')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">السلام الافتتاحي</span>
     </div>
-
-    <div class="cs">
-      <div class="cs-title">الدليل الثاني — وصف القرآن بـ"محدَث"</div>
-      <p>"2- قوله تعالى : (ما يأتيهم من ذكر من ربهم محدث إلا استمعوه وهم يلعبون) ، ومثله قوله : (وَمَا يأتيهم من ذكر من الرحمان محدث إلا كانوا عنه معرضين) ، ووجه الاستدلال بالآيتين وصف الذكر فيهما بالإحداث وهو الخلق ، ولا ريب أن الذكر لم يقصد به فيهما غير القرآن بدليل قوله تعالى : (وما هو إلا ذكر للعالمين).<br><br>
-      والقائلون بقِدم القرآن سلكوا طريقين في ردهم استدلال القائلين بخلقه بآيتي الأنبياء والشعراء ، فالقائلون منهم بقِدم حروفه وكلماته ذهبوا إلى أن<br>
-      المراد بالإحداث فيهما هو إحداث التنزيل متى شاء الله ذلك كما تقتضيه حكمته، ومعنى ذلك أن المحدث تنزيل الكتاب لا ذات الكتاب.<br><br>
-      وعبر بعضهم عنه بأن<br>
-      المراد بالإحداث تجدده ، والمفرقون منهم بين القرآن وما يتلى ويدون في المصاحف من الأحرف والكلمات قالوا : إن المحدث هو الأحرف والكلمات ، وهي<br>
-      عبارة عن القرآن الذي هو صفة أزلية قائمة بذاته عز وجل وحكاية له ، وكلا القولين مردود .<br><br>
-      أما الأول :فيبطله أن المحدث هو الذي وقع عليه فعل المحدث - بالكسر - ويشترط فيه أن يكون مسبوقاً بالفاعل والفعل ، والإحداث هو الإيجاد بعد العدم، وحمل الإحداث على أنه بمعنى الإنزال خروج عن الظاهر لغير داع سوى جعل ما في نفس القائل من الفكرة هو الأصل الذي ترد إليه النصوص وتحمل عليه الأدلة ، وما أعظمها من مصيبة في الدين على أن نقول إن نفس الإنزال إحالة للمنزل من حالة إلى حال ، وهي دالة على الحدوث لأمرين<br><br>
-      أولهما : أن القديم لا يتحول عن أصله ولا تعتريه العوارض<br>
-      ثانيهما : أنه لا يكون لأحد عليه سلطان ، لأنه غير معلول بعلة ولا مسبب بسبب"</p>
+    <div class="ch-row2"><div class="tags"><span class="tag tt">تنظيمي</span></div></div>
+  </div>
+  <div class="cb"><p>"السلام عليكم ورحمة الله وبركاته"</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c02')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">أربعة أدلة قرآنية على خلق القرآن + تحرير محلّ النزاع</span>
     </div>
+    <div class="ch-row2"><div class="tags"><span class="tag tt">تحرير المحلّ</span><span class="tag th">أدلة قرآنية × ٤</span></div></div>
+  </div>
+  <div class="cb"><div class="cs-title">تحرير محلّ النزاع</div>
+<p>"وعليكم السلام ورحمة الله وبركاته<br>
+المهم أنت كنت طلبت الحجج الي معنا<br><br>
+المهم أظنك تعرف أن المسألة صارت بعد عهد الصحابة<br>
+لذلك هي محدثة اصلا.. والمتفق عليه أن القرآن كلام الله المنزل المخلوق.<br>
+ولو الكل قال بهذا دون التطرق لكونها مخلوقة أو غير مخلوقة لارتحنا من الفتنة<br><br>
+المتفق عليه أن القرآن كلام الله المنزل على نبيه***<br><br>
+المخلوق بالغلط كتبتها<br><br>
+طيب ما الأختلاف بيننا الأن؟<br>
+أنتم قلتم أن القرآن صفة لذلك هو ليس بمخلوق<br><br>
+ونحن قلنا القرآن يستحيل أن يكون صفة<br><br>
+فهنا الأختلاف هل القرآن صفة ام أثر لصفة.<br><br>
+والفرق بين الصفة وأثرها هي مثل الخالق والخلق<br>
+والرحمن وآثار رحمته مثل المطر<br>
+والمتكلم والكلام<br><br>
+طيب ليش أئمة يكفروننا؟ لأنهم يظنون أننا نقول أن الصفة مخلوقة<br>
+بينما نحن نقول أن الصفة غير مخلوقة اصلا.. ونفرق بين القرآن والصفة<br><br>
+واعطيك مثلا<br><br>
+من المعلوم أن الصفة تلازم موصوفها<br><br>
+مثل الشجاعة<br>
+فالشجاعة هي صفة<br>
+من موصوفها؟ الإنسان<br>
+مثال..<br>
+سالم شجاع<br><br>
+سالم 👈 اسم مبتدأ موصوف<br>
+الشجاعة 👈 صفة<br><br>
+لكن هل نستطيع أو هل يستطيع سالم أن يفك الصفة عنده؟<br>
+لا طبعا لأن الصفة تلازم موصوفها<br>
+مثلا عندما يذهب للمسجد يخلع صفة الشجاعة عنه؟<br>
+طبعا لا.<br>
+لأن الصفة تلازم موصوفها.<br><br>
+ونحن نرى آثار الصفة فقط.<br><br>
+والقرآن لا يمكن أن يكون صفة<br>
+لان الصفة لا تنفك عن موصوفها كما هو متفق عليه بيننا<br><br>
+بينما القرآن في اللوح المحفوظ<br><br>
+وقال عنه تعالى نزل به الروح الأمين<br>
+أي جبريل<br>
+فهل جبريل نزل بصفة الله؟"</p>
 
-    <div class="cs">
-      <div class="cs-title">الدليل الثالث — القرآن في لوحٍ مخلوق</div>
-      <p>"3- قوله تعالى : (بل هو قرآن مجيد في لوح محفوظ) ، والإستدلال به من وجهين أولهما.. أن اللوح مخلوق.. والمخلوق لا يكون وعاء لغير المخلوق ، كما سبق<br>
-      ثانيا أن هاتين الآيتين سيقتا للتنويه بالقرآن وبيان عظم شأنه وعلو قدرته ، ولا يشك شاك أن ذلك يكون أكثر وضوحاً وأقوى حجة لو أخبر أنه قائم<br>
-      بذاته تعالى ، فلو كان أزليا قائماً به سبحانه لكان الأحرى أن يقال بل هو قرآن مجيد قائم بالعزيز الحميد ، أو نحو ذلك."</p>
+<div class="cs">
+<div class="cs-title">الدليل الأول — لفظ "جعلناه"</div>
+<p>"١-- قوله تعالى (إنا جعلناه قرآنا عربيا لعلكم تعقلون الزخرف) (٣) ، والاستدلال على هذا بأن الاخبار عنه أنه مجعول والمجعول هو المصير من حال إلى حال ، وهذا لا يكون إلا في المخلوق .<br>
+ومثل هذه الآية سائر الآيات الناصة على أنه مجعول كقوله تعالى (ولكن جعلناه نورا نهدي به من نشاء من عبادنا) الشورى (٥٢)<br><br>
+واستدل على أن الجعل إذا أسند إلى الله كان بمعنى الخلق بكثير من الآيات الدالة عليه كقوله تعالى (وجعل الظلمات والنور) الأنعام 1 ، وقوله (وجعل منها زوجها) الأعراف ١٨٩ ، وقوله (هو الذي جعل لكم الليل لتسكنوا فيه والنهار مبصرا) يونس ٦٧  وقوله (وجعل لكم من الجبال أكنانا) النحل ٨١ ، وقوله (وجعل لكم من الفلك والأنعام ما تركبون) الزخرف (١٢)<br>
+أي بمعنى خلق.<br>
+وتوجد الكثير من الآيات غيرها<br><br>
+والجعل في الآية هو جعل تكويني.. أي أنشأناه، خلقناه، أوجدناه<br><br>
+وفكر في صفات الله تعالى الأزلية الواجبة ، وعدم إمكان تعدي الجعل إليها فإنه من المستحيل عقلا الممتنع شرعا أن يقول قائل جعل الله علمه محيطا بكل شيء ، أو قدرته شاملة لكل شيء ، أو جعل الله وجوده أزليا أبديا ، أو جعل سمعه مدركاً لجميع الأصوات ، أو جعل بصره محيطا بكل المرئيات ، لما في هذه العبارات من اقتضاء أن يكون الله محدثا لهذه الصفات."</p>
+</div>
+
+<div class="cs">
+<div class="cs-title">الدليل الثاني — وصف القرآن بـ"محدَث"</div>
+<p>"2- قوله تعالى : (ما يأتيهم من ذكر من ربهم محدث إلا استمعوه وهم يلعبون) ، ومثله قوله : (وَمَا يأتيهم من ذكر من الرحمان محدث إلا كانوا عنه معرضين) ، ووجه الاستدلال بالآيتين وصف الذكر فيهما بالإحداث وهو الخلق ، ولا ريب أن الذكر لم يقصد به فيهما غير القرآن بدليل قوله تعالى : (وما هو إلا ذكر للعالمين).<br><br>
+والقائلون بقِدم القرآن سلكوا طريقين في ردهم استدلال القائلين بخلقه بآيتي الأنبياء والشعراء ، فالقائلون منهم بقِدم حروفه وكلماته ذهبوا إلى أن<br>
+المراد بالإحداث فيهما هو إحداث التنزيل متى شاء الله ذلك كما تقتضيه حكمته، ومعنى ذلك أن المحدث تنزيل الكتاب لا ذات الكتاب.<br><br>
+وعبر بعضهم عنه بأن<br>
+المراد بالإحداث تجدده ، والمفرقون منهم بين القرآن وما يتلى ويدون في المصاحف من الأحرف والكلمات قالوا : إن المحدث هو الأحرف والكلمات ، وهي<br>
+عبارة عن القرآن الذي هو صفة أزلية قائمة بذاته عز وجل وحكاية له ، وكلا القولين مردود .<br><br>
+أما الأول :فيبطله أن المحدث هو الذي وقع عليه فعل المحدث - بالكسر - ويشترط فيه أن يكون مسبوقاً بالفاعل والفعل ، والإحداث هو الإيجاد بعد العدم، وحمل الإحداث على أنه بمعنى الإنزال خروج عن الظاهر لغير داع سوى جعل ما في نفس القائل من الفكرة هو الأصل الذي ترد إليه النصوص وتحمل عليه الأدلة ، وما أعظمها من مصيبة في الدين على أن نقول إن نفس الإنزال إحالة للمنزل من حالة إلى حال ، وهي دالة على الحدوث لأمرين<br><br>
+أولهما : أن القديم لا يتحول عن أصله ولا تعتريه العوارض<br>
+ثانيهما : أنه لا يكون لأحد عليه سلطان ، لأنه غير معلول بعلة ولا مسبب بسبب"</p>
+</div>
+
+<div class="cs">
+<div class="cs-title">الدليل الثالث — القرآن في لوحٍ مخلوق</div>
+<p>"3- قوله تعالى : (بل هو قرآن مجيد في لوح محفوظ) ، والإستدلال به من وجهين أولهما.. أن اللوح مخلوق.. والمخلوق لا يكون وعاء لغير المخلوق ، كما سبق<br>
+ثانيا أن هاتين الآيتين سيقتا للتنويه بالقرآن وبيان عظم شأنه وعلو قدرته ، ولا يشك شاك أن ذلك يكون أكثر وضوحاً وأقوى حجة لو أخبر أنه قائم<br>
+بذاته تعالى ، فلو كان أزليا قائماً به سبحانه لكان الأحرى أن يقال بل هو قرآن مجيد قائم بالعزيز الحميد ، أو نحو ذلك."</p>
+</div>
+
+<div class="cs">
+<div class="cs-title">الدليل الرابع — "وإنا له لحافظون"</div>
+<p>"4- قوله تعالى : (إنا نحن نزلنا الذكر وإنا له لحافظون) ، ووجه الاستدلال به أن الله أخبر عنه بأنه محفوظ له ، ولا يكون المحفوظ إلا مخلوقاً لاستغناء غير المخلوق عن حفظ الحافظين ، ولذلك لا يجوز أن يقال حفظ الله حياته ، أو وجوده ، أو قدرته ، أو سمعه ، أو بصره ، أو علمه مع جواز<br>
+أن يقال حفظ الله كلامه إن قصد به الكـلام المنزل لا الكلام النفسي ، والآية دليل على جوازه.<br><br>
+فقط الي مجهزهن يمكن ١٣ دليل جاهزات ارسلهن لك.<br>
+بس بعد ٤ أدلة واشوف نفسي كتبت كثير<br>
+بعد ما تقرأهن اخبرني اكمل<br><br>
+وللعلم حاولت اجيب الأدلة الي سبق ومرت عليك حتى تكون سهلة الفهم<br>
+أما الأدلة الجديدة سأذكرها بعدها"</p>
+</div></div>
+</div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c03')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">استفسار عن أساس المذهب الإباضي وصفة التكلم</span>
     </div>
-
-    <div class="cs">
-      <div class="cs-title">الدليل الرابع — "وإنا له لحافظون"</div>
-      <p>"4- قوله تعالى : (إنا نحن نزلنا الذكر وإنا له لحافظون) ، ووجه الاستدلال به أن الله أخبر عنه بأنه محفوظ له ، ولا يكون المحفوظ إلا مخلوقاً لاستغناء غير المخلوق عن حفظ الحافظين ، ولذلك لا يجوز أن يقال حفظ الله حياته ، أو وجوده ، أو قدرته ، أو سمعه ، أو بصره ، أو علمه مع جواز<br>
-      أن يقال حفظ الله كلامه إن قصد به الكـلام المنزل لا الكلام النفسي ، والآية دليل على جوازه.<br><br>
-      فقط الي مجهزهن يمكن ١٣ دليل جاهزات ارسلهن لك.<br>
-      بس بعد ٤ أدلة واشوف نفسي كتبت كثير<br>
-      بعد ما تقرأهن اخبرني اكمل<br><br>
-      وللعلم حاولت اجيب الأدلة الي سبق ومرت عليك حتى تكون سهلة الفهم<br>
-      أما الأدلة الجديدة سأذكرها بعدها"</p>
+    <div class="ch-row2"><span class="reply-badge">الأدلة الأربعة</span><div class="tags"><span class="tag ts2">استفسار</span><span class="tag ti">إلزام ضمني</span></div></div>
+  </div>
+  <div class="cb"><p>" بصراحة إلى الآن ما فهمت أساس فكرتكم.. <br><br>
+يعني القرآن إذا هو مخلوق، وليس بصفة لله، بل أثر لها، فماذا يكون القرآن ذاتَه؟<br><br>
+نحن نقول كلام الله، وهذا نتفق عليه، لكن هل الله يحتاج إلى كلامٍ مخلوقٍ لِيُعلمَنَا ما يأمرنا به أو ينهانا عنه؟<br><br>
+الفكرة التي أفهمها أن كلام الله مخلوق، فإن كان ذاك، فهل كل ما يقوله الله هو مخلوق وليس صفةً له؟<br>
+إذا كان ذاك، فما هي صفة التكلم الأزلية؟<br><br>
+التكلم ← كلام = طريقة للتواصل.<br>
+فهل الطريقة التواصل بيننا وبين الله مخلوق، ولا يمكن أن يكلمنا الله إلا بمخلوق؟<br><br>
+الفكرة غير واضحة عندي، وما زلت لم أبحث فيها، لكن بإذن الله سأبحث فيها قريبًا."</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c04')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">الرد: صفة التكلم هي القدرة على الإنشاء + قياس على الأنبياء</span>
     </div>
+    <div class="ch-row2"><span class="reply-badge">استفسار عبد الرحمن</span><div class="tags"><span class="tag tr">رد</span><span class="tag tq">قياس</span></div></div>
   </div>
-</div>
-
-<!-- ر٣: استفسار عبد الرحمن الأول -->
-<div class="card at" style="animation-delay:.12s">
+  <div class="cb"><p>" يكون أثر بنفسك ذكرتها.. يكون مخلوق لا بخالق ولا بصفة.<br><br>
+أما قولك "لكن هل الله يحتاج إلى كلام مخلوق ليعلمنا ما يأمرنا به أو ينهانا عنه؟" انصدمت منه صراحة.<br><br>
+على هذه القاعدة التالفة لما أرسل الله اﻷنبياء و اﻷنبياء مخلوقين لا مرية في هذا.. فهل الله يحتاج إلى النبي مخلوق ليعلمنا أمور ديننا و يرشدنا إلى الهداية؟ أما جعل الله سبحانه و تعالى المخلوقات دالة عليه ( إِنَّ في خَلْقِ السَّمَاوَاتِ والْأَرْضِ وَاخْتِلَافِ اللَّيْلِ وَالنَّهَارِ لَآيَاتٍ لِّأُولِي الْأَلْبَابِ (190) ) فهل ستقول بأن الله احتاج إلى لمخلوقاته ليثبت وجوده و لتكون آية له؟ هذا كلام غريب<br><br>
+أما الجزئية الأخيرة<br>
+قولك "فهل كل ما يقوله الله هو مخلوق وليس صفة له؟"<br>
+كلام غير مستقيم.. هل يقول الله صفات؟<br><br>
+المهم إجابة سؤالك صفة التكلم الأزلية هي القدرة على التكلم وإنشاء الكلمات.<br>
+مثل صفة الخلق.. هي القدرة على إيجاد الخلق.. والخلق في حد ذاتهم مخلوقين.. لكن القدرة على ذلك هي الصفة غير المخلوقة<br><br>
+﴿وَما كانَ لِبَشَرٍ أَن يُكَلِّمَهُ اللَّهُ إِلّا وَحيًا أَو مِن وَراءِ حِجابٍ أَو يُرسِلَ رَسولًا فَيوحِيَ بِإِذنِهِ ما يَشاءُ إِنَّهُ عَلِيٌّ حَكيمٌ﴾"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m3')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">استفسار عن حقيقة القرآن عند الإباضية وصفة التكلم</span>
-    <div class="tags"><span class="tag ts">استفسار</span><span class="tag ti">إلزام استئناسي</span></div>
-  </div>
-  <div class="cb">
-    <p>" بصراحة إلى الآن ما فهمت أساس فكرتكم..<br><br>
-    يعني القرآن إذا هو مخلوق، وليس بصفة لله، بل أثر لها، فماذا يكون القرآن ذاتَه؟<br><br>
-    نحن نقول كلام الله، وهذا نتفق عليه، لكن هل الله يحتاج إلى كلامٍ مخلوقٍ لِيُعلمَنَا ما يأمرنا به أو ينهانا عنه؟<br><br>
-    الفكرة التي أفهمها أن كلام الله مخلوق، فإن كان ذاك، فهل كل ما يقوله الله هو مخلوق وليس صفةً له؟<br>
-    إذا كان ذاك، فما هي صفة التكلم الأزلية؟<br><br>
-    التكلم ← كلام = طريقة للتواصل.<br>
-    فهل الطريقة التواصل بيننا وبين الله مخلوق، ولا يمكن أن يكلمنا الله إلا بمخلوق؟<br><br>
-    الفكرة غير واضحة عندي، وما زلت لم أبحث فيها، لكن بإذن الله سأبحث فيها قريبًا."</p>
-  </div>
-</div>
-
-<!-- ر٤: رد الإباضي — قياس الأنبياء + تحديد صفة التكلم -->
-<div class="card ib" style="animation-delay:.16s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m4')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">الرد على الاستفسار: صفة التكلم وقياس الأنبياء</span>
-    <div class="tags"><span class="tag tr">رد</span><span class="tag tq">قياس</span></div>
-  </div>
-  <div class="cb">
-    <p>" يكون أثر بنفسك ذكرتها.. يكون مخلوق لا بخالق ولا بصفة.<br><br>
-    أما قولك "لكن هل الله يحتاج إلى كلام مخلوق ليعلمنا ما يأمرنا به أو ينهانا عنه؟" انصدمت منه صراحة.<br><br>
-    على هذه القاعدة التالفة لما أرسل الله اﻷنبياء و اﻷنبياء مخلوقين لا مرية في هذا.. فهل الله يحتاج إلى النبي مخلوق ليعلمنا أمور ديننا و يرشدنا إلى الهداية؟ أما جعل الله سبحانه و تعالى المخلوقات دالة عليه ( إِنَّ في خَلْقِ السَّمَاوَاتِ والْأَرْضِ وَاخْتِلَافِ اللَّيْلِ وَالنَّهَارِ لَآيَاتٍ لِّأُولِي الْأَلْبَابِ (190) ) فهل ستقول بأن الله احتاج إلى لمخلوقاته ليثبت وجوده و لتكون آية له؟ هذا كلام غريب<br><br>
-    أما الجزئية الأخيرة<br>
-    قولك "فهل كل ما يقوله الله هو مخلوق وليس صفة له؟"<br>
-    كلام غير مستقيم.. هل يقول الله صفات؟<br><br>
-    المهم إجابة سؤالك صفة التكلم الأزلية هي القدرة على التكلم وإنشاء الكلمات.<br>
-    مثل صفة الخلق.. هي القدرة على إيجاد الخلق.. والخلق في حد ذاتهم مخلوقين.. لكن القدرة على ذلك هي الصفة غير المخلوقة<br><br>
-    ﴿وَما كانَ لِبَشَرٍ أَن يُكَلِّمَهُ اللَّهُ إِلّا وَحيًا أَو مِن وَراءِ حِجابٍ أَو يُرسِلَ رَسولًا فَيوحِيَ بِإِذنِهِ ما يَشاءُ إِنَّهُ عَلِيٌّ حَكيمٌ﴾"</p>
-  </div>
-</div>
-
-<!-- ر٥: إلزام عبد الرحمن الأول -->
-<div class="card at" style="animation-delay:.20s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m5')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">الإلزام: الله لا يُسمع عباده كلامه إلا بمخلوق</span>
-    <div class="tags"><span class="tag ti">إلزام</span></div>
-  </div>
-  <div class="cb">
-    <p>" مقصد كلامي: إذا كان كلام الله الذي هو الحروف والكلمات مخلوقة، فلابد في ذلك من أن الله لا يكلم عباده إلا بواسطة ولا سبيل ليكلمهم دون مخلوق.<br><br>
-    لأن الله يكلم عباده، كما كان موسى، وعيسى، وباقي الأنبياء عليهم السلام، ويكلم جبريل وباقي الملائكة كذلك، فإن قلنا أن صفة التكلم أزلية، لكن الكلام أثر لصفة التكلم وهو مخلوق، فلا بد من ذلك أن كل كلام الله –الذي هو بحروف متتابعة وصوت– مخلوق والعياذ بالله.<br><br>
-    لو كان ذاك، فإن ما يلزم من ذلك أن الإله هذا –أعوذ بالله إن يكون الله– يفتقر إلى المخلوق لِيُسمِعَ عِبَادَه كلامه، إذ أنهم لا يسمعون كلامه بل يسمعون كلامًا مخلوقًا، فهو لا يستطيع أن يسمعهم كلامه دون واسطة مخلوقة.<br><br>
-    أما إثبات وجوده فهو قادرٌ على أن يرينا نفسه، وليس مانعٌ من ذلك، ولكن لو فعل لما كان هناك اختبارٌ ولآمن كل من في الأرض، لكن قولكم بأنه لا يستطيع أن يسمع خلقَه كلامَه إلا بكلامٍ هو مخلوق فهذا دليل عجزٍ لا ينسب لله."</p>
-  </div>
-</div>
-
-<!-- ر٦: رد الإباضي — تشبيه بكلام الكفار -->
-<div class="card ib" style="animation-delay:.24s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m6')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">تشبيه الإلزام بقول الكفار + طلب الدليل</span>
-    <div class="tags"><span class="tag tr">رد</span></div>
-  </div>
-  <div class="cb">
-    <p>" أخوي<br>
-    ذهبت عن الحوار والأدلة وجئت لكلام الكفار الذي كانوا يقولوه للأنبياء<br>
-    حاشاك أنت طبعا<br><br>
-    قولك مثل[أرسل صورة مع هذه العبارة]<br><br>
-    ﴿وَما مَنَعَ النّاسَ أَن يُؤمِنوا إِذ جاءَهُمُ الهُدى إِلّا أَن قالوا أَبَعَثَ اللَّهُ بَشَرًا رَسولًا﴾<br><br>
-    الله يفتقر لبشري مخلوق ليهدي الناس؟<br><br>
-    للعلم منطقك هذا واسلوبك هو ما يستخدمه الملحدين<br><br>
-    تريد تثبت بالأدلة كون القرآن غير مخلوق تفضل<br>
-    أما هذا التعجب وغيره لن يفيد"</p>
-  </div>
-</div>
-
-<!-- ر٧: عبد الرحمن — اعتذار + تفنيد التشبيه -->
-<div class="card at" style="animation-delay:.28s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m7')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">اعتذار عن التأخير + تفنيد التشبيه بقول الكفار</span>
-    <div class="tags"><span class="tag te">اعتذار</span><span class="tag tf">تفنيد التشبيه</span></div>
-  </div>
-  <div class="cb">
-    <p>"أعتذر، لكن عندي إختبارات(ثانوية، ودورات علمية، وأكاديمية)، وبحوث فقهية، فتأخرت كثير في الرد، وهذا الأسبوع إن شاء الله بعد ما أنتهي من الإختبارات النهائية للفصل رح أكتب رد على الي قلته..<br><br>
-    بحثت حول المسألة وأعرف رد كل حرف قلته ولله الحمد، لكن فقط الكتابة الي رح تأخذ وقت.<br><br>
-    وأعتذر مجددا عن التأخير<br>
-    أما قول الكفار فكان استكبارًا، أما قولي فهو إلزام لك في قولك، فإذا كان كل كلام الله مخلوق؛ إذًا لا يستطيع الله –عندكم– أن يكلم مخلوقاته إلا بواسطة مخلوق آخر يعلم ما في نفس الله –والعياذ بالله–.<br><br>
-    أما حجة الكفار فهي أن الله لن يرسل إلا ملئكة، وهذا كلام لا دليل لهم عليه، ولم يقولوه إلا احتقارًا إن يكون الحق مع بشر منهم ليس من الزعماء.<br><br>
-    فيوجد تباين بين قولي وقول الكفار."</p>
-  </div>
-</div>
-
-<!-- ر٨: الإباضي — الإلزام تافه -->
-<div class="card ib" style="animation-delay:.32s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m8')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">الإلزام تافه والمهم نسبة الكلام لله لا طبيعته</span>
-    <div class="tags"><span class="tag tr">رد</span></div>
-  </div>
-  <div class="cb">
-    <p>" بصراحة إلزامك تافه.<br>
-    اتمنى تسأل شيوخك قبل لا تلقي كلام من رأسك أخي وتحرج نفسك.<br><br>
-    الآية تعقب على من يرفض أن يتم هدايته بمخلوق وأنت هكذا.<br>
-    ثانيا لا يهم كونه مخلوق أو لا.. المهم هو أن هذا الكلام لمن ينسب؟ لله<br><br>
-    ثانيا أن يخلق الله كلاما لا يعني أن هذا الكلام يعلم ما في نفس الله !!<br>
-    الرسول كلامه ما ينطق عن الهوى إن هو إلا وحي يوحى، فهل تقول أنه يعلم ما في نفس الله؟"</p>
-  </div>
-</div>
-
-<!-- ر٩: عبد الرحمن — حجج جديدة -->
-<div class="card at" style="animation-delay:.36s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m9')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">حجج قرآنية جديدة: الأمر ≠ الخلق، والتفريق في سورة الرحمن، وتأكيد الإلزام</span>
-    <div class="tags"><span class="tag th">حجة قرآنية</span><span class="tag ti">إلزام</span></div>
-  </div>
-  <div class="cb">
-    <p>" لن أجادل في أن الحجة هذه صحيحة، وأنهم لم يصدوا عن الدين لأنهم رفضوا أن يكون المخلوق سببًا في هدايتهم، بل لأنه كان بشرًا ولأنهم زعموا أن الله لا يرسل إلا ملائكة.<br><br>
-    ولكن سأقول لك:<br>
-    قال تعالى: ﴿ألا له الخلق والأمر﴾ تقول أن العطف هنا لا يقتضي المغايرة؟<br>
-    إذًا ما قولك في قوله تعالى: ﴿إنما أمرنا لشيءٍ إذا أردناه أن نقول له كن فيكون﴾<br>
-    أمرنا = قولنا (كما في الآية)<br>
-    قولنا = كن.<br>
-    كن ≠ يكون.<br>
-    يكون = مخلوق.<br>
-    إذًا؛<br>
-    الأمر ≠ الخلق.<br><br>
-    لم ترضى بهذا؟<br>
-    أعطيك غيره لا بأس؛<br>
-    – قال تعالى: ﴿الرحمن * علم القرآن * خلق الإنسان﴾<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;• التفريق واضح بين "القرآن"(كلام الله)<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;والإنسان(المخلوق)؛ إذًا كلام الله(ومنه القرآن<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;تحديدًا كما الآية) ليس من الخلق.<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;لأنه لم يجعل القرآن مفعولًا للخلق،<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;بل جعله من علمه؛<br><br>
-    &nbsp;&nbsp;&nbsp;• فهل علم الله مخلوق؟ بالتأكيد لا؛ لذَا القرآن<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;غير مخلوق؛ لأنه من علم الله.<br><br>
-    لست ضعيف حجة، لكنني ألزمتك بشيء واضح لكل عاقل؛<br><br>
-    إن كان الخالق لا يتكلم إلا بمخلوق؛ إذًا الخالق مفتقر للمخلوق، وليس خالقٌ مفتقر؛ إذًا ليس هو بخالق.<br><br>
-    هذا هو الإلزام الذي قلت عنه تافه، لو فهمته لعلمت أنه إلزامٌ صحيح يوضح شناعة القول بأن كلام الخالق مخلوق.<br><br>
-    وقولي مختلف عن قول المشركين؛ لأنهم زعموا أن الله يتعالى ويتنزه عن أن يجعل بشرًا رسولًا، وأنه لا يرسل إلا ملائكة؛ وقالوا ذلك على سبيل المكابرة والعناد؛ لتبرير رفضهم الإسلام<br><br>
-    وأنا لم أزعم في هذا الإلزام شيئًا، إلا أنني ذكرت قولكم، وذكرت ما يلزم من هذا القول –وهو الافتقار إلى مخلوق–، لأنكم قلتم: أن كل كلام الله مخلوق<br><br>
-    كل كلام الخالق مخلوق؛ إذًا هو مفتقر لمخلوق<br>
-    نتيجة بسيطة وواضحة ولا أظن عاقلًا ينكرها"</p>
-  </div>
-</div>
-
-<!-- ر١٠: الإباضي — غلق البصيرة + الرد على العطف -->
-<div class="card ib" style="animation-delay:.40s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m10')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">الرد: العطف لا يقتضي المغايرة + المفسرون على أن الأمر هو التدبير</span>
-    <div class="tags"><span class="tag tr">رد</span><span class="tag tf">تفنيد</span></div>
-  </div>
-  <div class="cb">
-    <p>" الأخ أنت قلت أنك درست المسألة ولعلي فرحت لكن الواضح أنك درست مع غلق بصيرتك والأخذ من طرف واحد<br>
-    خيبت ظني إذا كان هذا فقط ما استطعت التوصل له<br><br>
-    1-العطف لا يقتضي المغايرة ، قوله تعالى :<br>
-    ﴿مَن كانَ عَدُوًّا لِلَّهِ وَمَلائِكَتِهِ وَرُسُلِهِ وَجِبريلَ وَميكالَ فَإِنَّ اللَّهَ عَدُوٌّ لِلكافِرينَ﴾<br>
-    فإن جبريل وميكل غير خارجين عن صنف الملائكة.<br><br>
-    ثانيًا تنبه ائمة التفسير الحاذقون لفساد هذا القول<br>
-    قال ابن جرير " امرهن الله فاطاعن امره الا له الخلق كله ] قال ابن كثير في تفسير الآيه : [ الجميع تحت قهره و سيطرته و مشيئته ولهذا قال<br>
-    منبها ( الاله الخلق و الامر ) اي الملك و التصرف ] قال رشيد رضا : [ الامر وهو التشريع والتكوين والتصرف و التدبير ] وقال العديد من المفسرين يطيل ذكرهم."</p>
-  </div>
-</div>
-
-<!-- ═══════════ تنظيم المناظرة ═══════════ -->
-<div class="sec">تنظيم المناظرة وتحديد مصادر الاستدلال</div>
-
-<!-- ر١١: عبد الرحمن يقترح الضبط -->
-<div class="card at" style="animation-delay:.04s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m11')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">اقتراح ضبط المناظرة بالتناوب وتحديد مصادر الاستدلال</span>
-    <div class="tags"><span class="tag tt">تنظيمي</span></div>
-  </div>
-  <div class="cb">
-    <p>"هل لك من رد على ما قلته؟<br>
-    إن أمكنك لنجعله نقاشا مباشرًا هنا،<br>
-    أنا أطرح حجة وإذا انتهيت، ترد عليها وتطرح حجة.<br>
-    ثم إذا أنت انتهيت أنا أرد على حجتك وأطرح حجة.<br>
-    وهكذا.<br><br>
-    لكن أولا لنحدد مصادر الإستدلال المتفق عليها في هذا النقاش، ليكون من السهل الوصول إلى النتيجة دون تفرع واسع معقد للمسألة.<br><br>
-    تتفق معي أم لك قول آخر؟"</p>
-  </div>
-</div>
-
-<!-- ر١٢: الإباضي — موافقة على التنظيم -->
-<div class="card ib" style="animation-delay:.08s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m12')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">الموافقة على الطريقة + تحفّظ على إلزامية التفاسير</span>
-    <div class="tags"><span class="tag tt">تنظيمي</span></div>
-  </div>
-  <div class="cb">
-    <p>"نعم حاليا ارد<br><br>
-    جميل طيب موافق"</p>
-    <div class="cs">
-      <p>ثم قال: " موافق<br>
-      ما رأيك تبدأ أنت؟<br>
-      أو ما فهمت<br>
-      هل تقصد ارد عليك؟<br>
-      لو تريد ارد على الي فوق اختار حجة واحدة لأن لو برد عليهن كلهن بنطول<br>
-      والباقي نأتي له لاحقا"</p>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c05')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">الإلزام الأول: الله لا يُسمع عباده كلامه إلا بمخلوق</span>
     </div>
-    <div class="cs">
-      <p>وعند تحديد المصادر قال: " ما اظن نختلف في هذا<br>
-      غير أن شيوخك ليسوا حجة علي مثلما شيوخي ليسوا حجة عليك.<br>
-      والعكس صحيح"</p>
-      <p>وعن التفاسير: "تفاسير المفسرين؟<br>
-      عندك شيوخك وعندي شيوخي وليس لأحد منهم حجة على الآخر<br>
-      فأنت لا تقبل بتفسير قطب الأئمة كما لا اقبل أنا بتفسير ابن كثير" [وقال عن التفاسير التي ذكرها عبد الرحمن "مخالفين لي" أي أنه لا يقبل بهم]، وقال: " هم حجة عليك لا علي"</p>
+    <div class="ch-row2"><span class="reply-badge">شرح صفة التكلم</span><div class="tags"><span class="tag ti">إلزام</span></div></div>
+  </div>
+  <div class="cb"><p>" مقصد كلامي: إذا كان كلام الله الذي هو الحروف والكلمات مخلوقة، فلابد في ذلك من أن الله لا يكلم عباده إلا بواسطة ولا سبيل ليكلمهم دون مخلوق.<br><br>
+لأن الله يكلم عباده، كما كان موسى، وعيسى، وباقي الأنبياء عليهم السلام، ويكلم جبريل وباقي الملائكة كذلك، فإن قلنا أن صفة التكلم أزلية، لكن الكلام أثر لصفة التكلم وهو مخلوق، فلا بد من ذلك أن كل كلام الله –الذي هو بحروف متتابعة وصوت– مخلوق والعياذ بالله.<br><br>
+لو كان ذاك، فإن ما يلزم من ذلك أن الإله هذا –أعوذ بالله إن يكون الله– يفتقر إلى المخلوق لِيُسمِعَ عِبَادَه كلامه، إذ أنهم لا يسمعون كلامه بل يسمعون كلامًا مخلوقًا، فهو لا يستطيع أن يسمعهم كلامه دون واسطة مخلوقة.<br><br>
+أما إثبات وجوده فهو قادرٌ على أن يرينا نفسه، وليس مانعٌ من ذلك، ولكن لو فعل لما كان هناك اختبارٌ ولآمن كل من في الأرض، لكن قولكم بأنه لا يستطيع أن يسمع خلقَه كلامَه إلا بكلامٍ هو مخلوق فهذا دليل عجزٍ لا ينسب لله."</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c06')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">تشبيه الإلزام بقول الكفار وطلب الأدلة</span>
     </div>
-    <div class="cs">
-      <p>وعن السنة: " السنة موحدة<br>
-      اقبل بالكتب الستة عادي"</p>
-      <p>وحين سُئل: "ايوا<br>
-      ولو تريد غيرها عادي"</p>
+    <div class="ch-row2"><span class="reply-badge">الإلزام الأول</span><div class="tags"><span class="tag tr">رد</span></div></div>
+  </div>
+  <div class="cb"><p>" أخوي<br>
+ذهبت عن الحوار والأدلة وجئت لكلام الكفار الذي كانوا يقولوه للأنبياء<br>
+حاشاك أنت طبعا<br><br>
+قولك مثل[أرسل صورة مع هذه العبارة]<br><br>
+﴿وَما مَنَعَ النّاسَ أَن يُؤمِنوا إِذ جاءَهُمُ الهُدى إِلّا أَن قالوا أَبَعَثَ اللَّهُ بَشَرًا رَسولًا﴾<br><br>
+الله يفتقر لبشري مخلوق ليهدي الناس؟<br><br>
+للعلم منطقك هذا واسلوبك هو ما يستخدمه الملحدين<br><br>
+تريد تثبت بالأدلة كون القرآن غير مخلوق تفضل<br>
+أما هذا التعجب وغيره لن يفيد"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c07')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">اعتذار عن التأخير + تفنيد التشبيه بقول الكفار</span>
     </div>
-    <div class="cs">
-      <p>وحين طُلب منه البدء: "تفضل أنت"</p>
+    <div class="ch-row2"><span class="reply-badge">تشبيه الإلزام بكلام الكفار</span><div class="tags"><span class="tag te">اعتذار</span><span class="tag tf2">تفنيد التشبيه</span></div></div>
+  </div>
+  <div class="cb"><p>"أعتذر، لكن عندي إختبارات(ثانوية، ودورات علمية، وأكاديمية)، وبحوث فقهية، فتأخرت كثير في الرد، وهذا الأسبوع إن شاء الله بعد ما أنتهي من الإختبارات النهائية للفصل رح أكتب رد على الي قلته.. <br><br>
+بحثت حول المسألة وأعرف رد كل حرف قلته ولله الحمد، لكن فقط الكتابة الي رح تأخذ وقت. <br><br>
+وأعتذر مجددا عن التأخير<br>
+أما قول الكفار فكان استكبارًا، أما قولي فهو إلزام لك في قولك، فإذا كان كل كلام الله مخلوق؛ إذًا لا يستطيع الله –عندكم– أن يكلم مخلوقاته إلا بواسطة مخلوق آخر يعلم ما في نفس الله –والعياذ بالله–.<br><br>
+أما حجة الكفار فهي أن الله لن يرسل إلا ملئكة، وهذا كلام لا دليل لهم عليه، ولم يقولوه إلا احتقارًا إن يكون الحق مع بشر منهم ليس من الزعماء.<br><br>
+فيوجد تباين بين قولي وقول الكفار."</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c08')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">الإلزام تافه + المهم نسبة الكلام لله لا طبيعته</span>
     </div>
+    <div class="ch-row2"><span class="reply-badge">تفنيد التشبيه</span><div class="tags"><span class="tag tr">رد</span></div></div>
   </div>
-</div>
-
-<!-- ر١٣: تكملة عبد الرحمن للتنظيم -->
-<div class="card at" style="animation-delay:.12s">
+  <div class="cb"><p>" بصراحة إلزامك تافه.<br>
+اتمنى تسأل شيوخك قبل لا تلقي كلام من رأسك أخي وتحرج نفسك.<br><br>
+الآية تعقب على من يرفض أن يتم هدايته بمخلوق وأنت هكذا.<br>
+ثانيا لا يهم كونه مخلوق أو لا.. المهم هو أن هذا الكلام لمن ينسب؟ لله <br><br>
+ثانيا أن يخلق الله كلاما لا يعني أن هذا الكلام يعلم ما في نفس الله !!<br>
+الرسول كلامه ما ينطق عن الهوى إن هو إلا وحي يوحى، فهل تقول أنه يعلم ما في نفس الله؟"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m13')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">توضيح آلية التناوب وتحديد المصادر النهائية</span>
-    <div class="tags"><span class="tag tt">تنظيمي</span></div>
-  </div>
-  <div class="cb">
-    <p>قال: " ترد على حجتي ثم تطرح حجة من عندك، هكذا أقصد"</p>
-    <p>ثم: " رد، وسؤال مقابل رد، وسؤال<br>
-    طيب نحدد مصادر الاستدلال المتفق عليها"</p>
-    <p>ثم: " جيد،<br>
-    إذا مصادر الاستدلال:<br>
-    القرآن، والسنة، واللغة، وتفاسير المفسرين.<br>
-    تتفق؟<br><br>
-    السنة: ما هي الكتب المتفق عليها؟<br>
-    التفاسير: ابن كثير، وابن جرير، والطبراني، والبغوي.<br>
-    تتفق؟"</p>
-    <p>ثم: " تمام، إذًا القرآن، والسنة، واللغة."</p>
-    <p>ثم: "الكتب الستة: بخاري، مسلم، النسائي، ابن ماجة، أبي داوود، الترمذي.<br>
-    هذه الي تقصدها؟"</p>
-    <p>ثم: "أبدأ أنا ولا أنت؟"</p>
-    <p>وكذلك قال عن التفاسير: " نعم، شيوخ كل طرف حجة عليه في المخالفة للقول، إلا إن قال بخطأ بعضهم واستشهاده بآخرين على خطأ البعض منهم."</p>
-  </div>
-</div>
-
-<!-- ═══════════ المناظرة المنظمة ═══════════ -->
-<div class="sec">المناظرة المنظمة · عبد الرحمن يبدأ</div>
-
-<!-- ر١٤: عبد الرحمن — عرض المذهب + دليل كن فيكون -->
-<div class="card at" style="animation-delay:.04s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m14')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">عرض المذهب الأثري + دليل "كن فيكون": القول ليس مخلوقًا + سؤال</span>
-    <div class="tags"><span class="tag tt">عرض المذهب</span><span class="tag th">حجة</span><span class="tag ts">سؤال</span></div>
-  </div>
-  <div class="cb">
-    <div class="cs-title">عرض القول</div>
-    <p>"بسم الله، والصلاة والسلام على رسول الله، أما بعد:<br><br>
-    قولنا نحن في كلام الله: أنها صفة لله، وهو سبحانه متكلم بما شاء متى شاء ولا يتصف بضد ذلك.<br><br>
-    وفي القرآن تحديدًا: هو كلام الله غير مخلوق، منه بدأ وإليه يعود، تكلم به بحرفٍ وصوت، وهو آيات وسور، حروفٌ وكلمات، أوله "بسم الله الرحمن الرحيم" وآخره "من الجنة والناس"، تكلم به الله حقيقة، وبلغه النبي ﷺ سماعًا من جبريل، وبلغه جبريل سماعًا من رب العالمين."</p>
-    <div class="cs">
-      <div class="cs-title">الحجة والسؤال</div>
-      <p>" ومن أدلتنا على قولنا هذا ما يلي:<br><br>
-      – قال الله تعالى: ﴿إنما أمرنا لشيءٍ إذا أردناه أن نقول له كن فيكون﴾، ﴿إنما أمره إذا أراد شيئًا أن يقول له كن فيكون﴾، ﴿فإذا قضى أمرًا فإنما يقول له كن فيكون﴾<br><br>
-      فأمره = قوله، وكن من قوله، وقوله سبب إيجاد الشيء من عدم؛ إذًا أمره/قوله ليس خَلقُه، لأن الأمر/القول إن كان مخلوقًا لَزِمَ أن يَكونَ لِكُلِّ أمرٍ/قَولٍ أمرًا/قولًا لِيُخلق، وهذا محال لأنه يوجب تسلسل الفاعلين.<br><br>
-      كسؤال من خلق الخالق، ومن خلق من خلق الخالق الخ..<br><br>
-      هذا الرد.<br><br>
-      السؤال:<br>
-      إن كان الأمر مخلوقًا، والله يخلق مخلوقاته بأمره، فكيف يكون مخلوقًا وَيتعلق به إيجاد الشيء من العدم(التكوين)؟<br><br>
-      تفضل"</p>
-      <p>"أعتذر: ﴿إنما قولنا لشيء﴾ وليس أمرنا لشيء.."</p>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c09')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">حجتان قرآنيتان جديدتان + تأكيد الإلزام وبيان الفارق مع المشركين</span>
     </div>
+    <div class="ch-row2"><span class="reply-badge">وصف الإلزام بالتفاهة</span><div class="tags"><span class="tag th">حجتان قرآنيتان</span><span class="tag ti">إلزام مُحكَم</span></div></div>
   </div>
-</div>
-
-<!-- ر١٥: الإباضي — ج١ + س١ -->
-<div class="card ib" style="animation-delay:.08s">
+  <div class="cb"><p>" لن أجادل في أن الحجة هذه صحيحة، وأنهم لم يصدوا عن الدين لأنهم رفضوا أن يكون المخلوق سببًا في هدايتهم، بل لأنه كان بشرًا ولأنهم زعموا أن الله لا يرسل إلا ملائكة.<br><br>
+ولكن سأقول لك:<br>
+قال تعالى: ﴿ألا له الخلق والأمر﴾ تقول أن العطف هنا لا يقتضي المغايرة؟<br>
+إذًا ما قولك في قوله تعالى: ﴿إنما أمرنا لشيءٍ إذا أردناه أن نقول له كن فيكون﴾<br>
+أمرنا = قولنا (كما في الآية)<br>
+قولنا = كن.<br>
+كن ≠ يكون.<br>
+يكون = مخلوق.<br>
+إذًا؛<br>
+الأمر ≠ الخلق.<br><br>
+لم ترضى بهذا؟<br>
+أعطيك غيره لا بأس؛<br>
+– قال تعالى: ﴿الرحمن * علم القرآن * خلق الإنسان﴾<br>
+&nbsp;&nbsp;&nbsp;&nbsp;• التفريق واضح بين "القرآن"(كلام الله)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;والإنسان(المخلوق)؛ إذًا كلام الله(ومنه القرآن <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;تحديدًا كما الآية) ليس من الخلق.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;لأنه لم يجعل القرآن مفعولًا للخلق، <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;بل جعله من علمه؛ <br><br>
+&nbsp;&nbsp;&nbsp;• فهل علم الله مخلوق؟ بالتأكيد لا؛ لذَا القرآن <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;غير مخلوق؛ لأنه من علم الله.<br><br>
+لست ضعيف حجة، لكنني ألزمتك بشيء واضح لكل عاقل؛<br><br>
+إن كان الخالق لا يتكلم إلا بمخلوق؛ إذًا الخالق مفتقر للمخلوق، وليس خالقٌ مفتقر؛ إذًا ليس هو بخالق.<br><br>
+هذا هو الإلزام الذي قلت عنه تافه، لو فهمته لعلمت أنه إلزامٌ صحيح يوضح شناعة القول بأن كلام الخالق مخلوق.<br><br>
+وقولي مختلف عن قول المشركين؛ لأنهم زعموا أن الله يتعالى ويتنزه عن أن يجعل بشرًا رسولًا، وأنه لا يرسل إلا ملائكة؛ وقالوا ذلك على سبيل المكابرة والعناد؛ لتبرير رفضهم الإسلام<br><br>
+وأنا لم أزعم في هذا الإلزام شيئًا، إلا أنني ذكرت قولكم، وذكرت ما يلزم من هذا القول –وهو الافتقار إلى مخلوق–، لأنكم قلتم: أن كل كلام الله مخلوق<br><br>
+كل كلام الخالق مخلوق؛ إذًا هو مفتقر لمخلوق<br>
+نتيجة بسيطة وواضحة ولا أظن عاقلًا ينكرها"</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m15')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">ج١: "كن" بيان لسرعة المشيئة لا دليل على قِدَم القرآن + س١: هل الصفة تنفك؟</span>
-    <div class="tags"><span class="tag tr">رد على الحجة</span><span class="tag ts">سؤال</span></div>
-  </div>
-  <div class="cb">
-    <p>" ج١. لو سلمت لك أن الأمر في الآية الكريمة المراد به هو قوله (كن فيكون) فإنه لا دليل على أن القرآن غير مخلوق لأنه بيان لسرعة إنفعال الكائنات.<br>
-    هي دلالة فقط على سرعة المشيئة.. فمثلا لو سألتك هل الله يحتاج أن يقول كن ليخلق؟ ستقول طبعا لا.<br><br>
-    س١.. هنا قلت أن القرآن صفة لله<br>
-    فهل تتفق معي أن الصفة لا تنفك عن موصوفها؟<br>
-    تفضل"</p>
-  </div>
-</div>
-
-<!-- ر١٦: عبد الرحمن — ج على س١ + سؤال الكلام على النت -->
-<div class="card at" style="animation-delay:.12s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m16')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">تفنيد تأويل "كن" بالمجاز + جواب سؤال الصفة + سؤال: الكلام المكتوب هل يبقى كلامًا لصاحبه؟</span>
-    <div class="tags"><span class="tag tf">تفنيد</span><span class="tag tr">رد على السؤال</span><span class="tag ts">سؤال</span></div>
-  </div>
-  <div class="cb">
-    <p>" قلت: بيان لسرعة انفعال الكائنات.<br>
-    إذًا: قوله تعالى ﴿إنما أمره إذا أراد شيئًا أن يقول له كن فيكون﴾ القول فيها هو سرعة استجابة المخلوقات لإرادة الخالق، أليس كذلك؟<br><br>
-    فيعني أنك تقول بأنه مجاز عن سرعة المشيئة، وهذا تأويلٌ للآية دون دليل، فهل لك دليل على ذلك؟<br><br>
-    أما سؤالك: هل الله يحتاج أن يقول كن ليخلق؟<br>
-    أقول لك: نحن ننفي عن الله الحاجة، وتثبت له الكمال وما أثبته لنفسه، والله يفعل بمشيئة وحكمة، لا لحاجته إلى ذلك.<br>
-    وقياسًا على سؤال: هل الله يحتاج للقدرة ليفعل؟<br><br>
-    سألت:<br>
-    القرآن صفة الله؟<br>
-    هل الصفة تنفك عن موصوفها؟<br><br>
-    أقول لك:<br>
-    نعم، القرآن من كلام الله وليس كلام الله كله،<br>
-    ونعم الصفة لا تنفك عن موصوفها.<br><br>
-    هذا الرد،<br><br>
-    والسؤال:<br>
-    هل كلامي حين كتبته هنا [ على النت ] لا يعود كلامًا لي؟<br>
-    هل أفقده أنني كتبته في جهاز يخزن البيانات (وعاء رقمي)؟"</p>
-  </div>
-</div>
-
-<!-- ر١٧: الإباضي — حجة الحروف + آية آدم + س٢ اللوح + ج٢ -->
-<div class="card ib" style="animation-delay:.16s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m17')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">حجتان جديدتان: الكلام حادث + آية آدم + س٢: الصفة في اللوح؟ + ج٢: كلامك ليس صفتك</span>
-    <div class="tags"><span class="tag th">حجة عقلية</span><span class="tag th">حجة قرآنية</span><span class="tag ts">سؤال</span><span class="tag tr">رد</span></div>
-  </div>
-  <div class="cb">
-    <p>" نعم عندي تقريبا سبع أدلة اكتفي باثنين.<br>
-    الدليل على ذلك بأن الكلام حادث فكيف يخلق بالحادث؟ فوجود النون مشروط بإنقضاء وجود الكاف و هكذا<br>
-    ثانيا قوله تعالى : { إن مثل عيسى عند الله كمثل آدم خلقه من تراب ثم قال له كن فيكون } بين أن قوله "كن" متأخر عن خلقه إذ المتأخر عن الشيء لا يكون مؤثرا في المتقدم عليه ، فعلمنا أنه لا تأثير لقوله "كن" في وجود الشيء.<br><br>
-    القدرة هي وصف بأنه قادر فقياسك باطل اصلا.. المهم ليس موضوعنا.<br><br>
-    جميل إذن بما أنك تقول أن الصفة لا تنفك عن موصوفها.<br>
-    فسؤالي س٢،<br>
-    قال تعالى ﴿بَل هُوَ قُرآنٌ مَجيدٌ .. في لَوحٍ مَحفوظٍ﴾.<br>
-    فهل صفة الله في اللوح المحفوظ؟ الآية دليل على انفصال القرآن عن الله.<br><br>
-    ج٢.<br>
-    كلامك لكن ليس صفتك.<br>
-    فأنا لا اقرأ صفتك<br>
-    فلا يصح مثلا أن اقول سمعت صفة فلان !<br><br>
-    تفضل"</p>
-  </div>
-</div>
-
-<!-- ر١٨: عبد الرحمن — ردود مطوّلة -->
-<div class="card at" style="animation-delay:.20s">
-  <div class="ch">
-    <button class="help-btn" onclick="openModal('m18')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">ردود مطوّلة: نقض الحروف، آية آدم على مراحل، اللوح والعلم، اللغة والصفة + سؤال آية البحر</span>
-    <div class="tags"><span class="tag tf">تفنيد</span><span class="tag tr">رد</span><span class="tag ts">سؤال</span></div>
-  </div>
-  <div class="cb">
-    <div class="cs-title">نقض قاعدة الحروف + إلزام النزول</div>
-    <p>" أما قولك الكلام حادث.. فوجود النون مشروط بإنقضاء وجود الكاف<br>
-    فهذه القاعدة لا أسلم لك بها، إذ أنك تعني بحادث=مخلوق، ولدينا مصادر الاستدلال إن استطعت فات بدليل على قولك منها. والمعلوم لكل عربي وعاقل أن المتكلم بحروفٍ وأصواتٍ متتابعة هو المتكلم بمشيئته، وهي صفة كمال، بخلاف الأخرص والجماد، فهمت لا يتكلمان لا بحرفٍ ولا بصوت، وهذه صفة نقص عند كل عاقل، فهل تجادل في أمرٍ واضح كهذا؟؟<br><br>
-    وإن كان التتابع يقتضي الخلق عندك، فما قولك في (نزول) الله إلى السماء الدنيا في ثلث الليل الآخر كما في البخاري ومسلم؟ النزول فعل فيه حركة وتتابع زماني، فهل هو مخلوق؟</p>
-
-    <div class="cs">
-      <div class="cs-title">الرد على آية آدم: الخلق على مراحل</div>
-      <p>أما عن الآية، فالأمر واضح..<br>
-      الله لم يخلق آدم عليه السلام مباشرة، وإنما خلقه على مراحل، ودليل المرحلية في الآية قوله ﴿ثم قال له كن فيكون﴾ فالجسم خلق من ترابٍ فهل اكتمل خلق آدم بهذا فقط؟ ألم يقل الله ﴿إنا خلقناهم من طين لازب﴾ وقال تعالى: ﴿وخلق الإنسان من صلصالٍ كالفخار﴾ وقال: ﴿إذ قال ربك للملائكة إني خالقٌ بشرًا من طين * فإذا سويته ونفخت فيه من روحي فقعُوا له ساجدين﴾<br><br>
-      هذه كلها تدل على أن آدم عليه السلام خلق بمراحل، فقوله ﴿كن﴾ هو لإتمام خلق آدم عليه السلام، كما في الآية: ﴿فإذا سويته ونفخت فيه من روحي﴾ فالتسوية للجسم، والنفخ هو إتمام الخلق. فهل في ذلك شك؟<br><br>
-      قلت: القدرة وصف بأنه قادر<br>
-      أقول: والأمر وصف بأنه آمِر..<br>
-      القدرة صفة للقادر، والأمر صفة للآمر، فكيف فرقت بين الصفتين؟</p>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c10')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">العطف لا يقتضي المغايرة + شهادة المفسرين</span>
     </div>
-
-    <div class="cs">
-      <div class="cs-title">الرد على سؤال اللوح + إلزام بعلم الله</div>
-      <p>قولك: هل صفة الله في اللوح المحفوظ؟<br><br>
-      الصفة لا تنفك عن الموصوف، والكلام إن لم ينسب إلى المتكلم فلمن عساه ينسب؟ تقول انفصل القرآن عن الله، فهل علم الله انفصل عنه عندما علمنا بعضه؟ ﴿ولا يحيطون بشيء من علمه إلا بما شاء﴾ فماذا تقول؟</p>
+    <div class="ch-row2"><span class="reply-badge">حجتي الأمر والرحمن</span><div class="tags"><span class="tag tr">رد</span><span class="tag tf2">تفنيد</span></div></div>
+  </div>
+  <div class="cb"><p>" الأخ أنت قلت أنك درست المسألة ولعلي فرحت لكن الواضح أنك درست مع غلق بصيرتك والأخذ من طرف واحد<br>
+خيبت ظني إذا كان هذا فقط ما استطعت التوصل له<br><br>
+1-العطف لا يقتضي المغايرة ، قوله تعالى :<br>
+﴿مَن كانَ عَدُوًّا لِلَّهِ وَمَلائِكَتِهِ وَرُسُلِهِ وَجِبريلَ وَميكالَ فَإِنَّ اللَّهَ عَدُوٌّ لِلكافِرينَ﴾<br>
+فإن جبريل وميكل غير خارجين عن صنف الملائكة.<br><br>
+ثانيًا تنبه ائمة التفسير الحاذقون لفساد هذا القول<br>
+قال ابن جرير " امرهن الله فاطاعن امره الا له الخلق كله ] قال ابن كثير في تفسير الآيه : [ الجميع تحت قهره و سيطرته و مشيئته ولهذا قال<br>
+منبها ( الاله الخلق و الامر ) اي الملك و التصرف ] قال رشيد رضا : [ الامر وهو التشريع والتكوين والتصرف و التدبير ] وقال العديد من المفسرين يطيل ذكرهم."</p></div>
+</div><div class="sec"><span>تنظيم المناظرة · تحديد الأسلوب والمصادر</span></div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c11')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">اقتراح مناظرة منظمة بالتناوب وتحديد مصادر الاستدلال</span>
     </div>
-
-    <div class="cs">
-      <div class="cs-title">الرد اللغوي: الكلام صفةٌ لصاحبه</div>
-      <p>جوابك هذا غريب، أنت لا تقرأ صفتي؟<br>
-      لماذا إذًا يقال: فلان يقول كذا وكذا(وصف له بأنه قال قولًا محددًا)؟<br>
-      أليس الوصف ينسب الصفة لموصوفها؟ فكيف يوصف فلان بأنه قال قولا محددا، ولكن هذا القول ليس صفته؟<br><br>
-      أما قولك: لا يصح أن أقول: سمعت صفة فلان.<br>
-      فأقول لك: أنت تخلط بين التركيب النحوي وبين الحقيقة المعنوية، فالكلام ليس قائما بذاته، فكيف يُنسب لي ثم لا يكون صفةً لي؟؟ أنت تقول ما لا يقبله عاقل، فكيف تبني عليها دينًا تدين الله به إلى يوم تلقاه؟<br><br>
-      ما سبق كان الرد،<br><br>
-      أما سؤالي: فما قولك في قوله تعالى: ﴿قل لو كان البحر مدادًا لكلمات ربي لنفد البحر قبل أن تنفد كلمات ربي ولو جئنا بمثله مددًا﴾<br><br>
-      تفضل"</p>
+    <div class="ch-row2"><span class="reply-badge">الردود الأولية</span><div class="tags"><span class="tag tt">اقتراح تنظيمي</span></div></div>
+  </div>
+  <div class="cb"><p>"هل لك من رد على ما قلته؟<br>
+إن أمكنك لنجعله نقاشا مباشرًا هنا، <br>
+أنا أطرح حجة وإذا انتهيت، ترد عليها وتطرح حجة.<br>
+ثم إذا أنت انتهيت أنا أرد على حجتك وأطرح حجة.<br>
+وهكذا. <br><br>
+لكن أولا لنحدد مصادر الإستدلال المتفق عليها في هذا النقاش، ليكون من السهل الوصول إلى النتيجة دون تفرع واسع معقد للمسألة. <br><br>
+تتفق معي أم لك قول آخر؟"</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c12')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">الموافقة على الطريقة + تحديد المصادر المتفق عليها</span>
     </div>
+    <div class="ch-row2"><span class="reply-badge">اقتراح الضبط</span><div class="tags"><span class="tag tt">تنظيمي</span></div></div>
   </div>
+  <div class="cb"><p>"نعم حاليا ارد <br><br>
+جميل طيب موافق"</p>
+
+<div class="cs">
+<p>ثم قال: " موافق<br>
+ما رأيك تبدأ أنت؟<br>
+أو ما فهمت<br>
+هل تقصد ارد عليك؟<br>
+لو تريد ارد على الي فوق اختار حجة واحدة لأن لو برد عليهن كلهن بنطول <br>
+والباقي نأتي له لاحقا"</p>
 </div>
 
-<!-- ر١٩: الإباضي — ردود مختصرة + حجة ابن مسعود -->
-<div class="card ib" style="animation-delay:.24s">
+<div class="cs">
+<div class="cs-title">تحديد المصادر</div>
+<p>عن التفاسير: "تفاسير المفسرين؟<br>
+عندك شيوخك وعندي شيوخي وليس لأحد منهم حجة على الآخر<br>
+فأنت لا تقبل بتفسير قطب الأئمة كما لا اقبل أنا بتفسير ابن كثير" [وقال عن التفاسير التي ذكرها عبد الرحمن "مخالفين لي" أي أنه لا يقبل بهم]، وقال: " هم حجة عليك لا علي"</p>
+<p>عن السنة: " السنة موحدة<br>
+اقبل بالكتب الستة عادي"</p>
+<p>"ايوا<br>
+ولو تريد غيرها عادي"</p>
+<p>وحين طُلب منه البدء: "تفضل أنت"</p>
+</div></div>
+</div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m19')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">ردود مختصرة: لا نثبت النزول + إصرار على سؤال اللوح + حجة أثر ابن مسعود</span>
-    <div class="tags"><span class="tag tr">رد</span><span class="tag th">حجة أثر صحابي</span><span class="tag ts">سؤال</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c12b')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">توضيح آلية التناوب + تحديد المصادر نهائيًّا</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">موافقة الإباضي</span><div class="tags"><span class="tag tt">تنظيمي</span></div></div>
   </div>
-  <div class="cb">
-    <p>"في أول رسالة لا يوجد نقض منك لكلامي وفي آخره تحيد عن ردي.<br>
-    أما قولك ما رأيك في نزل الله في الثلث الأخير !! هذا الإحتجاج يا أخي يبين جهلك بعقيدتنا.<br>
-    لا نسلم بالنزول اصلا وحتى لا اطيل واشرح قولنا مثل قول الأشاعرة في هذه.<br><br>
-    قاله له كن فيكون بعد أن خلقه هذا في صريح الآية.<br>
-    قال خلقه ثم قال له كن فيكون.. ثانيا تقول هي مراحل والخ... وهذه المراحل الطين والتراب كذلك تخلق فهذا لن يخرجك من الإلزام ولو سلمت لك.<br><br>
-    اخي سؤالي واضح هل صفة الله في اللوح المحفوظ؟ الإجابة بنعم أو لا، لا تحتاج هذا اللف.<br>
-    وأنت ترد علي بسؤال اصلا.. اولا رد على سؤالي بعدها وضح.<br><br>
-    هنا أنت تخلط فكلامي الذي اكتبه ليس صفتي اساسا فقول الصفة تنسب لموصوفها ليس له دخل لأني لا اسلم لك كونه صفة.<br><br>
-    تفضل بين الخلط<br><br>
-    ما فهمت سؤالك أو ما وجه الإستدلال.. هل تريد تفسيرا للآية أم ماذا؟[يتكلم عن آية: ﴿قل لو كان البحر مادا ..﴾]<br>
-    اطرح سؤال آخر ولو كان مغلقا.<br><br>
-    سؤالي لك واحتج بقول ابن مسعود وليس معكم دليل من الصحابة بينما معنا ومن الرسول حتى.<br>
-    سؤالي هو<br>
-    ابن مسعود قال:<br>
-    "ما خلق الله من سماء ولا أرض ولا سهل ولا جبل أعظم من آية الكرسي"<br><br>
-    ووجه الإستدلال فيه أن ابن مسعود رضي الله تعالى عنه قارن مخلوقات بآية الكرسي وهذا لعلمه أنها مخلوقة.<br><br>
-    فإن قلت آية الكرسي أعظم من جميع المخلوقات لأنها صفة لله.<br><br>
-    أقول إنه لا يجوز مقارنة صفات الله بمخلوقاته، فلا يقال ما خلق الله من سماء ولا أرض أعظم من حياة الله أو من علم الله، فهذا محال ومعلوم في الدين<br><br>
-    تفضل"</p>
-  </div>
-</div>
-
-<!-- ═══════════ فترة التأخير ═══════════ -->
-<div class="sec">فترات التأجيل والاعتذار</div>
-
-<div class="outer-block">
-  <strong>ملاحظة:</strong> تخلّلت المناظرة عدة فترات انتظار، تبادل فيها الطرفان اعتذارات واستئذانًا بالانتظار، نصّها كما يلي:<br><br>
-  قال عبد الرحمن: "أعتذر، منشغل هذا الأسبوع قليلًا، لكن ربما أقرأ ما كتبته بتمعن غدًّا أو بعد غد، وإن شاء الله ما رح أطول كثير، لأني أكاد أنتهي مما كان يشغلني." — فقال الإباضي: " تم خذ راحتك. بالتوفيق"<br><br>
-  ثم قال عبد الرحمن: " معذرة منك، انشغلت كثير وما حصلت وقت، إن شاء الله يوم الأحد أرد عليك، وأرجو المعذرة منك.." — فقال الإباضي: " تم"<br><br>
-  ثم قال عبد الرحمن: " أعتذر منك، لكن طرأ أمر محدد فما رح أقدر اليوم أرد، لكن قرأت الي كتبته، وأظنني ٱستطيع الرد إن شاء الله.. أعتذر عن كثرة الاعتذارات.." — فقال الإباضي: " لا تعتذر وما يحتاج تخبرني. متفهم أنا. رد من تفضى وما يحتاج تعتذر أو شيء أو حتى توضح"<br><br>
-  ثم قال عبد الرحمن: " بعد رمضان إن شاء الله، كان من قبل مشغول فعلا، حتى في أول خمس أيام من رمضان، أما الآن فمو زي قبل، لكن أوقف عن الجدالات في رمضان وأحاول إني أستغل وقتي قدر الإمكان في قراءة القرآن والتفسير ونشر العلم الي أعرفه قدر استطاعتي.. فما أفضل أدخل في النقاشات كثير.. الله يوفقني وإياك لما يحب ويرضى.." — فقال الإباضي: " آمين وإياكم"<br><br>
-  ثم بعد مدة قال الإباضي: " اينك أخي" — فقال عبد الرحمن: "اعذرني، انشغلت في رمضان ودخلت في عدة أمور شغلتني في الواقع والمواقع وما عاد دخلت الخاص في هذا الحساب.. عندك تلجرام؟ عشان نكمل النقاش فيه إن شئت.. عموما رح أبدأ الآن في الرد بإذن الله.. وأسأل من الله أن يشرح صدري وصدرك للحق، وأني يجعلنا من إتباع الحق، وأعتذر عن طول انتظارك.."
-</div>
-
-<!-- ═══════════ الردود الأخيرة ═══════════ -->
-<div class="sec">الردود الأخيرة · عبد الرحمن يُكمل</div>
-
-<!-- ر٢٠: عبد الرحمن — نقض الحروف + آية آدم بالتفصيل + الفرق بين قوله وقول المشركين -->
-<div class="card at" style="animation-delay:.04s">
+  <div class="cb"><p>قال عبد الرحمن: " ترد على حجتي ثم تطرح حجة من عندك، هكذا أقصد"</p>
+<p>ثم: " رد، وسؤال مقابل رد، وسؤال<br>
+طيب نحدد مصادر الاستدلال المتفق عليها"</p>
+<p>ثم: " جيد،<br>
+إذا مصادر الاستدلال:<br>
+القرآن، والسنة، واللغة، وتفاسير المفسرين.<br>
+تتفق؟<br><br>
+السنة: ما هي الكتب المتفق عليها؟<br>
+التفاسير: ابن كثير، وابن جرير، والطبراني، والبغوي.<br>
+تتفق؟"</p>
+<p>ثم: " تمام، إذًا القرآن، والسنة، واللغة."</p>
+<p>ثم: "الكتب الستة: بخاري، مسلم، النسائي، ابن ماجة، أبي داوود، الترمذي.<br>
+هذه الي تقصدها؟"</p>
+<p>وكذلك قال: " نعم، شيوخ كل طرف حجة عليه في المخالفة للقول، إلا إن قال بخطأ بعضهم واستشهاده بآخرين على خطأ البعض منهم."</p>
+<p>ثم: "أبدأ أنا ولا أنت؟"</p></div>
+</div><div class="sec"><span>المناظرة المنظمة · عبد الرحمن يبدأ</span></div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m20')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">نقض قاعدة الحروف + تفصيل آية آدم + تأكيد الفارق بين قوله وقول المشركين</span>
-    <div class="tags"><span class="tag tf">تفنيد</span><span class="tag ti">إلزام</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c13')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">عرض المذهب الأثري + دليل "كن فيكون": القول ليس مخلوقًا + سؤال</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">الاتفاق على المصادر</span><div class="tags"><span class="tag tt">عرض المذهب</span><span class="tag th">حجة</span><span class="tag ts2">سؤال</span></div></div>
   </div>
-  <div class="cb">
-    <p>" النقض في كلامي لحجتك من جهتين:<br><br>
-    الأولى: أن هذه القاعدة لا دليل عليها، فكيف تحاججني بقاعدة لا دليل يسندها؟ ﴿قل هاتوا برهانكم إن كنتم صادقين﴾.<br><br>
-    الثانية: أن ضد الكلام هو الخرس، فإن لم يكن الرب يتكلم كلامًا يقوم بذاته فيلزم من ذلك أنه أخرس محتاج إلى مخلوق، وهذا عين النقص.<br><br>
-    فإن قلت: هذا عينه كلام المشركين، قالوا: ﴿أبعث الله بشرًا رسولًا؟!﴾ فهم زعموا أن الله أعظم من إن يبعث بشرًا منهم رسولًا إليهم، وهذا أنت تزعم إن الله أعظم من أن يخلق كلامًا فيبلغه من شاء من عباده!<br><br>
-    فأقول لك:<br>
-    هذا قياس مع الفارق، [ هم ما قالوا ذلك على دليل ولا حجة، بل قالوه اتباعا للهوى وتكذيبًا منهم للحق. ]<br>
-    [ وزعموا زعمًا لا صحة له من الأساس؛ فلا نقص في أن يرسل الله بشرًا ]<br>
-    [ ولا يصح من الأساس أن يظهر الله نفسه لهم؛ لأنهم حينها لا مجال لهم للتكذيب؛ فلن يكون أصل الابتلاء والتكليف حينئذ ذا معنىً]<br>
-    [ وهم هربوا من أن يبعث الله بشرًا مخلوقًا إلى أن يبعث ملكًا مخلوقًا، وليس إلى صفة من صفات الله أو الله جل جلاله ]<br><br>
-    أما قولي فهو احتجاج بأن لازم قولكم أن الرب جل وعلى لا يمكنه الكلام إلا بمخلوق، فهذا معناه أنه حاشاه إما يكون بذلك أخرسًا أو يكون جمادًا..<br><br>
-    فشتان بين قولي وقول المشركين من قبل، فهم هربوا من أن يبعث الله مخلوقا منهم إلى أن يبعث مخلوقًا من نوع آخر، وأنا قلت أن الرب إن لم يكن يتكلم إلا بكلامٍ مخلوق فهو إذًا مفتقرٌ إلى هذا الكلام المخلوق حاشاه جل جلاله.<br><br>
-    فأين التماثل؟<br><br>
-    خلق النجار من الخشب بابًا.<br><br>
-    بمعنى: غير شكله.<br><br>
-    فقوله تعالى: ﴿خلقه من تراب﴾ بمعنى ﴿فإذا سويته﴾ وقوله: ﴿ثم قال له كن فيكون﴾ بمعنى ﴿ونفخت فيه من روحي﴾<br><br>
-    فالتسوية للجسم، والنفخ للروح، فإذا قلت ((أصل الإنسان خلق قبل الإنسان)) كانت العبارة صحيحة، لكن لو قلت ((خلق الإنسان قبل أن يكون)) فهذا فساد ظاهر في العبارة، فاحتجاجك بالآية احتجاج خاطئ، لأن الآية تقر أن أصل الإنسان خلق قبل تكوين الإنسان.<br><br>
-    قبل أن يخلق آدم وينفخ فيه الروح خلق الله التراب الذي هو مادة خلق آدم عليه السلام، ثم جعل الطين جسد آدم، فكان ذلك خلقًا لآدم بأن خلق جسده، ولم يكن حينئذ آدم عليه السلام حيًّا تدب فيه الحياة، فأين الحجة بأن يكون أصله قد خلق قبله؟<br><br>
-    فـ ﴿كن﴾ جاءت لتمام خلق آدم، فهو كما قال تعالى: ﴿فإذا سويته﴾= ﴿خلقه من تراب﴾. ﴿ونفخت فيه من روحي﴾= ﴿ثم قال له كن فيكون﴾<br><br>
-    فكما أنه قبل نفخ الروح فيه لم يكن خلقه تامًّا فكذلك في هذه الآية خلقه من التراب لا يعني إنه قد تم خلقه."</p>
-  </div>
-</div>
+  <div class="cb"><div class="cs-title">عرض المذهب الأثري</div>
+<p>"بسم الله، والصلاة والسلام على رسول الله، أما بعد:<br><br>
+قولنا نحن في كلام الله: أنها صفة لله، وهو سبحانه متكلم بما شاء متى شاء ولا يتصف بضد ذلك.<br><br>
+وفي القرآن تحديدًا: هو كلام الله غير مخلوق، منه بدأ وإليه يعود، تكلم به بحرفٍ وصوت، وهو آيات وسور، حروفٌ وكلمات، أوله "بسم الله الرحمن الرحيم" وآخره "من الجنة والناس"، تكلم به الله حقيقة، وبلغه النبي ﷺ سماعًا من جبريل، وبلغه جبريل سماعًا من رب العالمين."</p>
 
-<!-- ملاحظة اختبارات الإباضي -->
-<div class="card ib" style="animation-delay:.08s">
+<div class="cs">
+<div class="cs-title">الحجة الأولى — آية "كن فيكون" + السؤال</div>
+<p>" ومن أدلتنا على قولنا هذا ما يلي:<br><br>
+– قال الله تعالى: ﴿إنما أمرنا لشيءٍ إذا أردناه أن نقول له كن فيكون﴾، ﴿إنما أمره إذا أراد شيئًا أن يقول له كن فيكون﴾، ﴿فإذا قضى أمرًا فإنما يقول له كن فيكون﴾<br><br>
+فأمره = قوله، وكن من قوله، وقوله سبب إيجاد الشيء من عدم؛ إذًا أمره/قوله ليس خَلقُه، لأن الأمر/القول إن كان مخلوقًا لَزِمَ أن يَكونَ لِكُلِّ أمرٍ/قَولٍ أمرًا/قولًا لِيُخلق، وهذا محال لأنه يوجب تسلسل الفاعلين.<br><br>
+كسؤال من خلق الخالق، ومن خلق من خلق الخالق الخ.. <br><br>
+هذا الرد. <br><br>
+السؤال:<br>
+إن كان الأمر مخلوقًا، والله يخلق مخلوقاته بأمره، فكيف يكون مخلوقًا وَيتعلق به إيجاد الشيء من العدم(التكوين)؟<br><br>
+تفضل"</p>
+<p>"أعتذر: ﴿إنما قولنا لشيء﴾ وليس أمرنا لشيء.."</p>
+</div></div>
+</div><div class="card ib" style="animation-delay:80ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m_ib_exam')">?</button>
-    <span class="speaker">الإباضي</span>
-    <span class="ctitle">اعتذار بسبب الاختبارات</span>
-    <div class="tags"><span class="tag te">اعتذار</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c14')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">ج١: "كن" بيان لسرعة المشيئة لا دليلٌ على القِدَم + س١: هل الصفة تنفك؟</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">دليل "كن فيكون"</span><div class="tags"><span class="tag tr">ج١: رد على الحجة</span><span class="tag ts2">س١: سؤال استراتيجي</span></div></div>
   </div>
-  <div class="cb">
-    <p>" ابو مؤيد أنا في فترة اختبارات نهائية<br>
-    إن شاء الله بكمل معك بعدها"</p>
-  </div>
-</div>
-
-<!-- ر٢١: عبد الرحمن — تتمة الرد: اللوح والعلم + التركيب اللغوي -->
-<div class="card at" style="animation-delay:.12s">
+  <div class="cb"><p>" ج١. لو سلمت لك أن الأمر في الآية الكريمة المراد به هو قوله (كن فيكون) فإنه لا دليل على أن القرآن غير مخلوق لأنه بيان لسرعة إنفعال الكائنات.<br>
+هي دلالة فقط على سرعة المشيئة.. فمثلا لو سألتك هل الله يحتاج أن يقول كن ليخلق؟ ستقول طبعا لا.<br><br>
+س١.. هنا قلت أن القرآن صفة لله <br>
+فهل تتفق معي أن الصفة لا تنفك عن موصوفها؟<br>
+تفضل"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m21')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">جواب سؤال اللوح: علم الله في اللوح وإلزام من ذلك + أسئلة استراتيجية عن الكلام</span>
-    <div class="tags"><span class="tag tr">رد</span><span class="tag ti">إلزام</span><span class="tag ts">أسئلة</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c15')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">تفنيد تأويل "كن" بالمجاز + جواب س١ + سؤال مقابل</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">ج١ والسؤال الأول</span><div class="tags"><span class="tag tf2">تفنيد ج١</span><span class="tag tr">جواب س١</span><span class="tag ts2">سؤال</span></div></div>
   </div>
-  <div class="cb">
-    <p>" الجواب:<br>
-    نعم، القرءان في اللوح المحفوظ.<br><br>
-    وكذلك اللوح المحفوظ فيه من علم الله:<br><br>
-    قال تعالى: ﴿مَا فَرَّطْنَا فِي الْكِتَابِ مِنْ شَيْءٍ ثُمَّ إِلَى رَبِّهِمْ يُحْشَرُونَ﴾[الأنعام: ٣٨]<br>
-    وقال ﷺ –في سنن الترمذي–: «إِنَّ أَوَّلَ مَا خَلَقَ اللَّهُ القَلَمَ، فَقَالَ لَهُ: اكْتُبْ، فَجَرَى بِمَا هُوَ كَائِنٌ إِلَى الأَبَدِ»<br>
-    قال الترمذي: "هَذَا حَدِيثٌ حَسَنٌ صَحِيحٌ غَرِيبٌ وَفِيهِ عَنِ ابْنِ عَبَّاسٍ"<br><br>
-    فهل انفصل علم الله عنه عندما كتبه في اللوح المحفوظ؟<br><br>
-    أم هل انفصل علم الله عنه عندما علمنا من علمه:<br>
-    ﴿علم الإنسان ما لم يعلم﴾، ﴿ولا يحيطون بشيء من علمه إلا بما شاء﴾<br><br>
-    فإن قلت القرءان مخلوق إستنادًا لأنه في اللوح المحفوظ، واللوح المحفوظ مخلوق، والمخلوق لا يكون وعاءً لغير مخلوق؛ فيلزمك بذلك أمران:<br><br>
-    – الدليل على القاعدة "المخلوق لا يكون وعاء لغير مخلوق"<br>
-    – القول بأن صفة العلم لله مخلوقة، ويلزم من ذلك أن الرب حاشاه كان جاهلًا ثم خلق لنفسه علمًا.<br><br>
-    أم لك قصد آخر من إيراد هذا السؤال؟<br><br>
-    هل الكلام يقوم بذاته أم بغيره؟<br><br>
-    هل يوجد كلام بلا متكلم؟<br><br>
-    إذا لم يكن الكلام صفة فوجب بذلك أن يقوم بذلته، والمعلوم أن الكلام لا يقوم بذاته فيلزم لكل كلامٍ من متكلم، فالقول له قائل، والحديث له محدث، كما أن السمع يلزم منه سامع، والبصر يلزم منه مبصر."</p>
-  </div>
-</div>
-
-<!-- ر٢٢: عبد الرحمن — الحقيقة النحوية والمعنوية -->
-<div class="card at" style="animation-delay:.16s">
+  <div class="cb"><p>" قلت: بيان لسرعة انفعال الكائنات. <br>
+إذًا: قوله تعالى ﴿إنما أمره إذا أراد شيئًا أن يقول له كن فيكون﴾ القول فيها هو سرعة استجابة المخلوقات لإرادة الخالق، أليس كذلك؟<br><br>
+فيعني أنك تقول بأنه مجاز عن سرعة المشيئة، وهذا تأويلٌ للآية دون دليل، فهل لك دليل على ذلك؟<br><br>
+أما سؤالك: هل الله يحتاج أن يقول كن ليخلق؟<br>
+أقول لك: نحن ننفي عن الله الحاجة، وتثبت له الكمال وما أثبته لنفسه، والله يفعل بمشيئة وحكمة، لا لحاجته إلى ذلك.<br>
+وقياسًا على سؤال: هل الله يحتاج للقدرة ليفعل؟<br><br>
+سألت: <br>
+القرآن صفة الله؟<br>
+هل الصفة تنفك عن موصوفها؟<br><br>
+أقول لك: <br>
+نعم، القرآن من كلام الله وليس كلام الله كله، <br>
+ونعم الصفة لا تنفك عن موصوفها.<br><br>
+هذا الرد،<br><br>
+والسؤال:<br>
+هل كلامي حين كتبته هنا [ على النت ] لا يعود كلامًا لي؟<br>
+هل أفقده أنني كتبته في جهاز يخزن البيانات (وعاء رقمي)؟"</p></div>
+</div><div class="card ib" style="animation-delay:80ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m22')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">توضيح: الحقيقة النحوية لا تلزم الحقيقة المعنوية</span>
-    <div class="tags"><span class="tag tr">توضيح منهجي</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c16')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">حجة الحروف المتعاقبة + آية آدم + س٢ اللوح + ج٢ اللغة</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">جواب عبد الرحمن</span><div class="tags"><span class="tag th">حجتان جديدتان</span><span class="tag ts2">س٢: سؤال استراتيجي</span><span class="tag tr">ج٢: رد</span></div></div>
   </div>
-  <div class="cb">
-    <p>" أعني أن الحقيقة اللغوية(النحو) لا يلزم منها اتفاق الحقيقة الرياضية، أو العقلية، أو الفيزيائية معها.<br><br>
-    فببساطة:<br>
-    أنت قلت "لا يصح مثلا أن اقول سمعت صفة فلان"<br>
-    أقول لك: وكيف يقال سمعت صوت فلان، وصوته بلا ريب صفته، فهل يصح أن أقول هنا "سمعت صفة فلان"؟<br>
-    أم هل أنفي أن الصوت صفة لأنه لا يصح أن أقول "سمعت صفة فلان"؟<br><br>
-    كذلك رأيت جمال فلان، فهل يصح أن أقول "رأيت صفة فلان"<br>
-    أو شعرت بحبه لي، فهل يصح أن أقول: "شعرت بصفة فلان"<br><br>
-    كتركيب لغوي لا تصح، لكن كمعنى هي صحيحة، فالصوت والجمال والحب صفات، يلزم لصوت من مصدر، وللجمال من جميل، وللحب من مُحِبٍّ.<br><br>
-    أما الآية فتفسيرها أعني، ومعنى ألفاظها..<br><br>
-    وبإذن الله سنصل للتفسير الصحيح دون أي خلط.."</p>
-  </div>
-</div>
-
-<!-- ر٢٣: عبد الرحمن — الرد على ابن مسعود + لائحة أدلة -->
-<div class="card at" style="animation-delay:.20s">
+  <div class="cb"><p>" نعم عندي تقريبا سبع أدلة اكتفي باثنين.<br>
+الدليل على ذلك بأن الكلام حادث فكيف يخلق بالحادث؟ فوجود النون مشروط بإنقضاء وجود الكاف و هكذا<br>
+ثانيا قوله تعالى : { إن مثل عيسى عند الله كمثل آدم خلقه من تراب ثم قال له كن فيكون } بين أن قوله "كن" متأخر عن خلقه إذ المتأخر عن الشيء لا يكون مؤثرا في المتقدم عليه ، فعلمنا أنه لا تأثير لقوله "كن" في وجود الشيء.<br><br>
+القدرة هي وصف بأنه قادر فقياسك باطل اصلا.. المهم ليس موضوعنا.<br><br>
+جميل إذن بما أنك تقول أن الصفة لا تنفك عن موصوفها.<br>
+فسؤالي س٢،<br>
+قال تعالى ﴿بَل هُوَ قُرآنٌ مَجيدٌ .. في لَوحٍ مَحفوظٍ﴾.<br>
+فهل صفة الله في اللوح المحفوظ؟ الآية دليل على انفصال القرآن عن الله.<br><br>
+ج٢.<br>
+كلامك لكن ليس صفتك.<br>
+فأنا لا اقرأ صفتك<br>
+فلا يصح مثلا أن اقول سمعت صفة فلان !<br><br>
+تفضل"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m23')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">الرد على أثر ابن مسعود: "الله أكبر" مقارنة جائزة + تقديم لائحة أدلة</span>
-    <div class="tags"><span class="tag tf">تفنيد</span><span class="tag th">تمهيد لأدلة</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c17')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">تفنيد موسّع: نقض الحروف + آية آدم + اللوح والعلم + اللغة + سؤال آية البحر</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">الحروف وآية آدم وس٢</span><div class="tags"><span class="tag tf2">تفنيد × ٤</span><span class="tag ts2">سؤال</span></div></div>
   </div>
-  <div class="cb">
-    <p>" جميل..<br><br>
-    وأنا اقتداءً بابن مسعود رضي الله عنه، وطاعة لله عز وجل، أقول: ما خلق الله من شجر، ولا حجر، ولا أرضٍ ولا سماءٍ، ولا جنٍّ ولا إنسٍ أعظم من الله عز وجل ولا أكبر.<br><br>
-    فهل في قولي هذا خطب؟<br><br>
-    الله أعظم من كل خلق، وأكبر.<br><br>
-    فتعبيرًا عن هذا المعنى يصح أن أقول هذه العبارة؛ وإن كانت مقارنة فكيف بك تقول عند افتتاح صلاتك "الله أكبر"؟<br><br>
-    الله أكبر مما؟ من كل شيء، ما المقصود ب"كل شيء"؟ المقصود الخلق؛ إذًا الله أكبر من كل خلقه.<br><br>
-    فهل من خلل في العبارة؟<br><br>
-    قلت أن عندكم أدلة من أقوال الصحابة رضي الله عنهم بل ومن النبي ﷺ..<br><br>
-    بكل بساطة أقول لك: بل نحن الذين عندنا أدلة من القرءان حتى، من كلام الله نفسه لدينا أدلة.<br>
-    من سنة النبي ﷺ عندنا أدلة.<br>
-    من كلام الصحابة: عندنا أدلة.<br>
-    من التشريعات التي شرعها الله: عندنا أدلة.<br>
-    من العقل: عندنا أدلة.<br>
-    من اللغة: عندنا أدلة.<br><br>
-    فأي من هذه تريد؟"</p>
-  </div>
+  <div class="cb"><div class="cs-title">نقض قاعدة الحروف + إلزام النزول</div>
+<p>" أما قولك الكلام حادث.. فوجود النون مشروط بإنقضاء وجود الكاف<br>
+فهذه القاعدة لا أسلم لك بها، إذ أنك تعني بحادث=مخلوق، ولدينا مصادر الاستدلال إن استطعت فات بدليل على قولك منها. والمعلوم لكل عربي وعاقل أن المتكلم بحروفٍ وأصواتٍ متتابعة هو المتكلم بمشيئته، وهي صفة كمال، بخلاف الأخرص والجماد، فهمت لا يتكلمان لا بحرفٍ ولا بصوت، وهذه صفة نقص عند كل عاقل، فهل تجادل في أمرٍ واضح كهذا؟؟<br><br>
+وإن كان التتابع يقتضي الخلق عندك، فما قولك في (نزول) الله إلى السماء الدنيا في ثلث الليل الآخر كما في البخاري ومسلم؟ النزول فعل فيه حركة وتتابع زماني، فهل هو مخلوق؟</p>
+
+<div class="cs">
+<div class="cs-title">الرد على آية آدم: الخلق على مراحل</div>
+<p>أما عن الآية، فالأمر واضح..<br>
+الله لم يخلق آدم عليه السلام مباشرة، وإنما خلقه على مراحل، ودليل المرحلية في الآية قوله ﴿ثم قال له كن فيكون﴾ فالجسم خلق من ترابٍ فهل اكتمل خلق آدم بهذا فقط؟ ألم يقل الله ﴿إنا خلقناهم من طين لازب﴾ وقال تعالى: ﴿وخلق الإنسان من صلصالٍ كالفخار﴾ وقال: ﴿إذ قال ربك للملائكة إني خالقٌ بشرًا من طين * فإذا سويته ونفخت فيه من روحي فقعُوا له ساجدين﴾<br><br>
+هذه كلها تدل على أن آدم عليه السلام خلق بمراحل، فقوله ﴿كن﴾ هو لإتمام خلق آدم عليه السلام، كما في الآية: ﴿فإذا سويته ونفخت فيه من روحي﴾ فالتسوية للجسم، والنفخ هو إتمام الخلق. فهل في ذلك شك؟<br><br>
+قلت: القدرة وصف بأنه قادر<br>
+أقول: والأمر وصف بأنه آمِر..<br>
+القدرة صفة للقادر، والأمر صفة للآمر، فكيف فرقت بين الصفتين؟</p>
 </div>
 
-<!-- ر٢٤: عبد الرحمن — ملحوظة آية الروم -->
-<div class="card at" style="animation-delay:.24s">
+<div class="cs">
+<div class="cs-title">الرد على س٢ (اللوح) + إلزام بعلم الله</div>
+<p>قولك: هل صفة الله في اللوح المحفوظ؟<br><br>
+الصفة لا تنفك عن الموصوف، والكلام إن لم ينسب إلى المتكلم فلمن عساه ينسب؟ تقول انفصل القرآن عن الله، فهل علم الله انفصل عنه عندما علمنا بعضه؟ ﴿ولا يحيطون بشيء من علمه إلا بما شاء﴾ فماذا تقول؟</p>
+</div>
+
+<div class="cs">
+<div class="cs-title">الرد اللغوي + السؤال عن آية البحر</div>
+<p>جوابك هذا غريب، أنت لا تقرأ صفتي؟<br>
+لماذا إذًا يقال: فلان يقول كذا وكذا(وصف له بأنه قال قولًا محددًا)؟<br>
+أليس الوصف ينسب الصفة لموصوفها؟ فكيف يوصف فلان بأنه قال قولا محددا، ولكن هذا القول ليس صفته؟<br><br>
+أما قولك: لا يصح أن أقول: سمعت صفة فلان.<br>
+فأقول لك: أنت تخلط بين التركيب النحوي وبين الحقيقة المعنوية، فالكلام ليس قائما بذاته، فكيف يُنسب لي ثم لا يكون صفةً لي؟؟ أنت تقول ما لا يقبله عاقل، فكيف تبني عليها دينًا تدين الله به إلى يوم تلقاه؟<br><br>
+ما سبق كان الرد،<br><br>
+أما سؤالي: فما قولك في قوله تعالى: ﴿قل لو كان البحر مدادًا لكلمات ربي لنفد البحر قبل أن تنفد كلمات ربي ولو جئنا بمثله مددًا﴾<br><br>
+تفضل"</p>
+</div></div>
+</div><div class="card ib" style="animation-delay:80ms">
   <div class="ch">
-    <button class="help-btn" onclick="openModal('m24')">?</button>
-    <span class="speaker">عبد الرحمن</span>
-    <span class="ctitle">ملحوظة: شاهد من سورة الروم على مراحل خلق آدم + ختام بالدعاء</span>
-    <div class="tags"><span class="tag th">شاهد قرآني</span><span class="tag te">ختام</span></div>
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c18')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">ردود مختصرة: لا نثبت النزول + إصرار على س٢ + حجة أثر ابن مسعود</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">الردود الموسّعة</span><div class="tags"><span class="tag tr">ردود مختصرة</span><span class="tag th">حجة أثر صحابي</span><span class="tag ts2">إصرار على س٢</span></div></div>
   </div>
-  <div class="cb">
-    <p>" ملحوظة أخيرة:<br><br>
-    سبحان الله، هذا الأسبوع كنت أقرأ سورة الروم، فسبحان الله وجدت فيها آية بذات المعنى لهذا الكلام، وهي قوله تعالى:<br>
-    ﴿ومن ءاياته أن خلقكم من ترابٍ ثم إذا أنتم بشرٌ تنتشرون﴾<br><br>
-    فأثبت الخلق من التراب، وهو أصل الخلقة، ثم أثبت الحياة بحرف العطف "ثم" بأن قال ﴿ثم إذا أنتم بشر﴾ فأثبت التحويل والتصيير من تراب إلى بشر؛ فدل ذلك أن المقصود بالخلق هنا هو خلق الصورة من مادة الأصل وهي التراب.<br><br>
-    وكذلك فيها شاهد آخر على ذات الدلالة، وهو ﴿ثم إذا إنتم بشر تنتشرون﴾<br>
-    فإن كانوا أجسامًا من تراب لم يكن التكاثر(الانتشار) حاصلًا أصلا بينهم إلا بخلق أجسام أخرى بنفس طريقة خلق الأصل.<br><br>
-    ولكن للدلالة على أن المقصود ب ﴿ثم إذا أنتم بشر﴾ أنه بعد نفخ الروح فيهم ذكر تعالى صفة ﴿تنتشرون﴾ والانتشار هنا هو التكاثر.<br><br>
-    فالمعنى المستخلص هو:<br><br>
-    ومن آيات الله الدالة على قدرته وعظمته أن خلقكم من أصلٍ، وهو التراب، ثم بث فيكم الروح فإذا أنتم بشرٌ أحياءٌ تنتشرون في الأرض وتتكاثرون.<br><br>
-    تفضل..<br><br>
-    وأعتذر عن التأخير طوال تلك الفترات وخلال ردي..<br><br>
-    أسأل من الله لي ولك التوفيق والهداية إلى الحق والفلاح في الدارين، وفقني الله وإياك لنكون من أهل الجنة."</p>
+  <div class="cb"><p>"في أول رسالة لا يوجد نقض منك لكلامي وفي آخره تحيد عن ردي.<br>
+أما قولك ما رأيك في نزل الله في الثلث الأخير !! هذا الإحتجاج يا أخي يبين جهلك بعقيدتنا.<br>
+لا نسلم بالنزول اصلا وحتى لا اطيل واشرح قولنا مثل قول الأشاعرة في هذه.<br><br>
+قاله له كن فيكون بعد أن خلقه هذا في صريح الآية.<br>
+قال خلقه ثم قال له كن فيكون.. ثانيا تقول هي مراحل والخ... وهذه المراحل الطين والتراب كذلك تخلق فهذا لن يخرجك من الإلزام ولو سلمت لك.<br><br>
+اخي سؤالي واضح هل صفة الله في اللوح المحفوظ؟ الإجابة بنعم أو لا، لا تحتاج هذا اللف.<br>
+وأنت ترد علي بسؤال اصلا.. اولا رد على سؤالي بعدها وضح.<br><br>
+هنا أنت تخلط فكلامي الذي اكتبه ليس صفتي اساسا فقول الصفة تنسب لموصوفها ليس له دخل لأني لا اسلم لك كونه صفة.<br><br>
+تفضل بين الخلط<br><br>
+ما فهمت سؤالك أو ما وجه الإستدلال.. هل تريد تفسيرا للآية أم ماذا؟[يتكلم عن آية: ﴿قل لو كان البحر مادا ..﴾]<br>
+اطرح سؤال آخر ولو كان مغلقا.<br><br>
+سؤالي لك واحتج بقول ابن مسعود وليس معكم دليل من الصحابة بينما معنا ومن الرسول حتى.<br>
+سؤالي هو <br>
+ابن مسعود قال:<br>
+"ما خلق الله من سماء ولا أرض ولا سهل ولا جبل أعظم من آية الكرسي"<br><br>
+ووجه الإستدلال فيه أن ابن مسعود رضي الله تعالى عنه قارن مخلوقات بآية الكرسي وهذا لعلمه أنها مخلوقة.<br><br>
+فإن قلت آية الكرسي أعظم من جميع المخلوقات لأنها صفة لله.<br><br>
+أقول إنه لا يجوز مقارنة صفات الله بمخلوقاته، فلا يقال ما خلق الله من سماء ولا أرض أعظم من حياة الله أو من علم الله، فهذا محال ومعلوم في الدين<br><br>
+تفضل"</p></div>
+</div><div class="sec"><span>فترات التأجيل والاعتذار</span></div><div class="outer-block"><strong>ملاحظة:</strong> تخلّلت المناظرة عدة فترات انتظار تبادل فيها الطرفان اعتذارات، نصّها:<br><br>قال عبد الرحمن: "أعتذر، منشغل هذا الأسبوع قليلًا، لكن ربما أقرأ ما كتبته بتمعن غدًّا أو بعد غد، وإن شاء الله ما رح أطول كثير، لأني أكاد أنتهي مما كان يشغلني." — فقال الإباضي: "تم خذ راحتك. بالتوفيق"<br><br>ثم قال عبد الرحمن: "معذرة منك، انشغلت كثير وما حصلت وقت، إن شاء الله يوم الأحد أرد عليك، وأرجو المعذرة منك.." — فقال الإباضي: "تم"<br><br>ثم قال عبد الرحمن: "أعتذر منك، لكن طرأ أمر محدد فما رح أقدر اليوم أرد، لكن قرأت الي كتبته، وأظنني ٱستطيع الرد إن شاء الله.. أعتذر عن كثرة الاعتذارات.." — فقال الإباضي: "لا تعتذر وما يحتاج تخبرني. متفهم أنا. رد من تفضى وما يحتاج تعتذر أو شيء أو حتى توضح"<br><br>ثم قال عبد الرحمن: "بعد رمضان إن شاء الله، كان من قبل مشغول فعلا، حتى في أول خمس أيام من رمضان، أما الآن فمو زي قبل، لكن أوقف عن الجدالات في رمضان وأحاول إني أستغل وقتي قدر الإمكان في قراءة القرآن والتفسير ونشر العلم الي أعرفه قدر استطاعتي.. فما أفضل أدخل في النقاشات كثير.. الله يوفقني وإياك لما يحب ويرضى.." — فقال الإباضي: "آمين وإياكم"<br><br>ثم بعد مدة قال الإباضي: "اينك أخي" — فقال عبد الرحمن: "اعذرني، انشغلت في رمضان ودخلت في عدة أمور شغلتني في الواقع والمواقع وما عاد دخلت الخاص في هذا الحساب.. عندك تلجرام؟ عشان نكمل النقاش فيه إن شئت.. عموما رح أبدأ الآن في الرد بإذن الله.. وأسأل من الله أن يشرح صدري وصدرك للحق، وأني يجعلنا من إتباع الحق، وأعتذر عن طول انتظارك.."</div><div class="sec"><span>استئناف عبد الرحمن · الردود الأخيرة</span></div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c19')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">استئناف الرد: نقض الحروف + تفصيل آية آدم + تأكيد الفارق مع كلام المشركين</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">حجج الإباضي الأخيرة</span><div class="tags"><span class="tag tf2">نقض الحروف</span><span class="tag tf2">تفصيل آية آدم</span><span class="tag tf2">تفنيد التشبيه</span></div></div>
   </div>
-</div>
+  <div class="cb"><div class="cs-title">نقض قاعدة الحروف من جهتين + الفارق مع كلام المشركين</div>
+<p>" النقض في كلامي لحجتك من جهتين:<br><br>
+الأولى: أن هذه القاعدة لا دليل عليها، فكيف تحاججني بقاعدة لا دليل يسندها؟ ﴿قل هاتوا برهانكم إن كنتم صادقين﴾.<br><br>
+الثانية: أن ضد الكلام هو الخرس، فإن لم يكن الرب يتكلم كلامًا يقوم بذاته فيلزم من ذلك أنه أخرس محتاج إلى مخلوق، وهذا عين النقص.<br><br>
+فإن قلت: هذا عينه كلام المشركين، قالوا: ﴿أبعث الله بشرًا رسولًا؟!﴾ فهم زعموا أن الله أعظم من إن يبعث بشرًا منهم رسولًا إليهم، وهذا أنت تزعم إن الله أعظم من أن يخلق كلامًا فيبلغه من شاء من عباده! <br><br>
+فأقول لك:<br>
+هذا قياس مع الفارق، [ هم ما قالوا ذلك على دليل ولا حجة، بل قالوه اتباعا للهوى وتكذيبًا منهم للحق. ]<br>
+[ وزعموا زعمًا لا صحة له من الأساس؛ فلا نقص في أن يرسل الله بشرًا ]<br>
+[ ولا يصح من الأساس أن يظهر الله نفسه لهم؛ لأنهم حينها لا مجال لهم للتكذيب؛ فلن يكون أصل الابتلاء والتكليف حينئذ ذا معنىً]<br>
+[ وهم هربوا من أن يبعث الله بشرًا مخلوقًا إلى أن يبعث ملكًا مخلوقًا، وليس إلى صفة من صفات الله أو الله جل جلاله ]<br><br>
+أما قولي فهو احتجاج بأن لازم قولكم أن الرب جل وعلى لا يمكنه الكلام إلا بمخلوق، فهذا معناه أنه حاشاه إما يكون بذلك أخرسًا أو يكون جمادًا..<br><br>
+فشتان بين قولي وقول المشركين من قبل، فهم هربوا من أن يبعث الله مخلوقا منهم إلى أن يبعث مخلوقًا من نوع آخر، وأنا قلت أن الرب إن لم يكن يتكلم إلا بكلامٍ مخلوق فهو إذًا مفتقرٌ إلى هذا الكلام المخلوق حاشاه جل جلاله. <br><br>
+فأين التماثل؟</p>
 
-<!-- ═══════════ خاتمة ═══════════ -->
-<div class="sec">الخاتمة · كلام خارج المناظرة</div>
-<div class="outer-block">
-  <strong>حال المناظرة:</strong><br>
-  لم تنتهِ هذه المناظرة بعد، لأنني أرسلت له الردود قريبًا وهو قال إنه بحاجة إلى وقت لأن لديه امتحانات نهائية، لذا أنا بانتظار انتهائه ورده.
-</div>
-
-<div style="text-align:center; margin-top:52px; padding-top:28px; border-top:1px solid var(--border); color:var(--text-faint); font-size:12px; font-style:italic;">
-  توثيقٌ للمناظرة كما جرت · لم تُعدَّل ردودٌ ولم يُزَد ولم يُنقص
-</div>
-</div><!-- /wrap -->
-
-<!-- ══════════════════════
-     MODAL OVERLAY
-══════════════════════ -->
-<div class="modal-bg" id="modalBg" onclick="closeModal()"></div>
+<div class="cs">
+<div class="cs-title">تفصيل آية آدم: مراحل الخلق</div>
+<p>خلق النجار من الخشب بابًا.<br><br>
+بمعنى: غير شكله.<br><br>
+فقوله تعالى: ﴿خلقه من تراب﴾ بمعنى ﴿فإذا سويته﴾ وقوله: ﴿ثم قال له كن فيكون﴾ بمعنى ﴿ونفخت فيه من روحي﴾<br><br>
+فالتسوية للجسم، والنفخ للروح، فإذا قلت ((أصل الإنسان خلق قبل الإنسان)) كانت العبارة صحيحة، لكن لو قلت ((خلق الإنسان قبل أن يكون)) فهذا فساد ظاهر في العبارة، فاحتجاجك بالآية احتجاج خاطئ، لأن الآية تقر أن أصل الإنسان خلق قبل تكوين الإنسان.<br><br>
+قبل أن يخلق آدم وينفخ فيه الروح خلق الله التراب الذي هو مادة خلق آدم عليه السلام، ثم جعل الطين جسد آدم، فكان ذلك خلقًا لآدم بأن خلق جسده، ولم يكن حينئذ آدم عليه السلام حيًّا تدب فيه الحياة، فأين الحجة بأن يكون أصله قد خلق قبله؟<br><br>
+فـ ﴿كن﴾ جاءت لتمام خلق آدم، فهو كما قال تعالى: ﴿فإذا سويته﴾= ﴿خلقه من تراب﴾. ﴿ونفخت فيه من روحي﴾= ﴿ثم قال له كن فيكون﴾<br><br>
+فكما أنه قبل نفخ الروح فيه لم يكن خلقه تامًّا فكذلك في هذه الآية خلقه من التراب لا يعني إنه قد تم خلقه."</p>
+</div></div>
+</div><div class="card ib" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c19b')">?</button>
+      <span class="speaker">الإباضي</span>
+      <span class="ctitle">اعتذار بسبب الاختبارات النهائية</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">استئناف عبد الرحمن</span><div class="tags"><span class="tag te">اعتذار</span></div></div>
+  </div>
+  <div class="cb"><p>" ابو مؤيد أنا في فترة اختبارات نهائية<br>إن شاء الله بكمل معك بعدها"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c19c')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">الدعاء بالتوفيق + الاستمرار في إرسال الردود</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">اعتذار الإباضي</span><div class="tags"><span class="tag te">تعليق</span></div></div>
+  </div>
+  <div class="cb"><p>"مو مشكلة، أسأل الله لك التوفيق والفلاح في الدنيا والآخرة"</p></div>
+</div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c20')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">جواب س٢ نهائيًّا: نعم القرآن في اللوح + إلزام بعلم الله + أسئلة جوهرية</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">السؤال الثاني: هل الصفة في اللوح؟</span><div class="tags"><span class="tag tr">جواب س٢</span><span class="tag ti">إلزام بعلم الله</span><span class="tag ts2">أسئلة</span></div></div>
+  </div>
+  <div class="cb"><div class="cs-title">جواب س٢ (اللوح) + الإلزام بعلم الله + أسئلة جوهرية</div>
+<p>" الجواب: <br>
+نعم، القرءان في اللوح المحفوظ.<br><br>
+وكذلك اللوح المحفوظ فيه من علم الله:<br><br>
+قال تعالى: ﴿مَا فَرَّطْنَا فِي الْكِتَابِ مِنْ شَيْءٍ ثُمَّ إِلَى رَبِّهِمْ يُحْشَرُونَ﴾[الأنعام: ٣٨]<br>
+وقال ﷺ –في سنن الترمذي–: «إِنَّ أَوَّلَ مَا خَلَقَ اللَّهُ القَلَمَ، فَقَالَ لَهُ: اكْتُبْ، فَجَرَى بِمَا هُوَ كَائِنٌ إِلَى الأَبَدِ»<br>
+قال الترمذي: "هَذَا حَدِيثٌ حَسَنٌ صَحِيحٌ غَرِيبٌ وَفِيهِ عَنِ ابْنِ عَبَّاسٍ"<br><br>
+فهل انفصل علم الله عنه عندما كتبه في اللوح المحفوظ؟<br><br>
+أم هل انفصل علم الله عنه عندما علمنا من علمه:<br>
+﴿علم الإنسان ما لم يعلم﴾، ﴿ولا يحيطون بشيء من علمه إلا بما شاء﴾<br><br>
+فإن قلت القرءان مخلوق إستنادًا لأنه في اللوح المحفوظ، واللوح المحفوظ مخلوق، والمخلوق لا يكون وعاءً لغير مخلوق؛ فيلزمك بذلك أمران:<br><br>
+– الدليل على القاعدة "المخلوق لا يكون وعاء لغير مخلوق"<br>
+– القول بأن صفة العلم لله مخلوقة، ويلزم من ذلك أن الرب حاشاه كان جاهلًا ثم خلق لنفسه علمًا.<br><br>
+أم لك قصد آخر من إيراد هذا السؤال؟<br><br>
+هل الكلام يقوم بذاته أم بغيره؟<br><br>
+هل يوجد كلام بلا متكلم؟<br><br>
+إذا لم يكن الكلام صفة فوجب بذلك أن يقوم بذلته، والمعلوم أن الكلام لا يقوم بذاته فيلزم لكل كلامٍ من متكلم، فالقول له قائل، والحديث له محدث، كما أن السمع يلزم منه سامع، والبصر يلزم منه مبصر."</p></div>
+</div><div class="card at" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c21')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">الحقيقة النحوية ≠ الحقيقة المعنوية: توضيح مسألة الكلام والصفة</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">ج٢: كلامك ليس صفتك</span><div class="tags"><span class="tag tr">توضيح منهجي</span></div></div>
+  </div>
+  <div class="cb"><p>" أعني أن الحقيقة اللغوية(النحو) لا يلزم منها اتفاق الحقيقة الرياضية، أو العقلية، أو الفيزيائية معها.<br><br>
+فببساطة: <br>
+أنت قلت "لا يصح مثلا أن اقول سمعت صفة فلان"<br>
+أقول لك: وكيف يقال سمعت صوت فلان، وصوته بلا ريب صفته، فهل يصح أن أقول هنا "سمعت صفة فلان"؟<br>
+أم هل أنفي أن الصوت صفة لأنه لا يصح أن أقول "سمعت صفة فلان"؟<br><br>
+كذلك رأيت جمال فلان، فهل يصح أن أقول "رأيت صفة فلان"<br>
+أو شعرت بحبه لي، فهل يصح أن أقول: "شعرت بصفة فلان"<br><br>
+كتركيب لغوي لا تصح، لكن كمعنى هي صحيحة، فالصوت والجمال والحب صفات، يلزم لصوت من مصدر، وللجمال من جميل، وللحب من مُحِبٍّ.<br><br>
+أما الآية فتفسيرها أعني، ومعنى ألفاظها..<br><br>
+وبإذن الله سنصل للتفسير الصحيح دون أي خلط.."</p></div>
+</div><div class="card at" style="animation-delay:40ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c22')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">تفنيد حجة ابن مسعود + الإعلان عن لائحة أدلة</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">حجة أثر ابن مسعود</span><div class="tags"><span class="tag tf2">تفنيد حجة ابن مسعود</span><span class="tag th">تمهيد لأدلة</span></div></div>
+  </div>
+  <div class="cb"><p>" جميل..<br><br>
+وأنا اقتداءً بابن مسعود رضي الله عنه، وطاعة لله عز وجل، أقول: ما خلق الله من شجر، ولا حجر، ولا أرضٍ ولا سماءٍ، ولا جنٍّ ولا إنسٍ أعظم من الله عز وجل ولا أكبر.<br><br>
+فهل في قولي هذا خطب؟<br><br>
+الله أعظم من كل خلق، وأكبر.<br><br>
+فتعبيرًا عن هذا المعنى يصح أن أقول هذه العبارة؛ وإن كانت مقارنة فكيف بك تقول عند افتتاح صلاتك "الله أكبر"؟<br><br>
+الله أكبر مما؟ من كل شيء، ما المقصود ب"كل شيء"؟ المقصود الخلق؛ إذًا الله أكبر من كل خلقه.<br><br>
+فهل من خلل في العبارة؟<br><br>
+قلت أن عندكم أدلة من أقوال الصحابة رضي الله عنهم بل ومن النبي ﷺ.. <br><br>
+بكل بساطة أقول لك: بل نحن الذين عندنا أدلة من القرءان حتى، من كلام الله نفسه لدينا أدلة.<br>
+من سنة النبي ﷺ عندنا أدلة. <br>
+من كلام الصحابة: عندنا أدلة.<br>
+من التشريعات التي شرعها الله: عندنا أدلة.<br>
+من العقل: عندنا أدلة.<br>
+من اللغة: عندنا أدلة.<br><br>
+فأي من هذه تريد؟"</p></div>
+</div><div class="card at" style="animation-delay:80ms">
+  <div class="ch">
+    <div class="ch-row1">
+      <button class="help-btn" onclick="openModal('c23')">?</button>
+      <span class="speaker">عبد الرحمن</span>
+      <span class="ctitle">ملحوظة: شاهد من سورة الروم على مراحل الخلق + ختام بالدعاء</span>
+    </div>
+    <div class="ch-row2"><span class="reply-badge">آية آدم وجدل مراحل الخلق</span><div class="tags"><span class="tag th">شاهد قرآني</span><span class="tag te">ختام</span></div></div>
+  </div>
+  <div class="cb"><p>" ملحوظة أخيرة:<br><br>
+سبحان الله، هذا الأسبوع كنت أقرأ سورة الروم، فسبحان الله وجدت فيها آية بذات المعنى لهذا الكلام، وهي قوله تعالى:<br>
+﴿ومن ءاياته أن خلقكم من ترابٍ ثم إذا أنتم بشرٌ تنتشرون﴾<br><br>
+فأثبت الخلق من التراب، وهو أصل الخلقة، ثم أثبت الحياة بحرف العطف "ثم" بأن قال ﴿ثم إذا أنتم بشر﴾ فأثبت التحويل والتصيير من تراب إلى بشر؛ فدل ذلك أن المقصود بالخلق هنا هو خلق الصورة من مادة الأصل وهي التراب.<br><br>
+وكذلك فيها شاهد آخر على ذات الدلالة، وهو ﴿ثم إذا إنتم بشر تنتشرون﴾<br>
+فإن كانوا أجسامًا من تراب لم يكن التكاثر(الانتشار) حاصلًا أصلا بينهم إلا بخلق أجسام أخرى بنفس طريقة خلق الأصل.<br><br>
+ولكن للدلالة على أن المقصود ب ﴿ثم إذا أنتم بشر﴾ أنه بعد نفخ الروح فيهم ذكر تعالى صفة ﴿تنتشرون﴾ والانتشار هنا هو التكاثر.<br><br>
+فالمعنى المستخلص هو:<br><br>
+ومن آيات الله الدالة على قدرته وعظمته أن خلقكم من أصلٍ، وهو التراب، ثم بث فيكم الروح فإذا أنتم بشرٌ أحياءٌ تنتشرون في الأرض وتتكاثرون.<br><br>
+تفضل.. <br><br>
+وأعتذر عن التأخير طوال تلك الفترات وخلال ردي..<br><br>
+أسأل من الله لي ولك التوفيق والهداية إلى الحق والفلاح في الدارين، وفقني الله وإياك لنكون من أهل الجنة."</p></div>
+</div><div class="sec"><span>الخاتمة · كلام خارج المناظرة</span></div><div class="outer-block"><strong>حال المناظرة:</strong> لم تنتهِ هذه المناظرة بعد، لأنني أرسلت له الردود قريبًا وهو قال إنه بحاجة إلى وقت لأن لديه امتحانات نهائية، لذا أنا بانتظار انتهائه ورده.</div><div class="ftr">توثيقٌ للمناظرة كما جرت · لم تُعدَّل ردودٌ ولم يُزَد ولم يُنقص</div></div><!-- /wrap -->
+<div class="mbg" id="mbg" onclick="closeM()"></div>
 <div class="modal" id="modal">
-  <button class="modal-close" onclick="closeModal()">✕</button>
-  <div class="modal-title" id="modalTitle"></div>
-  <div id="modalBody"></div>
+  <button class="mclose" onclick="closeM()">✕</button>
+  <div class="mtitle" id="mtitle"></div>
+  <div class="mtabs">
+    <button class="mtab active" id="tab-btn-explain" onclick="switchTab('explain')">التوضيح</button>
+    <button class="mtab" id="tab-btn-analysis" onclick="switchTab('analysis')">التحليل العلمي ✦</button>
+  </div>
+  <div id="tab-explain"><div id="mbody"></div></div>
+  <div id="tab-analysis" style="display:none"><div id="analysis-body"></div></div>
 </div>
-
 <script>
-const tips = {
-  m1:{ t:'السلام الافتتاحي', b:'يفتتح عبد الرحمن المناظرة بالسلام الشرعي.' },
-  m2:{ t:'أدلة الإباضي الأربعة', b:`يطرح الإباضي أربعة أدلة قرآنية على خلق القرآن:<br><br>
-  ◾ <span class="gterm">الجعل</span>: ورد في الآية "جعلناه قرآنًا" وهو بمعنى الإنشاء والإيجاد، والإيجاد يقتضي الخلق.<br><br>
-  ◾ <span class="gterm">محدَث</span>: ما كان معدومًا ثم وُجد. وقد وصف القرآن بأنه محدَث في آيتي الأنبياء والشعراء.<br><br>
-  ◾ <span class="gterm">اللوح المحفوظ</span>: لوح مخلوق أُودع فيه القرآن، والمخلوق لا يحوي غير مخلوق عنده.<br><br>
-  ◾ <span class="gterm">الحفظ</span>: ما يحتاج إلى من يحفظه يعني أنه محتاج وليس بمستغنٍ، وهذا لا ينطبق إلا على المخلوق. فلا يقال "حفظ الله علمه" أو "حفظ الله قدرته".<br><br>
-  ويُفرّق بين <span class="gterm">الصفة</span> (كالرحمة والعلم): أزلية لا تنفك عن الله، وبين <span class="gterm">أثر الصفة</span> (كالمطر أثر الرحمة): مخلوق منفصل.` },
-  m3:{ t:'استفسار عبد الرحمن', b:`يسأل عبد الرحمن عن حقيقة مذهب الإباضية: إذا كان القرآن مخلوقًا وليس صفةً فماذا يكون بالضبط؟ ويطرح إشكالًا: هل معنى ذلك أن الله لا يستطيع مخاطبة عباده مباشرةً؟<br><br>
-  <span class="gterm">صفة التكلم الأزلية</span>: يسأل عنها — هل هي القرآن ذاته، أم شيء آخر؟` },
-  m4:{ t:'قياس الأنبياء وصفة التكلم', b:`يرد الإباضي بأن الله يبلّغ بأسباب مخلوقة ولا يعني ذلك افتقاره إليها، تمامًا كإرسال الأنبياء المخلوقين.<br><br>
-  ويحدّد أن <span class="gterm">صفة التكلم</span> عندهم هي القدرة على إنشاء الكلام، لا الكلام نفسه — مثل صفة الخلق التي هي القدرة على الإيجاد لا المخلوقين أنفسهم.` },
-  m5:{ t:'الإلزام الأول', b:`<span class="gterm">الإلزام</span> في المناظرة: إثبات أن نتيجة ممتنعة تلزم من قول الخصم، فيثبت بذلك بطلانه.<br><br>
-  يقول عبد الرحمن: إذا كان كل كلام الله مخلوقًا، فالله لا يستطيع إسماع عباده كلامه الحقيقي أبدًا، لأن ما يُسمع كلامٌ مخلوق. وهذا يعني العجز والافتقار إلى مخلوق، وهذا مستحيل في حق الله.` },
-  m6:{ t:'تشبيه الإلزام بكلام الكفار', b:`يرى الإباضي أن منطق عبد الرحمن يشبه قول من رفضوا نبوة بشر: ﴿أبعث الله بشرًا رسولًا؟﴾ لأن كليهما في رأيه يرفض أن يبلّغ الله بمخلوق. ويطلب الانتقال من الإلزامات إلى الأدلة المباشرة.` },
-  m7:{ t:'تفنيد التشبيه', b:`<span class="gterm">الفارق</span> الذي يُبرزه عبد الرحمن بين قوله وقول الكفار:<br><br>
-  الكفار قالوا كلامهم اتباعًا للهوى والعناد، ورفضوا بشرًا ليقبلوا ملَكًا — وكلاهما مخلوق.<br>
-  أما هو فيُبيّن نتيجة منطقية لازمة من مذهب الإباضي: إن قلنا كل كلام الله مخلوق → الله مفتقر إلى مخلوق.` },
-  m8:{ t:'الرد: لا يهم كونه مخلوقًا', b:`يرى الإباضي أن المهم نسبة الكلام لله لا طبيعته، وأن خلق الله كلامًا لا يعني أن هذا الكلام يعلم ما في نفس الله — فالرسول ﷺ يبلّغ وحي الله دون أن يعلم ما في نفس الله.` },
-  m9:{ t:'حجتان قرآنيتان جديدتان', b:`عبد الرحمن يستدل بحجتين:<br><br>
-  ١. <span class="gterm">سورة يس/يس</span>: الأمر = القول = "كن"، وإن كان مخلوقًا لزم <span class="gterm">تسلسل</span> لا نهاية له في الفاعلين (من خلق الكلام الذي خلق الكلام؟).<br><br>
-  ٢. <span class="gterm">سورة الرحمن</span>: قرن القرآن بالعلم لا بالخلق: ﴿علّم القرآن﴾ بينما ﴿خلق الإنسان﴾ — فالتفريق دليل.` },
-  m10:{ t:'الرد على الحجتين', b:`◾ <span class="gterm">العطف لا يقتضي المغايرة</span>: مثال: جبريل وميكائيل عُطفا على الملائكة مع أنهما منهم.<br><br>
-  ◾ المفسرون فسّروا "الأمر" في الآية بالتدبير والتكوين والتشريع، لا بمعنى أنه صفة منفصلة عن الخلق.` },
-  m11:{ t:'اقتراح ضبط المناظرة', b:`يقترح عبد الرحمن تنظيم المناظرة بنظام التناوب: يطرح كلٌّ منهما حجةً ثم يرد على حجة الآخر، مع تحديد مصادر استدلال مشتركة لتفادي الجدل في السلطات.` },
-  m12:{ t:'موافقة الإباضي', b:`يوافق الإباضي على طريقة التناوب لكنه يرفض إلزامية التفاسير لأن لكل طرف علماءه، ويقبل الكتب الستة للسنة.` },
-  m13:{ t:'تحديد المصادر', b:`اتُّفق على مصادر الاستدلال: القرآن الكريم، الكتب الستة للسنة (البخاري، مسلم، النسائي، ابن ماجه، أبو داود، الترمذي)، واللغة العربية. واستُبعدت التفاسير كمصدر ملزِم للطرفين.` },
-  m14:{ t:'عرض المذهب الأثري والحجة الأولى', b:`عبد الرحمن يُعلن موقفه بوضوح: القرآن كلام الله بحرف وصوت غير مخلوق. ثم يستدل بآية "كن فيكون": إن كان الأمر/القول مخلوقًا لزم <span class="gterm">تسلسلٌ ممتنع</span>: من خلق كلام الله الذي خلق الأشياء؟ ومن خلق ذلك الكلام؟ إلى ما لا نهاية.` },
-  m15:{ t:'ج١ وس١ من الإباضي', b:`◾ <span class="gterm">ج١</span>: "كن" تعبيرٌ مجازي عن سرعة الاستجابة لا قولٌ حقيقي — الله لا يحتاج قولًا ليخلق.<br><br>
-  ◾ <span class="gterm">س١</span>: الصفة لا تنفك عن موصوفها — والقرآن نزل به جبريل وكان في اللوح، فكيف يكون صفةً لازمةً لله؟` },
-  m16:{ t:'تفنيد التأويل وجواب السؤال', b:`◾ يُلزم عبد الرحمن بأن تأويل "كن" بسرعة المشيئة <span class="gterm">تأويلٌ بلا دليل</span>، والأصل حمل الكلام على ظاهره.<br><br>
-  ◾ يجيب: القرآن من كلام الله وليس كله، والصفة لا تنفك عن موصوفها.<br><br>
-  ◾ سؤاله: إذا كتبت كلامًا هل يصبح ملكًا للجهاز؟ هل يخرج عن كونه كلامي لأنه في وعاءٍ رقمي؟` },
-  m17:{ t:'حجتان جديدتان للإباضي', b:`◾ <span class="gterm">الحروف المتعاقبة</span>: النون تأتي بعد انتهاء الكاف — الكلام ذو تتابع زماني وما كان كذلك فهو حادث، والحادث مخلوق.<br><br>
-  ◾ <span class="gterm">آية آدم</span>: "خلقه من تراب ثم قال له كن" — "كن" متأخرة، فلا تأثير لها في الإيجاد.<br><br>
-  ◾ <span class="gterm">س٢</span>: الصفة لا تنفك عن موصوفها والقرآن في لوح منفصل — إذًا ليس صفةً.<br><br>
-  ◾ <span class="gterm">ج٢</span>: كلامك المكتوب ليس صفتك — لا يصح أن أقول "سمعت صفة فلان".` },
-  m18:{ t:'ردود موسّعة على أربع نقاط', b:`◾ <span class="gterm">الحروف</span>: لا دليل على أن التتابع يقتضي الخلق — ويُلزم بالنزول (فهل النزول مخلوق؟).<br><br>
-  ◾ <span class="gterm">آية آدم</span>: "كن" لإتمام الخلق بنفخ الروح لا لابتدائه.<br><br>
-  ◾ <span class="gterm">اللوح</span>: إذا كان القرآن في اللوح مخلوقًا، فعلم الله الذي كُتب في اللوح أيضًا مخلوق — وهذا لا يقوله أحد.<br><br>
-  ◾ <span class="gterm">اللغة</span>: "سمعت صوت فلان" — والصوت صفة. فعدم صحة "سمعت صفة فلان" نحويًّا لا ينفي أن الصوت صفةٌ معنويًّا.` },
-  m19:{ t:'ردود مختصرة وحجة ابن مسعود', b:`◾ الإباضية لا يُثبتون <span class="gterm">النزول الحرفي</span> لله ويؤوّلونه كالأشاعرة، فالاحتجاج به يبيّن — في رأيه — جهل عبد الرحمن بعقيدتهم.<br><br>
-  ◾ يُصرّ على سؤاله: هل صفة الله في اللوح؟ بنعم أو لا.<br><br>
-  ◾ <span class="gterm">أثر ابن مسعود</span>: صحابي جليل قارن آية الكرسي بالمخلوقات — وهذا عنده دليل على أنها من جنسها.` },
-  m_ib_exam:{ t:'اعتذار الإباضي', b:'يعتذر الإباضي عن الاستمرار في الرد بسبب الاختبارات النهائية، ويَعِد بمواصلة المناظرة بعدها.' },
-  m20:{ t:'النقض المفصّل وتأكيد الفارق', b:`◾ <span class="gterm">نقض الحروف</span>: القاعدة بلا دليل. وضدّ الكلام الخرسُ — فإن لم يتكلم الله بكلامٍ يقوم بذاته فهو أخرس.<br><br>
-  ◾ <span class="gterm">آية آدم</span>: ﴿فإذا سويته ونفخت فيه من روحي﴾ = ﴿ثم قال له كن فيكون﴾ — "كن" هي إتمام الخلق بنفخ الروح، لا ابتداؤه.<br><br>
-  ◾ <span class="gterm">الفارق مع الكفار</span>: الكفار هربوا من مخلوقٍ إلى مخلوقٍ آخر. أما هو فيُبيّن لازم القول لا يرفض المخلوقية من حيث هي.` },
-  m21:{ t:'جواب سؤال اللوح وأسئلة عن الكلام', b:`◾ يُجيب: نعم، القرآن في اللوح المحفوظ. لكن علم الله أيضًا كُتب في اللوح — فهل علمه مخلوق؟<br><br>
-  ◾ يُلزم بأن القاعدة "المخلوق لا يحوي غير مخلوق" بلا دليل، وتستلزم القول بأن علم الله مخلوق.<br><br>
-  ◾ يطرح سؤالًا فلسفيًّا: <span class="gterm">هل يوجد كلامٌ بلا متكلم؟</span> إذا كان الكلام ليس صفةً فهو يقوم بذاته — وهذا محال.` },
-  m22:{ t:'الحقيقة النحوية والمعنوية', b:`◾ <span class="gterm">الحقيقة النحوية</span>: ما يصح وما لا يصح تركيبًا في اللغة العربية.<br><br>
-  ◾ <span class="gterm">الحقيقة المعنوية</span>: ما يدل عليه المعنى من صفاتٍ ونسب.<br><br>
-  لا يصح نحويًّا: "سمعت صفة فلان" — لكن الصوت صفةٌ معنويًّا. فعدم صحة التركيب النحوي لا يُلغي الحقيقة المعنوية.` },
-  m23:{ t:'الرد على ابن مسعود وتقديم الأدلة', b:`◾ قارنَ الله بخلقه في العظمة في قوله "الله أكبر" — أي أكبر من كل خلقه. فالمقارنة لا تعني أن المقارَن به مخلوق.<br><br>
-  ◾ يُعلن أن لديه أدلة من القرآن والسنة والصحابة والعقل واللغة والتشريع، ويدعو الخصم لاختيار الميدان.` },
-  m24:{ t:'شاهد سورة الروم', b:`◾ ﴿خلقكم من تراب ثم إذا أنتم بشر تنتشرون﴾ — "الانتشار" (التكاثر) لا يكون إلا بعد الحياة، فدل على أن "ثم إذا أنتم بشر" هو مرحلة ما بعد نفخ الروح، وأن الخلق من التراب مجرد خلق الصورة والجسد، والخلق التام يكون بنفخ الروح.<br><br>
-  ◾ يختم بالدعاء لنفسه وللإباضي بالهداية والتوفيق.` }
-};
+const TIPS = {"c01": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tt\">تنظيمي · افتتاح</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يفتتح عبد الرحمن المناظرة الرسمية بالتسليم الشرعي، وهو ما يُعدّ الانطلاقة الرسمية للحوار بعد الاتفاق على خوضه.</div></div>", "c02": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tt\">تحرير محلّ النزاع</span><span class=\"tag th\">أدلة قرآنية × ٤</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">بعد سلام الافتتاح، ينتقل الإباضي مباشرةً إلى صلب الموضوع: يُحرّر أولًا موضع الخلاف، ثم يعرض أربعة أدلة قرآنية مُرتّبة على خلق القرآن.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>تحرير محلّ النزاع:</b> المتفق عليه أن القرآن كلام الله المنزَّل، والخلاف في: هل هو <span class=\"gterm\">صفة</span> لله فغير مخلوق، أم <span class=\"gterm\">أثر صفة</span> فمخلوق؟</li><li><b>الدليل الأول — لفظ \"جعلناه\":</b> الجعل التكويني = الإيجاد من عدم، ويستحيل إسناده إلى الصفات الأزلية (فلا يقال: جعل الله علمه محيطًا).</li><li><b>الدليل الثاني — \"محدَث\":</b> وصف القرآن بالإحداث في آيتي الأنبياء والشعراء، والمحدَث هو الموجود بعد عدم، وردّ القدم على هذا خروجٌ عن الظاهر.</li><li><b>الدليل الثالث — اللوح المحفوظ:</b> اللوح مخلوق، والمخلوق لا يكون وعاءً لغير مخلوق، ولو كان القرآن أزليًّا لقيل: قائم بالعزيز الحميد.</li><li><b>الدليل الرابع — \"لحافظون\":</b> المحفوظ يحتاج من يحفظه، وغير المخلوق مستغنٍ عن الحفظ، فلا يقال: حفظ الله علمه أو قدرته.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الصفة</span>: وصفٌ لازمٌ لموصوفه لا ينفك عنه، كعلم الله وقدرته</li><li><span class=\"gterm\">أثر الصفة</span>: ما ينتج عن الصفة خارج الذات، كالمطر أثر الرحمة</li><li><span class=\"gterm\">محدَث</span>: ما لم يكن ثم كان، أي ما أُوجِد بعد عدم</li><li><span class=\"gterm\">تحرير محلّ النزاع</span>: تحديد نقطة الخلاف الحقيقية بعيدًا عن المتفق عليه</li></ul></div></div>", "c03": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag ts\">استفسار</span><span class=\"tag ti\">إلزام ضمني</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">بعد سماع مذهب الإباضي، يطلب عبد الرحمن توضيح الأساس الفلسفي للمذهب قبل الرد، ويضمّن استفساره لازمًا مُحرِجًا.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الاستفسار الأول:</b> إذا كان القرآن مخلوقًا وليس صفةً، فماذا يكون؟ وكيف يُنسَب كلامًا لله؟</li><li><b>الاستفسار الثاني:</b> هل معنى ذلك أن الله لا يستطيع التواصل مع عباده إلا بمخلوق؟</li><li><b>الإلزام الضمني:</b> التواصل بمخلوق يوحي بالحاجة إلى الوسيط، وهذا ينافي الكمال الإلهي.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">صفة التكلم الأزلية</span>: الصفة التي بها يتكلم الله، وهي محلّ الخلاف هل هي القرآن ذاته أم شيء آخر</li></ul></div></div>", "c04": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">رد</span><span class=\"tag tq\">قياس</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يجيب الإباضي على الاستفسار بأن الله يبلّغ بوسائط مخلوقة دون أن يعني ذلك افتقاره إليها، ويُحدّد صفة التكلم عند مذهبه.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الرد على إشكال الحاجة:</b> الله أرسل أنبياء مخلوقين وجعل المخلوقات دليلًا على وجوده، فاستخدام المخلوق وسيلةً لا يعني الحاجة إليه.</li><li><b>القياس:</b> كما أن الله لا يحتاج للنبي لكنه أرسله، فكذلك لا يحتاج للكلام المخلوق لكنه خلقه وسيلةً.</li><li><b>تحديد صفة التكلم:</b> هي القدرة على إنشاء الكلام، لا الكلام نفسه — كصفة الخلق هي القدرة على الإيجاد لا المخلوقين.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">القياس</span>: إلحاق مسألة بمسألة أخرى لاشتراكهما في علة، للتدليل على الحكم</li><li><span class=\"gterm\">صفة الخلق</span>: القدرة على الإيجاد من عدم، وهي صفةٌ أزلية غير مخلوقة، بينما المخلوقون أنفسهم مخلوقون</li></ul></div></div>", "c05": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag ti\">إلزام</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">بعد أن حدّد الإباضي صفة التكلم بـ\"القدرة على إنشاء الكلام\"، يُلزمه عبد الرحمن بنتيجة يرى أنها تلزم من هذا القول.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>بناء الإلزام:</b> إذا كان كل كلام الله المتلفظ به مخلوقًا، فمعنى ذلك أن الله لا يُسمع عباده كلامه الحقيقي أبدًا — وما يُسمعونه ليس كلامه بل كلامٌ مخلوق.</li><li><b>النتيجة اللازمة:</b> هذا يعني — في رأيه — أن الله مفتقرٌ إلى مخلوق ليتواصل مع خلقه، وهذا الافتقار عجزٌ لا يليق.</li><li><b>التفريق عن إثبات الوجود:</b> يُميّز عبد الرحمن بين إثبات وجوده (وهو قادر لكنه لا يفعله لحكمة الابتلاء) وبين إسماع كلامه.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الإلزام</span>: أسلوبٌ جدلي يُثبت فيه المناظِر أن مذهب خصمه يستلزم نتيجةً يرفضها، ليُثبت بذلك بطلان المذهب</li><li><span class=\"gterm\">لازم القول</span>: ما يترتب على قولٍ ما حتمًا، حتى لو لم يقصده صاحبه</li></ul></div></div>", "c06": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">رد</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يرد الإباضي على الإلزام بأن أسلوبه يُشابه أسلوب من رفضوا نبوة البشر، ويطلب الانتقال إلى الأدلة.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>التشبيه بكلام الكفار:</b> الآية ﴿أبعث الله بشرًا رسولًا؟﴾ تعقّبت من رفضوا الهداية بمخلوق، وعبد الرحمن في رأيه يفعل الشيء ذاته.</li><li><b>ربط بالإلحاد:</b> يرى أن هذا الأسلوب (التعجب من الهداية بمخلوق) يستخدمه الملحدون.</li><li><b>الطلب:</b> يطلب الانتقال من الإلزام إلى الأدلة النصية المباشرة.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">التشبيه بكلام الكفار</span>: أسلوبٌ جدلي يُبيّن الخصم فيه أن موقف المخالف يُشابه موقفًا مرفوضًا، مما يُفسد الحجة</li></ul></div></div>", "c07": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag te\">اعتذار</span><span class=\"tag tf\">تفنيد التشبيه</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يعتذر عبد الرحمن عن التأخير ثم يُفنّد التشبيه بينه وبين كلام الكفار بيانًا للفارق.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الاعتذار:</b> عن التأخير بسبب الاختبارات والبحوث الفقهية.</li><li><b>الفارق الأول — الدافع:</b> الكفار قالوا ذلك استكبارًا وعنادًا بلا دليل، أما هو فإلزامٌ منطقي.</li><li><b>الفارق الثاني — المحتوى:</b> الكفار هربوا من بشر مخلوق إلى ملَك مخلوق، أي من مخلوقٍ إلى مخلوقٍ آخر. أما هو فيتكلم عن صفة الله لا مخلوقاته.</li><li><b>خلاصة التفريق:</b> التشبيه مع الفارق، فلا يجوز إسقاطه.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">تفنيد</span>: إثبات بطلان حجة الخصم بكشف خطئها الداخلي أو تناقضها</li><li><span class=\"gterm\">قياس مع الفارق</span>: قياسٌ يجمع بين شيئين مع وجود فرق جوهري بينهما يمنع صحة القياس</li></ul></div></div>", "c08": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">رد</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يردّ الإباضي بوصف الإلزام بالتفاهة ثم يبيّن أن المهم نسبة الكلام لله لا طبيعته.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>وصف الإلزام بالتفاهة:</b> يرى أن الإلزام مبني على سوء فهم.</li><li><b>الرد الجوهري:</b> المهم أن هذا الكلام منسوبٌ لله، أيًّا كانت طبيعته. فالرسول ﷺ يُبلّغ وحيًا ولا يعلم ما في نفس الله.</li><li><b>المثال:</b> الرسول يقول \"ما ينطق عن الهوى إن هو إلا وحي يوحى\" — فهل نقول إنه يعلم ما في نفس الله؟</li></ol></div></div>", "c09": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag th\">حجة قرآنية × ٢</span><span class=\"tag ti\">إلزام مُحكَم</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">بعد وصف الإلزام بالتفاهة، يطرح عبد الرحمن حجتين قرآنيتين جديدتين ثم يُعيد صياغة الإلزام بشكل أقوى.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الحجة الأولى — آية كن فيكون:</b> الأمر = القول = \"كن\"، والقول هو سبب إيجاد المخلوق. إن كان مخلوقًا لَزِمَ <span class=\"gterm\">تسلسلٌ ممتنع</span>: لكل قولٍ قولٌ يخلقه، ولذاك قولٌ آخر... إلى ما لا نهاية.</li><li><b>الحجة الثانية — سورة الرحمن:</b> ﴿علّم القرآن﴾ ثم ﴿خلق الإنسان﴾ — القرآن جُعل مفعولًا للتعليم لا للخلق، فهو من علم الله الذي هو غير مخلوق.</li><li><b>الإلزام المُحكَم:</b> إن كان الخالق لا يتكلم إلا بمخلوق → هو مفتقرٌ للمخلوق → المفتقر ليس بخالق.</li><li><b>تأكيد الفارق مع المشركين:</b> المشركون قالوا ذلك مكابرةً لتبرير رفضهم، أما هو فيبيّن لازم القول فقط.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">التسلسل الممتنع</span>: سلسلة لا نهاية لها من العلل لا يمكن وقوفها، وهي محالٌ عقلًا في الفاعلين</li><li><span class=\"gterm\">الإلزام المُحكَم</span>: إلزامٌ مبني على قاعدة منطقية صارمة لا تقبل الاستثناء</li></ul></div></div>", "c10": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">رد</span><span class=\"tag tf\">تفنيد الحجة الأولى</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يرد الإباضي على حجتي عبد الرحمن بمبدأ لغوي وبشواهد من المفسرين.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>المبدأ اللغوي — العطف لا يقتضي المغايرة:</b> كما أن جبريل وميكائيل عُطفا على الملائكة ولم يخرجا عنهم، فكذلك الأمر قد يعطف على الخلق دون مغايرة.</li><li><b>شهادة المفسرين:</b> ابن جرير وابن كثير ورشيد رضا فسّروا \"الأمر\" في ﴿ألا له الخلق والأمر﴾ بالتدبير والتشريع والتكوين، لا بمعنى الصفة المنفصلة عن الخلق.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">العطف لا يقتضي المغايرة</span>: قاعدة نحوية: معطوف الشيء على شيء لا يشترط أن يكون من جنسٍ مختلف</li></ul></div></div>", "c11": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tt\">تنظيمي</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">بعد تبادل الحجج الأولية، يقترح عبد الرحمن الانتقال إلى مناظرة منظمة ذات قواعد واضحة وتحديد مصادر الاستدلال.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>نظام التناوب:</b> كل طرف يطرح حجة ثم يرد على حجة الآخر.</li><li><b>تحديد المصادر:</b> لضمان أن يكون الاستدلال من مصادر يقبل بها الطرفان.</li><li><b>الغاية:</b> الوصول إلى نتيجة دون تشعب مفرط في المسألة.</li></ol></div></div>", "c12": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tt\">تنظيمي</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يوافق الإباضي على الطريقة المقترحة مع تحفّظات على مصادر الاستدلال.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الموافقة:</b> على نظام التناوب في الحجج.</li><li><b>التحفّظ على التفاسير:</b> كل طرف له علماؤه، ولا يُلزَم الطرف الآخر بتفاسير مخالفيه.</li><li><b>القبول بالكتب الستة:</b> يقبل السنة من خلال الكتب الستة المتفق عليها.</li><li><b>المصادر المتفق عليها نهائيًّا:</b> القرآن، الكتب الستة (البخاري، مسلم، النسائي، ابن ماجه، أبو داود، الترمذي)، اللغة العربية.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الكتب الستة</span>: أمهات كتب الحديث النبوي: البخاري، مسلم، سنن النسائي، سنن ابن ماجه، سنن أبي داود، جامع الترمذي</li></ul></div></div>", "c13": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tt\">عرض المذهب</span><span class=\"tag th\">حجة قرآنية</span><span class=\"tag ts\">سؤال</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يفتتح عبد الرحمن المناظرة المنظمة بعرض موقفه بإيجاز ودقة، ثم يطرح أولى حججه الرسمية.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>عرض المذهب الأثري:</b> القرآن كلام الله بحرف وصوت، غير مخلوق، أوله \"بسم الله\" وآخره \"من الجنة والناس\".</li><li><b>الحجة — آية \"كن فيكون\":</b> أمره = قوله = \"كن\"، والقول سبب إيجاد الشيء. إن كان مخلوقًا لزم تسلسلٌ ممتنع في الفاعلين.</li><li><b>السؤال المُوجَّه:</b> إن كان الأمر مخلوقًا، كيف يكون مخلوقًا ويتعلق به إيجاد الشيء من العدم في نفس الوقت؟</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">المذهب الأثري</span>: مذهب يستند إلى الأثر (النصوص المروية) دون التأويل العقلي، ويُثبت الصفات الإلهية كما وردت</li></ul></div></div>", "c14": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">رد على الحجة</span><span class=\"tag ts\">سؤال استراتيجي (س١)</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يردّ الإباضي على دليل \"كن فيكون\" بتأويله، ثم يطرح سؤاله الاستراتيجي الأول.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>ج١ — تأويل \"كن\":</b> \"كن فيكون\" بيانٌ لسرعة انفعال الكائنات لإرادة الله، لا دليلٌ على قِدَم القرآن. والله لا يحتاج أن يقول \"كن\" ليخلق.</li><li><b>س١ — الصفة لا تنفك:</b> أنت قلت إن القرآن صفة لله — فهل تتفق أن الصفة لا تنفك عن موصوفها؟ (هذا سؤال استراتيجي يُمهّد لدليل اللوح المحفوظ).</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">السؤال الاستراتيجي</span>: سؤال يُوجّهه المناظِر لإلزام الخصم بمقدمة تُفضي إلى الدليل القادم</li><li><span class=\"gterm\">سرعة انفعال الكائنات</span>: التفسير القائل إن \"كن فيكون\" تعبيرٌ مجازي عن أن المخلوقات تستجيب لإرادة الله فورًا</li></ul></div></div>", "c15": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tf\">تفنيد ج١</span><span class=\"tag tr\">جواب س١</span><span class=\"tag ts\">سؤال مُقابل</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يردّ عبد الرحمن على تأويل الإباضي لـ\"كن\"، ويجيب عن سؤاله، ثم يطرح سؤالًا مقابلًا.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>تفنيد ج١:</b> تأويل \"كن\" بسرعة المشيئة تأويلٌ بلا دليل. والأصل حمل الكلام على ظاهره. فهل لك دليل على هذا التأويل من مصادرنا المتفق عليها؟</li><li><b>جواب س١:</b> نعم، القرآن من كلام الله وليس كلام الله كله. ونعم، الصفة لا تنفك عن موصوفها.</li><li><b>سؤال مُقابل:</b> إذا كتبت كلامي على الشبكة في جهاز — هل أفقده أنه كلامي؟ هل خرج من ملكيتي لأنه في وعاء رقمي؟</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">التأويل</span>: صرف اللفظ عن ظاهره إلى معنى آخر لدليل، وبدون دليل يُعدّ خروجًا عن الظاهر</li></ul></div></div>", "c16": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag th\">حجتان جديدتان</span><span class=\"tag ts\">سؤال استراتيجي (س٢)</span><span class=\"tag tr\">جواب السؤال المقابل</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يطرح الإباضي حجتين جديدتين، يطرح سؤاله الاستراتيجي الثاني، ثم يجيب عن سؤال الجهاز.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الحجة الجديدة ١ — الحروف المتعاقبة:</b> الكلام حادث لأن وجود النون مشروط بانقضاء الكاف، وهكذا. فالتعاقب الزماني يقتضي الحدوث.</li><li><b>الحجة الجديدة ٢ — آية آدم:</b> ﴿خلقه من تراب ثم قال له كن فيكون﴾ — \"كن\" جاءت بعد الخلق، فالمتأخر لا يُؤثّر في المتقدم، ودلّ على عدم تأثير \"كن\" في الإيجاد.</li><li><b>س٢ — اللوح المحفوظ:</b> الصفة لا تنفك عن موصوفها — فهل صفة الله في اللوح المحفوظ؟ الآية دليل على انفصال القرآن.</li><li><b>جواب السؤال المقابل:</b> كلامك المكتوب ليس صفتك. فلا يصح أن أقول \"سمعت صفة فلان\".</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الحروف المتعاقبة</span>: حجة تقول: لأن كل حرف يأتي بعد انتهاء الحرف قبله، فالكلام ذو تعاقب زماني وما كان كذلك فهو حادث</li><li><span class=\"gterm\">حدوث</span>: وجود الشيء بعد عدم، والحادث = المخلوق في هذا السياق</li><li><span class=\"gterm\">اللوح المحفوظ</span>: لوحٌ مخلوق كتب الله فيه كل ما سيكون إلى يوم القيامة</li></ul></div></div>", "c17": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tf\">تفنيد × ٤</span><span class=\"tag ts\">سؤال آية البحر</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يردّ عبد الرحمن ردودًا موسّعة على أربع نقاط في رد الإباضي، ثم يطرح سؤالًا جديدًا.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>نقض الحروف + إلزام النزول:</b> قاعدة \"التعاقب يقتضي الحدوث\" بلا دليل. والمعلوم أن المتكلم بأصوات متتابعة هو المتكلم بمشيئته وهي صفة كمال. ثم: إن كان التتابع يقتضي الخلق، فالنزول في البخاري ومسلم فعلٌ فيه تتابع زماني، فهل هو مخلوق؟</li><li><b>تفنيد آية آدم:</b> آدم خُلق بمراحل بدليل: ﴿فإذا سويته ونفخت فيه من روحي﴾ — التسوية للجسم والنفخ للروح. فـ\"كن\" لإتمام الخلق بنفخ الروح لا لابتدائه.</li><li><b>تفنيد دليل اللوح بالإلزام المُقابل:</b> علم الله أيضًا مكتوبٌ في اللوح — فهل انفصل علمه عنه؟ وهل علمه مخلوق؟</li><li><b>الرد اللغوي:</b> \"سمعت صوت فلان\" — والصوت صفته. فعدم صحة \"سمعت صفة فلان\" نحويًّا لا ينفي أن الصوت صفةٌ معنويًّا.</li><li><b>السؤال:</b> ﴿قل لو كان البحر مدادًا لكلمات ربي﴾ — هل كلمات الله عندكم مخلوقة؟</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">صفة كمال / صفة نقص</span>: صفة الكمال ما يُمدَح به، وصفة النقص ما يُذمّ به. والكلام بالأصوات كمالٌ والخرس نقص</li><li><span class=\"gterm\">النزول إلى السماء الدنيا</span>: حديث ثابت في البخاري ومسلم: \"ينزل ربنا كل ليلة إلى السماء الدنيا\" — يحتجّ به عبد الرحمن كصفةٍ فيها \"تتابع\" لكنها ثابتة</li></ul></div></div>", "c18": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">ردود مختصرة</span><span class=\"tag th\">حجة أثر صحابي</span><span class=\"tag ts\">إصرار على س٢</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يردّ الإباضي بإيجاز على النقاط المطروحة ثم يطرح حجة جديدة من أثر ابن مسعود رضي الله عنه.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الرد على النزول:</b> الإباضية لا يُثبتون النزول الحرفي، وقولهم كقول الأشاعرة في الصفات الفعلية (يؤوّلون).</li><li><b>الرد على آية آدم:</b> \"قال له كن فيكون\" بعد الخلق — صريح الآية. والمراحل (الطين والتراب) مخلوقةٌ هي الأخرى.</li><li><b>الإصرار على س٢:</b> سؤاله واضح: هل صفة الله في اللوح المحفوظ؟ بنعم أو لا.</li><li><b>الرد اللغوي:</b> كلامه المكتوب ليس صفته — فلا دخل للبحث اللغوي.</li><li><b>حجة أثر ابن مسعود:</b> ابن مسعود رضي الله عنه قارن آية الكرسي بالمخلوقات (سماء وأرض وجبل)، فدلّ على علمه أنها من جنسها. فلا يجوز مقارنة صفات الله بمخلوقاته — كما لا يقال \"ما خلق الله شيئًا أعظم من علم الله\".</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الأشاعرة</span>: مذهبٌ كلامي يُأوّل الصفات الفعلية الإلهية (كالنزول والاستواء) بما لا يُوحي بالتشبيه بالمخلوق</li><li><span class=\"gterm\">الصفات الفعلية</span>: صفاتٌ تتعلق بمشيئة الله وتكون وقت إرادته، كالنزول والغضب والرضا، بخلاف الصفات الذاتية الأزلية</li></ul></div></div>", "c19": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tf\">نقض الحروف</span><span class=\"tag tf\">تفصيل آية آدم</span><span class=\"tag tf\">تفنيد التشبيه بالمشركين</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يستأنف عبد الرحمن — بعد انقطاع طويل — ردوده على الحجج المتراكمة في رد الإباضي.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>نقض قاعدة الحروف — جهة١:</b> القاعدة بلا دليل: ﴿قل هاتوا برهانكم﴾. والمتكلم بحروف هو المتكلم بمشيئته — صفة كمال. وضدّ الكلام الخرسُ وهو صفة نقص.</li><li><b>نقض قاعدة الحروف — جهة٢:</b> إن كان التتابع يقتضي الخلق، فهو يُلزمهم بخلق النزول، وهم لا يقبلون ذلك.</li><li><b>تفصيل آية آدم:</b> ﴿خلقه من تراب﴾ = ﴿فإذا سويته﴾ (تسوية الجسم). ﴿ثم قال له كن فيكون﴾ = ﴿ونفخت فيه من روحي﴾ (إتمام الخلق). فأصل الإنسان (التراب) خُلق قبله لكن لم يكتمل خلق آدم إلا بنفخ الروح.</li><li><b>تفنيد التشبيه بكلام المشركين:</b> المشركون هربوا من مخلوقٍ (بشر) إلى مخلوقٍ آخر (ملَك). أما هو فيُبيّن لازم القول بأن الرب مفتقرٌ إلى مخلوق ليتكلم — وهذا نقصٌ مستحيل.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الاستئناف</span>: العودة إلى الحوار بعد انقطاع بسبب الاختبارات</li><li><span class=\"gterm\">الجهتان في النقض</span>: مصطلح يعني أن الحجة ضعيفة من جهتين مختلفتين، مما يُعزّز الرد</li></ul></div></div>", "c20": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">جواب س٢</span><span class=\"tag ti\">إلزام بعلم الله</span><span class=\"tag ts\">أسئلة جوهرية</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يجيب عبد الرحمن على سؤال اللوح (س٢) الذي كان الإباضي يُلحّ عليه، ويُلزمه من الجواب.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الجواب:</b> نعم، القرآن في اللوح المحفوظ.</li><li><b>الإلزام بالعلم:</b> وكذلك علم الله كُتب في اللوح (بدليل الآية والحديث). فإن كانت قاعدتك \"المخلوق لا يحوي غير مخلوق\" صحيحة، لزم منها أن علم الله مخلوق. وهذا لا يقوله أحد.</li><li><b>اللازمان:</b> يلزمك (١) الدليل على القاعدة، أو (٢) القول بأن علم الله مخلوق — ومن الثاني يلزم أن الله كان جاهلًا ثم خلق لنفسه علمًا.</li><li><b>الأسئلة الجوهرية:</b> هل يوجد كلامٌ بلا متكلم؟ إذا لم يكن الكلام صفةً وجب أن يقوم بذاته — والكلام لا يقوم بذاته، فيلزم لكل كلام متكلم.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">القاعدة المطعون فيها</span>: \"المخلوق لا يكون وعاءً لغير مخلوق\" — يطعن عبد الرحمن في هذه القاعدة بمثال علم الله في اللوح</li></ul></div></div>", "c21": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tr\">توضيح منهجي</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يُفصّل عبد الرحمن الفرق بين الحقيقة النحوية وبين الحقيقة المعنوية، ردًّا على حجة \"لا يصح سمعت صفة فلان\".</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>المبدأ:</b> صحة التركيب النحوي ≠ الحقيقة المعنوية.</li><li><b>المثال الأول:</b> \"سمعت صوت فلان\" — صحيحٌ نحويًّا. \"سمعت صفة فلان\" — لا يصح نحويًّا. لكن الصوت صفةٌ معنويًّا.</li><li><b>المثال الثاني:</b> \"رأيت جمال فلان\" أو \"شعرت بحبّه\" — لا يصح \"رأيت صفة فلان\" أو \"شعرت بصفته\" نحويًّا، لكن الجمال والحب صفاتٌ.</li><li><b>النتيجة:</b> فالصوت يلزم منه مصدرٌ، والجمال يلزم منه جميلٌ، والحب يلزم منه محبٌّ — مهما اختلف التركيب النحوي.</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الحقيقة النحوية</span>: ما يصح وما لا يصح من تراكيب الجمل في اللغة العربية</li><li><span class=\"gterm\">الحقيقة المعنوية</span>: ما يدل عليه المعنى من صفاتٍ ونسب، بصرف النظر عن صحة التركيب النحوي</li></ul></div></div>", "c22": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag tf\">تفنيد حجة ابن مسعود</span><span class=\"tag th\">تمهيد لأدلة موسّعة</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يردّ عبد الرحمن على حجة ابن مسعود ثم يُعلن أن لديه أدلة من مصادر متعددة.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>نقض الحجة:</b> المقارنة بين الله ومخلوقاته في العظمة جائزةٌ بدليل \"الله أكبر\" في افتتاح الصلاة.</li><li><b>التفسير:</b> \"الله أكبر\" = أكبر من كل شيء = أكبر من كل خلقه. فالمقارنة لإثبات عظمته لا لكون المقارَن به من جنسه.</li><li><b>الإلزام المعاكس:</b> أقتداءً بابن مسعود أقول \"ما خلق الله من شجر ولا حجر أعظم من الله\" — فهل في قولي خطب؟</li><li><b>إعلان الأدلة:</b> لديّ أدلة من القرآن والسنة والصحابة والتشريعات والعقل واللغة — أيّها تريد؟</li></ol></div></div><div class=\"ts\"><div class=\"ts-label\">مصطلحات</div><div class=\"ts-body\"><ul><li><span class=\"gterm\">الله أكبر</span>: تكبيرٌ يُقال في افتتاح الصلاة، معناه الله أكبر من كل شيء — وهو مقارنةٌ بين الله ومخلوقاته</li></ul></div></div>", "c23": "<div class=\"ts\"><div class=\"ts-label\">نوع الرد</div><div class=\"ts-body\"><div class=\"ts-tags\"><span class=\"tag th\">شاهد قرآني</span><span class=\"tag te\">دعاء وختام</span></div></div></div><div class=\"ts\"><div class=\"ts-label\">السياق والمناسبة</div><div class=\"ts-body\">يُضيف عبد الرحمن شاهدًا من سورة الروم يُعزّز حجته على مراحل خلق آدم، ثم يختم بالدعاء.</div></div><div class=\"ts\"><div class=\"ts-label\">أبرز النقاط</div><div class=\"ts-body\"><ol><li><b>الشاهد:</b> ﴿ومن آياته أن خلقكم من تراب ثم إذا أنتم بشرٌ تنتشرون﴾.</li><li><b>الدلالة الأولى:</b> \"الخلق من التراب\" = خلق الصورة من مادة الأصل. و\"ثم إذا أنتم بشر\" = بعد نفخ الروح.</li><li><b>الدلالة الثانية:</b> \"تنتشرون\" = التكاثر، ولا يكون التكاثر إلا بعد الحياة. فدلّ على أن \"ثم إذا أنتم بشر\" يعني مرحلة ما بعد نفخ الروح.</li><li><b>المعنى المستخلص:</b> ومن آياته أن خلقكم من أصلٍ (التراب) ثم بثّ فيكم الروح فإذا أنتم بشرٌ أحياءٌ تنتشرون في الأرض وتتكاثرون.</li></ol></div></div>"};
+/* ===== STATE ===== */
+let _curId = '', _curText = '';
+const analysisCache = {};
 
-function openModal(id) {
-  const d = tips[id];
-  if (!d) return;
-  document.getElementById('modalTitle').textContent = d.t;
-  document.getElementById('modalBody').innerHTML = d.b;
+/* ===== MODAL OPEN / CLOSE ===== */
+function openModal(id){
+  const d = TIPS[id];
+  if(!d) return;
+  _curId = id;
+  const btn = document.querySelector('[onclick="openModal(\''+id+'\')"]');
+  const card = btn ? btn.closest('.card') : null;
+  document.getElementById('mtitle').textContent = card ? card.querySelector('.ctitle').textContent : '';
+  _curText = card ? (card.querySelector('.cb').innerText || '') : '';
+  document.getElementById('mbody').innerHTML = d;
+  document.getElementById('analysis-body').innerHTML = analysisCache[id]
+    ? renderAnalysis(analysisCache[id])
+    : '<div class="ai-loading"><div class="ai-spinner"></div><span>اضغط على التبويب للتحليل</span></div>';
+  switchTab('explain');
   document.getElementById('modal').classList.add('open');
-  document.getElementById('modalBg').classList.add('open');
+  document.getElementById('mbg').classList.add('open');
 }
-function closeModal() {
+
+function closeM(){
   document.getElementById('modal').classList.remove('open');
-  document.getElementById('modalBg').classList.remove('open');
+  document.getElementById('mbg').classList.remove('open');
 }
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeM(); });
+
+/* ===== TABS ===== */
+function switchTab(tab){
+  document.getElementById('tab-explain').style.display  = tab === 'explain'  ? 'block' : 'none';
+  document.getElementById('tab-analysis').style.display = tab === 'analysis' ? 'block' : 'none';
+  document.getElementById('tab-btn-explain').classList.toggle('active',  tab === 'explain');
+  document.getElementById('tab-btn-analysis').classList.toggle('active', tab === 'analysis');
+  if(tab === 'analysis' && !analysisCache[_curId]) runAnalysis(_curId, _curText);
+}
+
+/* ===== AI ANALYSIS ===== */
+async function runAnalysis(id, cardText){
+  const el = document.getElementById('analysis-body');
+  el.innerHTML = '<div class="ai-loading"><div class="ai-spinner"></div><span>يُحلَّل المستوى العلمي…</span></div>';
+  try{
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: buildPrompt(cardText) }]
+      })
+    });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    const text = data.content.map(i => i.text || '').join('\n');
+    const clean = text.replace(/```json\n?|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    analysisCache[id] = parsed;
+    el.innerHTML = renderAnalysis(parsed);
+  } catch(e){
+    el.innerHTML = '<div class="ai-error">⚠ تعذّر التحليل<br><button onclick="runAnalysis(\''+id+'\',_curText)">إعادة المحاولة</button></div>';
+  }
+}
+
+function buildPrompt(t){
+  return `أنت محلل علمي متخصص في علوم الإسلام وآداب المناظرات والمنطق والكلام.\n\nالسياق: مناظرة بين أثري وإباضي حول هل القرآن صفة لله أم أثر صفة مخلوق.\n\nنص الرد المراد تحليله:\n"""\n${t}\n"""\n\nالمطلوب:\n١. استخرج القواعد التي بُني عليها هذا الرد — ظاهرة (مصرح بها) ومبطنة (يُبنى عليها دون التصريح)\n٢. حدد العلوم والفنون المستخدمة (علم الكلام، أصول الفقه، مصطلح الحديث، آداب المناظرات، المنطق، اللغة العربية، أصول الدين إلخ) مع مستوى التوظيف\n٣. قيّم المستوى العلمي الكلي\n\nأجب بـJSON فقط بلا أي نص خارجه:\n{\n  "rules": [\n    {"text": "نص القاعدة", "type": "ظاهرة", "note": "موضع الاستخدام في الرد"},\n    {"text": "قاعدة أخرى", "type": "مبطنة", "note": "كيف بُني عليها"}\n  ],\n  "disciplines": [\n    {"name": "اسم العلم", "level": "سطحي", "note": "مثال من الرد"},\n    {"name": "علم آخر", "level": "متوسط", "note": "مثال"}\n  ],\n  "level": {\n    "grade": "متوسط",\n    "score": 6,\n    "strengths": "نقاط القوة في الرد",\n    "gaps": "ما يمكن تعزيزه أو الثغرات"\n  }\n}`;
+}
+
+function renderAnalysis(data){
+  let h = '';
+  if(data.rules && data.rules.length){
+    h += '<div class="an-sec"><div class="an-label">القواعد المنهجية</div><div class="an-body">';
+    data.rules.forEach(r => {
+      const cls = r.type === 'ظاهرة' ? 'rule-explicit' : 'rule-implicit';
+      h += '<div class="rule-item">'
+         + '<span class="rule-badge ' + cls + '">' + r.type + '</span>'
+         + '<div class="rule-content">'
+         + '<div class="rule-text">' + r.text + '</div>'
+         + (r.note ? '<div class="rule-note">' + r.note + '</div>' : '')
+         + '</div></div>';
+    });
+    h += '</div></div>';
+  }
+  if(data.disciplines && data.disciplines.length){
+    h += '<div class="an-sec"><div class="an-label">العلوم والفنون المستخدمة</div><div class="an-body">';
+    data.disciplines.forEach(d => {
+      const lc = d.level === 'سطحي' ? 'level-low' : d.level === 'متوسط' ? 'level-mid' : 'level-high';
+      h += '<div class="disc-item">'
+         + '<div class="disc-header"><span class="disc-name">' + d.name + '</span><span class="disc-level ' + lc + '">' + d.level + '</span></div>'
+         + (d.note ? '<div class="disc-note">' + d.note + '</div>' : '')
+         + '</div>';
+    });
+    h += '</div></div>';
+  }
+  if(data.level){
+    const l = data.level;
+    const grades = {'مبتدئ':'#888','متوسط':'#c9a84c','متقدم':'#6aabdd','عالٍ':'#7ec46e'};
+    const gc = grades[l.grade] || '#c9a84c';
+    const pct = Math.round((l.score / 10) * 100);
+    h += '<div class="an-sec">'
+       + '<div class="an-label">المستوى العلمي الكلي</div>'
+       + '<div class="an-body">'
+       + '<div class="level-header">'
+       + '<span class="level-grade" style="color:' + gc + '">' + l.grade + '</span>'
+       + '<div class="level-score">'
+       + '<div class="score-bar"><div class="score-fill" style="width:' + pct + '%;background:' + gc + '"></div></div>'
+       + '<span class="score-num">' + l.score + '/١٠</span>'
+       + '</div></div>'
+       + (l.strengths ? '<div class="level-row"><strong>نقاط القوة:</strong> ' + l.strengths + '</div>' : '')
+       + (l.gaps ? '<div class="level-row"><strong>ما يمكن تعزيزه:</strong> ' + l.gaps + '</div>' : '')
+       + '</div></div>';
+  }
+  return h || '<p style="color:var(--td);text-align:center;padding:20px">لا يوجد تحليل.</p>';
+}
+
 </script>
 </body>
 </html>
