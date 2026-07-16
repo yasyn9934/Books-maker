@@ -2132,6 +2132,12 @@
     }
 
     // --- 4. معالجة النصوص والأقواس الذكية ---
+    // [FIX] الحد الأقصى لطول النص المقتبس بين «» أو ﴿﴾ ليُشغّل البحث التلقائي.
+    // اقتباسات الحديث/الآية الحقيقية قصيرة عادة. بدون هذا الحد، أي فقرة طويلة يكتبها
+    // المستخدم بين علامتي اقتباس كانت تُرسَل كاملة كاستعلام بحث — رابط ضخم يفشل غالباً
+    // (خطأ CORS/طول رابط) عبر وسيط api.allorigins.win، ويهدر طلب شبكة بلا فائدة أصلاً.
+    const SMART_SEARCH_MAX_LEN = 300;
+
     function checkSmartBrackets(e) {
         const val = e.target.value; const pos = e.target.selectionStart;
         let lastQ = val.lastIndexOf('﴿', pos-1); let nextQ = val.indexOf('﴾', pos);
@@ -2139,18 +2145,24 @@
         clearTimeout(searchTimer);
         if (lastQ !== -1 && nextQ !== -1 && pos <= nextQ) {
             let query = val.substring(lastQ+1, nextQ).trim();
-            if (query.length > 2) { showPanelMessage("جاري البحث في المصحف..."); searchTimer = setTimeout(() => fetchQuran(query), 800); }
+            if (query.length > 2 && query.length <= SMART_SEARCH_MAX_LEN) { showPanelMessage("جاري البحث في المصحف..."); searchTimer = setTimeout(() => fetchQuran(query), 800); }
+            else if (query.length > SMART_SEARCH_MAX_LEN) { hidePanel(); }
         } else if (lastH !== -1 && nextH !== -1 && pos <= nextH) {
             let query = val.substring(lastH+1, nextH).trim();
-            if (query.length > 3) { showPanelMessage("جاري التخريج من الدرر السنية..."); searchTimer = setTimeout(() => fetchHadith(query), 800); }
+            if (query.length > 3 && query.length <= SMART_SEARCH_MAX_LEN) { showPanelMessage("جاري التخريج من الدرر السنية..."); searchTimer = setTimeout(() => fetchHadith(query), 800); }
+            else if (query.length > SMART_SEARCH_MAX_LEN) { hidePanel(); }
         } else { hidePanel(); }
     }
 
     async function fetchQuran(query) {
+        // [FIX] احتياط إضافي حتى لو استُدعيت الدالة من مكان آخر مستقبلاً بنص طويل
+        if (query.length > SMART_SEARCH_MAX_LEN) { showPanelMessage("النص المحدد طويل جداً للبحث التلقائي."); return; }
         try { let res = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(query)}/all/quran-simple-clean`); let data = await res.json(); if(data.data.matches) renderQuran(data.data.matches); } catch(e) { showPanelMessage("خطأ في الاتصال بمحرك البحث."); }
     }
     async function fetchHadith(query) {
-        try { let url = `https://dorar.net/dorara/hadith/search?q=${encodeURIComponent(query)}`; let res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`); let data = await res.json(); let doc = new DOMParser().parseFromString(data.contents,'text/html'); let items = doc.querySelectorAll('.hadith-info'); if(items.length > 0) renderHadith(items); else showPanelMessage("لم يتم العثور على أحاديث."); } catch(e) { showPanelMessage("فشل الاتصال بموسوعة الحديث."); }
+        // [FIX] نفس الاحتياط لمنع رابط ضخم يفشل عبر وسيط CORS
+        if (query.length > SMART_SEARCH_MAX_LEN) { showPanelMessage("النص المحدد طويل جداً للبحث التلقائي."); return; }
+        try { let url = `https://dorar.net/dorara/hadith/search?q=${encodeURIComponent(query)}`; let res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(12000) }); let data = await res.json(); let doc = new DOMParser().parseFromString(data.contents,'text/html'); let items = doc.querySelectorAll('.hadith-info'); if(items.length > 0) renderHadith(items); else showPanelMessage("لم يتم العثور على أحاديث."); } catch(e) { showPanelMessage("فشل الاتصال بموسوعة الحديث — قد تكون الخدمة الخارجية غير متاحة مؤقتاً."); }
     }
 
     function renderQuran(matches) {
