@@ -502,7 +502,7 @@
             const _cu = (typeof currentUser !== 'undefined') ? currentUser : null;
             if (navigator.onLine && _cu && _cu.role === 'member' && typeof AUTH_CONFIG !== 'undefined') {
               fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-                action:       'save_viewed_shares',
+                action:       'save_viewed_shares', token:currentUser.token,
                 userId:       _cu.id,
                 viewedShares: JSON.parse(localStorage.getItem('royal_viewed_shares')||'[]')
               })}).catch(()=>{});
