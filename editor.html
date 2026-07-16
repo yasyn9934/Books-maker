@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محرك الكتب الملكي - الإصدار الماسي المعتمد</title>
     <script src="auth.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- [FIX] أُزيلت مكتبة jsPDF — كانت محمّلة بالكامل (~200 كيلوبايت) دون أي استخدام فعلي
+         في الكود؛ تصدير PDF يعتمد بالكامل على window.print() (طباعة المتصفح). -->
     <script src="plugins.js"></script>
     <script src="PDFs/royal-assets.js"></script>
     <script src="PDFs/royal-parser.js"></script>
@@ -16,7 +17,9 @@
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof RoyalFeatures !== 'undefined') {
                 for(let f in RoyalFeatures) {
-                    currentSiteFeatures[f] = { css: RoyalFeatures[f].css, execute: RoyalFeatures[f].execute.toString() };
+                    // [FIX-SECURITY] نحتفظ بمرجع الدالة الحية نفسها، لا بنصها كسلسلة —
+                    // فلا حاجة لإعادة بنائها لاحقاً عبر new Function()/eval (انظر applyImport)
+                    currentSiteFeatures[f] = { css: RoyalFeatures[f].css, execute: RoyalFeatures[f].execute };
                 }
                 injectDynamicStyles(RoyalFeatures);
             }
@@ -43,6 +46,11 @@
         /* ── DESIGN TOKENS ──────────────────────────────────── */
         :root {
             --global-page-bg:  #FFFDD0;
+            /* [FIX] لون نص صفحة الكتاب — ثابت ومستقل تماماً عن سمة واجهة المحرر.
+               لم يكن موجوداً سابقاً، فكان نص المعاينة يرث color:var(--text) من body
+               (نفس المتغير الذي يُغيّره تبديل السمة/الوضع الليلي-النهاري في الواجهة)،
+               فيتغيّر لون نص الكتاب في المعاينة بلا داعٍ عند كل تبديل. */
+            --global-page-text: #2b2013;
             --global-font-size: 20pt;
             --royal-gold:  #b8860b;
             --royal-green: #6B8E23;
@@ -182,7 +190,7 @@
 
         /* ── BOOK CONTAINER ─────────────────────────────────── */
         #book-container { display:flex; flex-direction:column; gap:30px; width:250mm; margin:50px auto 70px; }
-        .page-wrapper   { width:250mm; height:353mm; position:relative; overflow:hidden; background-color:var(--global-page-bg)!important; page-break-after:always; box-shadow:0 10px 45px rgba(0,0,0,.55); box-sizing:border-box; }
+        .page-wrapper   { width:250mm; height:353mm; position:relative; overflow:hidden; background-color:var(--global-page-bg)!important; color:var(--global-page-text)!important; page-break-after:always; box-shadow:0 10px 45px rgba(0,0,0,.55); box-sizing:border-box; }
         .page-header    { position:absolute; width:100%; display:flex; justify-content:space-between; padding:0 35mm; font-size:14pt; color:#4a3f35; font-family:'Amiri'; font-weight:bold; z-index:10; }
         .style-islamic .page-header { top:6mm; } .style-classic .page-header { top:5mm; } .style-floral .page-header { top:7mm; } .style-royal .page-header { top:8mm; } .style-minimal .page-header { top:5mm; } .style-clean .page-header { top:10mm; }
         .content-body   { position:absolute; top:42mm; bottom:25mm; left:35mm; right:35mm; font-size:var(--global-font-size); line-height:2.2; z-index:2; overflow:hidden; }
@@ -923,18 +931,10 @@
     </div>
 </div>
 
-<!-- Import Modal -->
-<div id="importModal" class="modal-overlay">
-    <div class="modal-content">
-        <h2 class="modal-title">كيف تود استيراد الكتاب؟</h2>
-        <p class="modal-desc">وجدنا أكواد تنسيق مدمجة داخل هذا الملف — هل تريد تطبيقها أم تفضل أحدث أكواد الموقع؟</p>
-        <div class="modal-buttons">
-            <button class="btn-modal btn-original" onclick="applyImport(true)">📦 استيراد بالأكواد الأصلية للملف</button>
-            <button class="btn-modal btn-current"  onclick="applyImport(false)">🌐 استيراد بأكواد الموقع الحالية</button>
-            <button class="btn-modal btn-cancel"   onclick="closeImportModal()">✖ إلغاء</button>
-        </div>
-    </div>
-</div>
+<!-- [FIX-SECURITY] تم حذف نافذة "استيراد بالأكواد الأصلية للملف" -
+     كانت تسمح بتنفيذ كود جافاسكربت من ملفات مستوردة (ثغرة تنفيذ كود عشوائي).
+     الاستيراد الآن يستخدم دائماً أكواد الموقع الموثوقة تلقائياً (انظر handleFileSelect). -->
+
 
 <!-- Confirm Modal -->
 <div id="confirmModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;justify-content:center;align-items:center;backdrop-filter:blur(9px);">
@@ -1381,27 +1381,48 @@
     let activeTheme = 'classic';
     let isDayMode   = false;
 
-    /** تطبيق متغيرات السمة — لا تؤثر على --global-page-bg أبدًا */
+    // ══════════════════════════════════════════════════════
+    // [FIX] تفضيلات المحرر (السمة اللونية + الوضع الليلي/النهاري)
+    // كانت غير محفوظة إطلاقاً (الوضع الليلي/النهاري) أو محفوظة خطأً
+    // داخل بيانات كتاب واحد بدل أن تكون تفضيلاً عاماً للمحرر — الآن
+    // تُحفظ في مفتاح localStorage مستقل، فتبقى ثابتة بين الكتب وبين الجلسات.
+    // ══════════════════════════════════════════════════════
+    const EDITOR_PREFS_KEY = 'royal_editor_prefs';
+
+    function _saveEditorPrefsLocally() {
+        try { localStorage.setItem(EDITOR_PREFS_KEY, JSON.stringify({ theme: activeTheme, dayMode: isDayMode })); }
+        catch(e) {}
+    }
+
+    function _loadEditorPrefsLocally() {
+        try {
+            const p = JSON.parse(localStorage.getItem(EDITOR_PREFS_KEY) || '{}');
+            if (p.theme && royalThemes[p.theme]) activeTheme = p.theme;
+            if (typeof p.dayMode === 'boolean') isDayMode = p.dayMode;
+        } catch(e) {}
+    }
+
+    /** تطبيق متغيرات السمة — لا تؤثر على --global-page-bg أو --global-page-text أبدًا */
     function applyThemeVars(themeName) {
         const theme = royalThemes[themeName];
         if (!theme) return;
         const root = document.documentElement;
-        // طبّق المتغيرات الأساسية (بدون --global-page-bg)
+        // طبّق المتغيرات الأساسية (بدون متغيرات صفحة الكتاب الثابتة)
         for (let v in theme.vars) {
-            if (v === '--global-page-bg') continue;
+            if (v === '--global-page-bg' || v === '--global-page-text') continue;
             root.style.setProperty(v, theme.vars[v]);
         }
         // طبّق متغيرات السطح حسب الوضع الليلي / النهاري
         if (isDayMode && theme.dayVars) {
             for (let v in theme.dayVars) {
+                if (v === '--global-page-bg' || v === '--global-page-text') continue;
                 root.style.setProperty(v, theme.dayVars[v]);
             }
         }
     }
 
-    /** تبديل الوضع الليلي ↔ النهاري */
-    function toggleDayNight() {
-        isDayMode = !isDayMode;
+    /** تحديث نص/أيقونة زر الوضع الليلي/النهاري بحسب isDayMode الحالية */
+    function _refreshDayNightUI() {
         const icon  = document.getElementById('dayNightIcon');
         const label = document.getElementById('dayNightLabel');
         if (isDayMode) {
@@ -1411,9 +1432,18 @@
             if (icon)  icon.textContent  = '🌙';
             if (label) label.textContent = 'ليلي';
         }
+    }
+
+    /** تبديل الوضع الليلي ↔ النهاري */
+    function toggleDayNight() {
+        isDayMode = !isDayMode;
+        _refreshDayNightUI();
         document.body.classList.add('theme-switching');
         applyThemeVars(activeTheme);
         setTimeout(() => document.body.classList.remove('theme-switching'), 500);
+        // [FIX] لم يكن يُحفظ إطلاقاً — الآن يُحفظ محلياً فوراً + مزامنة سحابية مؤجلة
+        _saveEditorPrefsLocally();
+        _scheduleColorSync();
     }
 
     /** تطبيق السمة اللونية على المحرر بالكامل — المعاينة لا تتغير */
@@ -1434,12 +1464,17 @@
 
         // حفظ السمة
         if (save) {
+            // [FIX] السمة اللونية للمحرر هي تفضيل عام (لا يخص كتاباً بعينه) —
+            // كانت تُحفظ فقط داخل بيانات الكتاب الحالي فتُفقد عند فتح كتاب آخر
+            // أو إنشاء كتاب جديد. الآن تُحفظ في مفتاح تفضيلات مستقل أيضاً.
+            _saveEditorPrefsLocally();
             try {
+                // نُبقي الحفظ ضمن بيانات الكتاب أيضاً للتوافق مع ملفات .rbook المُصدَّرة سابقاً
                 let s = JSON.parse(localStorage.getItem('bookData') || '{}');
                 s.selectedTheme = themeName;
                 localStorage.setItem('bookData', JSON.stringify(s));
             } catch(e) {}
-            // [FIX] مزامنة السمة صامتاً إلى درايف
+            // مزامنة السمة صامتاً إلى درايف
             _scheduleColorSync();
         }
     }
@@ -1926,7 +1961,7 @@
             if (!navigator.onLine) throw new Error("Offline");
             const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action:"save_book", userId:currentUser.id, userName:currentUser.username, bookId:bookData.id, bookData:bookData, categoryName: bookData.category || "عام" }) // [FIX]
+                body: JSON.stringify({ action:"save_book", userId:currentUser.id, token:currentUser.token, userName:currentUser.username, bookId:bookData.id, bookData:bookData, categoryName: bookData.category || "عام" }) // [FIX] أضيف token
             });
             const result = await response.json();
             if (result.success) {
@@ -1935,6 +1970,11 @@
                 alert("تم الحفظ في درايف بنجاح ✅");
                 if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
                 return true;
+            } else {
+                // [FIX] كانت هذه الحالة تُترك دون معالجة: الزر يبقى معطلاً للأبد ودون تنبيه المستخدم
+                alert("⚠️ فشل الحفظ في درايف: " + (result.message || "خطأ غير معروف") + "\nتم الاحتفاظ بالتغييرات محلياً وستتم إعادة المحاولة لاحقاً.");
+                if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
+                return false;
             }
         } catch (error) {
             alert("تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
@@ -1943,15 +1983,20 @@
         }
     }
 
+    let _buildDebounceTimer = null;
     function autoSaveAndBuild() {
         const bookData = getCurrentBookObject();
         currentBookId  = bookData.id;
         document.getElementById('stat-words').innerText   = bookData.text.trim() ? bookData.text.trim().split(/\s+/).length : 0;
         document.getElementById('stat-chars').innerText   = bookData.text.length;
         document.getElementById('stat-headers').innerText = (bookData.text.match(/^# /gm) || []).length;
+        // الحفظ المحلي فوري دائماً (رخيص ومهم ألا نفقد أي حرف يكتبه المستخدم)
         localStorage.setItem('bookData', JSON.stringify(bookData));
         updateGlobalBooksList(bookData);
-        buildBook();
+        // [FIX] إعادة بناء صفحات الكتاب كاملة كانت تحدث مع كل ضغطة حرف — مكلفة للأداء
+        // في الكتب الطويلة. الآن نؤجّلها قليلاً (debounce) فتُبنى مرة واحدة بعد توقف الكتابة.
+        clearTimeout(_buildDebounceTimer);
+        _buildDebounceTimer = setTimeout(buildBook, 180);
     }
 
     function updateGlobalBooksList(book) {
@@ -2049,17 +2094,21 @@
         reader.onload = function(evt) {
             try {
                 uploadedBookData = JSON.parse(evt.target.result);
-                if (uploadedBookData.engineVersion) { document.getElementById('importModal').style.display = 'flex'; }
-                else { applyImport(false); }
+                // [FIX-SECURITY] لم نعد نعرض خيار "استيراد بالأكواد الأصلية للملف" —
+                // كان ذلك يُنفّذ كود جافاسكربت عشوائياً من الملف المستورد داخل متصفحك (new Function)
+                // أي شخص يشارك معك ملف .rbook "ملغوم" كان يقدر تشغيل كود في حسابك.
+                // نطبّق دائماً أكواد الموقع الموثوقة فقط، مهما كان محتوى الملف المستورد.
+                applyImport(false);
             } catch(err) { alert("ملف غير مدعوم أو تالف."); }
         };
         reader.readAsText(file); document.getElementById('importFile').value = '';
     }
 
-    function closeImportModal() { document.getElementById('importModal').style.display = 'none'; uploadedBookData = null; }
+    function closeImportModal() { const m = document.getElementById('importModal'); if (m) m.style.display = 'none'; uploadedBookData = null; }
 
     function applyImport(useOriginalEngine) {
-        document.getElementById('importModal').style.display = 'none';
+        const modalEl = document.getElementById('importModal');
+        if (modalEl) modalEl.style.display = 'none';
         if (!uploadedBookData || !uploadedBookData.metadata) return;
         let s = uploadedBookData.metadata;
         currentBookId = s.id || 'book_' + Date.now();
@@ -2075,13 +2124,10 @@
         customPageBackgrounds = s.customBgs || {};
         mediaVault = uploadedBookData.vault || s.vault || {};
         saveVaultToDB(); updateGlobalColor(document.getElementById('globalBgPicker').value);
-        if (useOriginalEngine && uploadedBookData.engineVersion) {
-            for (let f in uploadedBookData.engineVersion) { RoyalFeatures[f] = { css: uploadedBookData.engineVersion[f].css, execute: new Function('return ' + uploadedBookData.engineVersion[f].execute)() }; }
-            injectDynamicStyles(RoyalFeatures);
-        } else {
-            for (let f in currentSiteFeatures) { RoyalFeatures[f] = { css: currentSiteFeatures[f].css, execute: new Function('return ' + currentSiteFeatures[f].execute)() }; }
-            injectDynamicStyles(RoyalFeatures);
-        }
+        // [FIX-SECURITY] لم يعد يُنفَّذ أي كود قادم من الملف المستورد إطلاقاً (new Function حُذفت نهائياً).
+        // نعيد فقط أكواد الموقع الموثوقة (مراجع دوال حيّة، لا سلاسل نصية) بغض النظر عن قيمة useOriginalEngine.
+        for (let f in currentSiteFeatures) { RoyalFeatures[f] = { css: currentSiteFeatures[f].css, execute: currentSiteFeatures[f].execute }; }
+        injectDynamicStyles(RoyalFeatures);
         renderVaultList(); autoSaveAndBuild();
     }
 
@@ -2339,7 +2385,32 @@
         a.download = (bookData.title||'تطبيق_الكتاب') + '.html'; a.click(); URL.revokeObjectURL(url);
     }
 
-    function downloadPDF() { window.print(); }
+    function downloadPDF() {
+        // [FIX] "تصدير PDF" كان مجرد window.print() بينما مكتبة jsPDF محمّلة بالكامل
+        // بلا استخدام أبداً — عبء تحميل بلا فائدة. الطريقة الحالية (طباعة المتصفح) هي
+        // فعلياً الأنسب هنا لأنها تحافظ على التنسيق البصري الدقيق للصفحات (خطوط، ألوان،
+        // خلفيات مخصصة لكل صفحة) الذي يصعب إعادة إنتاجه بدقة عبر jsPDF من HTML معقّد.
+        // لكن كانت فيها مشكلتان حقيقيتان تم إصلاحهما:
+        //  1) اسم الملف الناتج من "طباعة كـ PDF" في المتصفح يعتمد على document.title —
+        //     وكان دائماً العنوان العام للصفحة، وليس عنوان الكتاب.
+        //  2) لم يكن هناك ضمان لاكتمال بناء الصفحات (خاصة بعد تفعيل تأجير buildBook أعلاه)
+        //     قبل استدعاء الطباعة مباشرة.
+        clearTimeout(_buildDebounceTimer);
+        buildBook(); // تأكيد اكتمال البناء بأحدث بيانات قبل الطباعة مباشرة
+
+        const bookTitle = (document.getElementById('cTitle').value || '').trim() || 'كتاب_ملكي';
+        const originalTitle = document.title;
+        document.title = bookTitle; // [FIX] يجعل اسم ملف PDF الناتج مطابقاً لعنوان الكتاب
+
+        const restoreTitle = () => {
+            document.title = originalTitle;
+            window.removeEventListener('afterprint', restoreTitle);
+        };
+        window.addEventListener('afterprint', restoreTitle);
+
+        // مهلة قصيرة تمنح المتصفح فرصة لإكمال أي رسم/تحميل صور معلّق قبل فتح حوار الطباعة
+        setTimeout(() => window.print(), 60);
+    }
 
     function openBgModal()  { document.getElementById('bgModal').style.display = 'flex'; renderBgList(); }
     function closeBgModal() { document.getElementById('bgModal').style.display = 'none'; autoSaveAndBuild(); }
@@ -2380,6 +2451,12 @@
 
     // --- 7. التشغيل الأولي ---
     window.onload = () => {
+        // [FIX] تُحمَّل تفضيلات المحرر (السمة + الوضع الليلي/النهاري) أولاً وبمعزل
+        // عن أي كتاب — فتبقى ثابتة حتى عند فتح كتاب مختلف أو إنشاء كتاب جديد
+        _loadEditorPrefsLocally();
+        _refreshDayNightUI();
+        applyThemeVars(activeTheme);
+
         loadVaultFromDB((vaultData) => {
             mediaVault = vaultData;
             let s = JSON.parse(localStorage.getItem('bookData') || '{}');
@@ -2401,10 +2478,12 @@
                 updateGlobalColor(savedColor);
                 customPageBackgrounds = s.customBgs || {};
 
-                // ── استرجاع السمة المحفوظة ──────────────────
-                if (s.selectedTheme && royalThemes[s.selectedTheme]) {
+                // [FIX] لم نعد نستبدل تفضيل السمة العام بما هو محفوظ داخل هذا الكتاب تحديداً؛
+                // فقط إن لم يوجد أي تفضيل عام محفوظ بعد (مستخدم قديم) نأخذها من الكتاب كترقية لمرة واحدة
+                if (!localStorage.getItem(EDITOR_PREFS_KEY) && s.selectedTheme && royalThemes[s.selectedTheme]) {
                     activeTheme = s.selectedTheme;
                     applyThemeVars(s.selectedTheme);
+                    _saveEditorPrefsLocally();
                 }
             }
             // بناء swatches بعد تحميل البيانات
@@ -2427,7 +2506,7 @@
         try {
             const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: "fetch_book", userId: currentUser.id, userName: currentUser.username, bookId: bookId })
+                body: JSON.stringify({ action: "fetch_book", userId: currentUser.id, token: currentUser.token, userName: currentUser.username, bookId: bookId })
             });
             const data = await res.json();
             if (data.success && data.book) {
@@ -2462,13 +2541,8 @@
         document.getElementById('colorCodeInput').value  = savedColor.replace('#', '');
         updateGlobalColor(savedColor);
         customPageBackgrounds = s.customBgs || {};
-        if (s.selectedTheme && royalThemes[s.selectedTheme]) {
-            activeTheme = s.selectedTheme;
-            applyThemeVars(s.selectedTheme);
-            document.querySelectorAll('.theme-swatch').forEach(sw => {
-                sw.classList.toggle('active', sw.dataset.theme === s.selectedTheme);
-            });
-        }
+        // [FIX] السمة اللونية للمحرر تفضيل عام للمستخدم، لا يجب أن يغيّرها محتوى
+        // كتاب قادم من درايف بصمت. تُترك كما هي (مُحمَّلة مسبقاً من EDITOR_PREFS_KEY).
         localStorage.setItem('bookData', JSON.stringify(s));
         buildBook();
         lastSavedData = JSON.stringify(getCurrentBookObject());
@@ -2490,6 +2564,7 @@
                 body: JSON.stringify({
                     action:       "save_book",
                     userId:       currentUser.id,
+                    token:        currentUser.token, // [FIX-SECURITY]
                     userName:     currentUser.username,
                     bookId:       bookData.id,
                     bookData:     bookData,
@@ -2521,10 +2596,12 @@
                     body: JSON.stringify({
                         action:   "save_editor_settings",
                         userId:   currentUser.id,
+                        token:    currentUser.token, // [FIX-SECURITY]
                         userName: currentUser.username,
                         settings: {
                             pageColor:     bookData.color,
-                            selectedTheme: bookData.selectedTheme,
+                            selectedTheme: activeTheme,
+                            dayMode:       isDayMode, // [FIX] لم تكن تُحفظ إطلاقاً سابقاً
                             lastBookId:    bookData.id
                         }
                     })

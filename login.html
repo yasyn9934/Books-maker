@@ -275,7 +275,7 @@
                 showStatus("تم إنشاء الحساب بنجاح! جاري التحويل...", "green");
 
                 // [FIX] مزامنة أولية بعد التسجيل (ترفع أي بيانات زائر موجودة)
-                await syncLibrary(data.user.id, data.user.username);
+                await syncLibrary(data.user.id, data.user.username, data.user.token);
                 setTimeout(() => window.location.href = INDEX_PAGE, 1200);
             } else {
                 showStatus(data.message, "red");
@@ -310,7 +310,7 @@
                 showStatus("تم الدخول!", "green");
 
                 // [FIX] مزامنة ذكية: دمج المحلي والسحابة وأخذ الأحدث
-                await syncLibrary(data.user.id, data.user.username);
+                await syncLibrary(data.user.id, data.user.username, data.user.token);
                 window.location.href = INDEX_PAGE;
             } else {
                 showStatus(data.message, "red");
@@ -323,7 +323,7 @@
 
     // ── [FIX] دالة المزامنة الذكية ─────────────────────────
     // ترسل البيانات المحلية، والسيرفر يقارن updatedAt ويرجع الأحدث من الجهتين.
-    async function syncLibrary(userId, username) {
+    async function syncLibrary(userId, username, token) {
         setSyncIndicator(true);
         showStatus("جاري مزامنة مكتبتك...", "#6B8E23");
 
@@ -336,6 +336,7 @@
                 body: JSON.stringify({
                     action:          "sync_library",
                     userId,
+                    token,           // [FIX-SECURITY] مطلوب الآن من الخادم للتحقق من الجلسة
                     userName:        username,
                     localBooks,
                     localCategories

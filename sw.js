@@ -1,4 +1,4 @@
-// sw.js — الإصدار v5 (المُصحَّح والمحسَّن)
+// sw.js — الإصدار v6
 
 const CACHE_NAME = 'royal-book-v6';
 
@@ -41,7 +41,7 @@ self.addEventListener('install', event => {
 
 // ─── التفعيل: حذف الكاش القديم وتسليم السيطرة فوراً ─────────────────────────
 self.addEventListener('activate', event => {
-  console.log('🚀 النظام الملكي v5 جاهز للعمل!');
+  console.log('🚀 النظام الملكي v6 جاهز للعمل!');
   event.waitUntil(
     caches.keys().then(cacheNames =>
       Promise.all(
@@ -69,12 +69,14 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(networkResponse => {
-        // [FIX] إذا نجح الطلب من الشبكة، حدِّث الكاش بالنسخة الجديدة
-        if (networkResponse && networkResponse.status === 200) {
+        // [FIX] نحدّث الكاش فقط لطلبات GET الناجحة — cache.put() يرفض طلبات
+        // POST/PUT وغيرها (خطأ TypeError)، وهذا احتياط لو أُضيف مستقبلاً أي
+        // طلب POST لنفس الأصل (غير Google Apps Script المستثنى أعلاه بالفعل)
+        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
+            cache.put(event.request, responseToCache).catch(() => {});
+          }).catch(() => {});
         }
         return networkResponse;
       })

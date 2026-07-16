@@ -546,7 +546,7 @@ async function saveAccount() {
       await fetch(AUTH_CONFIG.SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({
-          action:   'update_profile',
+          action:   'update_profile', token:currentUser.token,
           userId:   updated.id,
           userName: updated.username,
           profile:  updated,
@@ -604,7 +604,7 @@ window.addEventListener('online', async () => {
   try {
     await fetch(AUTH_CONFIG.SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ action:'update_profile', userId:u.id, userName:u.username, profile:u })
+      body: JSON.stringify({ action:'update_profile', token:currentUser.token, userId:u.id, userName:u.username, profile:u })
     });
     localStorage.removeItem('royal_pending_profile_sync');
     showToast('✅ تمت مزامنة بياناتك تلقائياً', 'success');

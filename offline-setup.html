@@ -148,9 +148,10 @@
     // الصفحة المستهدفة بعد انتهاء التجهيز
     const indexPage = 'index.html';
 
-    // قائمة الملفات المطلوب تخزينها (يجب أن تطابق sw.js)
+    // قائمة الملفات المطلوب تخزينها (يجب أن تطابق sw.js -> urlsToCache تماماً)
     const filesToCache = [
-        'index.html', 'editor.html', 'login.html',
+        'index.html', 'editor.html', 'login.html', 'offline-setup.html',
+        'profile.html', 'edit-account.html',
         'royal-features-interactive-fixed.html',
         'plugins.js', 'auth.js',
         'PDFs/royal-assets.js', 'PDFs/royal-parser.js', 'PDFs/royal-renderer.js',
@@ -181,8 +182,13 @@
             await navigator.serviceWorker.register('sw.js');
             status.innerText = '⏳ جاري تحميل الملفات...';
 
-            // 2. [FIX] فتح الكاش مباشرةً وتتبّع كل ملف على حدة
-            const cache = await caches.open('royal-book-v5');
+            // 2. [FIX-حرج] فتح الكاش مباشرةً وتتبّع كل ملف على حدة
+            // كان هذا الاسم "royal-book-v5" بينما sw.js يستخدم "royal-book-v6" —
+            // نتيجة ذلك أن كل الملفات التي "أنجزها" هذا الشريط بنجاح 100% كانت
+            // تُحذف فوراً بعد ثوانٍ (حدث activate في sw.js يحذف أي كاش غير الاسم
+            // الحالي CACHE_NAME). أي أن "التجهيز للعمل أوف لاين" لم يكن يعمل إطلاقاً
+            // رغم ظهور اكتمال 100% للمستخدم. يجب أن يطابق الاسم دائماً CACHE_NAME في sw.js.
+            const cache = await caches.open('royal-book-v6');
             let done  = 0;
             const total = filesToCache.length;
 

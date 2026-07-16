@@ -491,7 +491,7 @@ async function submitGateCode() {
 
   try {
     const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
-      action: 'admin_verify_code',
+      action: 'admin_verify_code', token:currentUser.token,
       code,
       userId: currentUser ? currentUser.id : null
     })});
@@ -544,7 +544,7 @@ async function confirmChangeCode() {
 
   err.textContent = '';
   const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
-    action: 'admin_change_code',
+    action: 'admin_change_code', token:currentUser.token,
     requesterId: currentUser.id,
     newCode: nw
   })}).catch(()=>null);
@@ -567,7 +567,7 @@ document.getElementById('ccModal').addEventListener('click', e=>{
 async function loadUsers() {
   try {
     const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
-      action: 'admin_get_all_users', requesterId: currentUser.id
+      action: 'admin_get_all_users', token:currentUser.token, requesterId: currentUser.id
     })});
     const data = await res.json();
     if (!data.success) { alert('خطأ: ' + (data.message||'غير معروف')); return; }
@@ -671,7 +671,7 @@ async function openStatsModal(uid) {
   openModal('statsModal');
 
   const res  = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
-    action:'admin_get_user_stats', requesterId:currentUser.id, targetUserId:uid
+    action:'admin_get_user_stats', token:currentUser.token, requesterId:currentUser.id, targetUserId:uid
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
   if (!data || !data.success) { body.innerHTML='<div class="empty-msg">⚠️ تعذر جلب البيانات</div>'; return; }
@@ -783,7 +783,7 @@ async function loadUserNotifs(uid) {
   document.getElementById('userNotifsBody').innerHTML='<div class="loading-center">⏳</div>';
   // يُجلب عبر get_notifications — المشرف يجلب لحسابه فقط حالياً
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_get_notes', requesterId:currentUser.id, targetUserId:uid
+    action:'admin_get_notes', token:currentUser.token, requesterId:currentUser.id, targetUserId:uid
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
   if (!data || !data.success) {
@@ -926,7 +926,7 @@ function updateBadgeBuilder() {
 async function setBasicRank(tier, btn) {
   if (!_rankUser) return;
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_set_rank', requesterId:currentUser.id,
+    action:'admin_set_rank', token:currentUser.token, requesterId:currentUser.id,
     targetUserId:_rankUser.id, tier
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
@@ -945,7 +945,7 @@ async function addBadge() {
   if (!_badgeBuilder.text.trim()) { showToast('⚠️ أدخل نص الشارة'); return; }
   const badge = Object.assign({}, _badgeBuilder);
   const res   = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_add_badge', requesterId:currentUser.id,
+    action:'admin_add_badge', token:currentUser.token, requesterId:currentUser.id,
     targetUserId:_rankUser.id, badge
   })}).catch(()=>null);
   const data  = res ? await res.json().catch(()=>null) : null;
@@ -962,7 +962,7 @@ async function addBadge() {
 
 async function removeBadge(idx) {
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_remove_badge', requesterId:currentUser.id,
+    action:'admin_remove_badge', token:currentUser.token, requesterId:currentUser.id,
     targetUserId:_rankUser.id, badgeIndex:idx
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
@@ -986,7 +986,7 @@ async function openNotesModal(uid) {
   openModal('notesModal');
 
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_get_notes', requesterId:currentUser.id, targetUserId:uid
+    action:'admin_get_notes', token:currentUser.token, requesterId:currentUser.id, targetUserId:uid
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
   const notes = (data && data.success) ? data.notes : [];
@@ -1065,7 +1065,7 @@ async function sendNote(uid) {
   }
 
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_add_note', requesterId:currentUser.id, targetUserId:uid,
+    action:'admin_add_note', token:currentUser.token, requesterId:currentUser.id, targetUserId:uid,
     note: { text, authorId:currentUser.id, authorName:currentUser.username, createdAt:Date.now(), files:filesPayload }
   })}).catch(()=>null);
   const data = res ? await res.json().catch(()=>null) : null;
@@ -1135,7 +1135,7 @@ async function confirmSendNotif() {
   }
 
   const res  = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify({
-    action:'admin_send_notif', requesterId:currentUser.id,
+    action:'admin_send_notif', token:currentUser.token, requesterId:currentUser.id,
     targetUserId:_activeUser.id,
     notification:{ title:title||'إشعار من الموقع', message:msg, link:link||'', type:'site',
                    sender:{ id:'system', name:'الموقع' }, createdAt:Date.now() },

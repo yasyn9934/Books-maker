@@ -1737,7 +1737,7 @@ function confirmDeleteBook(id) {
       if (navigator.onLine && currentUser.role==='member') {
         fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
           body:JSON.stringify({
-            action:'delete_book',
+            action:'delete_book', token:currentUser.token,
             userId:currentUser.id,
             userName: currentUser.username || '',  // [FIX] كان مفقوداً
             bookId:id
@@ -1812,7 +1812,7 @@ async function renderMyShares() {
   try {
     // [FIX] طلب واحد فقط بدلاً من طلب لكل كتاب — يحل مشكلة CORS وبطء التحميل
     const res    = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
-      body: JSON.stringify({ action:'get_all_shares', userId:currentUser.id }) });
+      body: JSON.stringify({ action:'get_all_shares', token:currentUser.token, userId:currentUser.id }) });
     const result = await res.json();
 
     if (!result.success) throw new Error(result.message);
@@ -1915,7 +1915,7 @@ function deleteMyShare(bookId) {
   showConfirm(`حذف جميع روابط مشاركة "<strong>${entry.book.title}</strong>"؟`, '🗑️', async () => {
     for (const sh of entry.shares) {
       await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
-        body:JSON.stringify({ action:'delete_share', userId:currentUser.id, shareId:sh.shareId })
+        body:JSON.stringify({ action:'delete_share', token:currentUser.token, userId:currentUser.id, shareId:sh.shareId })
       }).catch(()=>{});
     }
     renderMyShares();
@@ -1997,7 +1997,7 @@ async function syncNotifications() {
   if (!currentUser || currentUser.role !== 'member' || !navigator.onLine) return;
   try {
     const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST',
-      body: JSON.stringify({ action:'get_notifications', userId: currentUser.id }) });
+      body: JSON.stringify({ action:'get_notifications', token:currentUser.token, userId: currentUser.id }) });
     const data = await res.json();
     if (!data.success) return;
     // دمج: أضف الجديدة غير الموجودة محلياً
@@ -2275,7 +2275,7 @@ function saveTabVisibility() {
   if (navigator.onLine && currentUser && currentUser.role === 'member') {
     // [FIX] إزالة المتغير المحلي الذي كان يُظلِّل المتغير العام viewedShares
     fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-      action: 'save_tab_visibility',
+      action: 'save_tab_visibility', token:currentUser.token,
       userId: currentUser.id,
       visibility: saved,
       viewedShares: viewedShares   // يستخدم المتغير العام مباشرة
@@ -2614,7 +2614,7 @@ async function publishPost() {
           btn.textContent = 'جاري رفع: ' + att.name.slice(0, 20) + '...';
           const res    = await fetch(AUTH_CONFIG.SCRIPT_URL, { method: 'POST',
             body: JSON.stringify({
-              action:   'upload_file',
+              action:   'upload_file', token:currentUser.token,
               userId:   currentUser.id,
               userName: currentUser.username || '',
               fileName: att.name,
@@ -2677,7 +2677,7 @@ async function publishPost() {
   if (navigator.onLine && currentUser && currentUser.role === 'member') {
     try {
       await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-        action:   'save_post',
+        action:   'save_post', token:currentUser.token,
         userId:   currentUser.id,
         userName: currentUser.username,
         userPhoto: currentUser.profilePhoto || '',
@@ -2954,7 +2954,7 @@ async function postPickRx(event, pid, reaction) {
   await fetch(AUTH_CONFIG.SCRIPT_URL, {
     method:'POST',
     body: JSON.stringify({
-      action:'save_post', userId:ownerId,
+      action:'save_post', token:currentUser.token, userId:ownerId,
       post: { ...post, reactions: post.reactions }
     })
   }).catch(()=>{});
@@ -3028,7 +3028,7 @@ async function deletePost(postId, type) {
     localStorage.setItem(key, JSON.stringify(feed));
     if (navigator.onLine && currentUser && currentUser.role === 'member') {
       await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-        action:'delete_post', userId:currentUser.id, postId
+        action:'delete_post', token:currentUser.token, userId:currentUser.id, postId
       })}).catch(()=>{});
     }
     loadFeed(type);
@@ -4116,7 +4116,7 @@ async function uploadLargeFile(file, onProgress) {
         const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
-            action:   'upload_file',
+            action:   'upload_file', token:currentUser.token,
             userId:   currentUser.id,
             userName: currentUser.username || '',
             fileName: file.name,
@@ -4807,7 +4807,7 @@ window.addEventListener('online', async () => {
   ];
   for (const post of allPosts.slice(0,20)) {
     await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-      action:'save_post', userId:currentUser.id, userName:currentUser.username, post
+      action:'save_post', token:currentUser.token, userId:currentUser.id, userName:currentUser.username, post
     })}).catch(()=>{});
   }
   localStorage.removeItem('royal_pending_posts_sync');
@@ -5139,7 +5139,7 @@ async function toggleFollow() {
         btn.disabled = true;
         try {
           await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-            action: 'unfollow_user', followerId: currentUser.id, targetUserId: _targetUid
+            action: 'unfollow_user', token:currentUser.token, followerId: currentUser.id, targetUserId: _targetUid
           })});
           _isFollowing = false;
           _followersCount = Math.max(0, _followersCount - 1);
@@ -5156,7 +5156,7 @@ async function toggleFollow() {
     btn.disabled = true;
     try {
       const res = await fetch(AUTH_CONFIG.SCRIPT_URL, { method:'POST', body: JSON.stringify({
-        action: 'follow_user', followerId: currentUser.id, targetUserId: _targetUid
+        action: 'follow_user', token:currentUser.token, followerId: currentUser.id, targetUserId: _targetUid
       })});
       const data = await res.json();
       if (data.success) {

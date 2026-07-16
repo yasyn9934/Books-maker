@@ -1224,7 +1224,7 @@
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action:          'sync_library',
+                    action:          'sync_library', token:currentUser.token,
                     userId:          currentUser.id,
                     userName:        currentUser.username,
                     localBooks,
@@ -1299,7 +1299,7 @@ function saveData() {
             if (statusEl) statusEl.textContent = '⏳ جاري جلب التصنيفات من السحابة...';
             fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: "fetch_categories", userId: currentUser.id })
+                body: JSON.stringify({ action: "fetch_categories", token:currentUser.token, userId: currentUser.id })
             })
             .then(r => r.json())
             .then(data => {
@@ -1450,7 +1450,7 @@ function saveData() {
             try {
                 await fetch(AUTH_CONFIG.SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: "save_categories", userId: currentUser.id, categories: categories })
+                    body: JSON.stringify({ action: "save_categories", token:currentUser.token, userId: currentUser.id, categories: categories })
                 });
                 cloudSaved = true;
                 localStorage.removeItem('pending_sync_categories');
@@ -1697,7 +1697,7 @@ function saveData() {
         if (bookToDelete && navigator.onLine && typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'member') {
             fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: "delete_book", userId: currentUser.id, bookId: bookToDelete.id })
+                body: JSON.stringify({ action: "delete_book", token:currentUser.token, userId: currentUser.id, bookId: bookToDelete.id })
             }).catch(() => {});
         }
     }
@@ -1746,7 +1746,7 @@ function saveData() {
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action:          'sync_library',
+                    action:          'sync_library', token:currentUser.token,
                     userId:          currentUser.id,
                     userName:        currentUser.username,
                     localBooks,
@@ -2151,7 +2151,7 @@ function _pvObserve(side, total) {
             try {
                 await fetch(AUTH_CONFIG.SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: "save_book", userId: currentUser.id, bookData: book })
+                    body: JSON.stringify({ action: "save_book", token:currentUser.token, userId: currentUser.id, bookData: book })
                 });
             } catch(e) {
                 // لا بأس، البيانات محفوظة في localStorage وستُزامَن لاحقاً
@@ -2323,7 +2323,7 @@ async function saveBookFromModal() {
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: 'save_book',
+                    action: 'save_book', token:currentUser.token,
                     userId: currentUser.id,
                     userName: currentUser.username,
                     bookId: book.id,
@@ -2762,7 +2762,7 @@ async function generateShareLink() {
         const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action: "create_share_link",
+                action: "create_share_link", token:currentUser.token,
                 userId: currentUser.id,
                 userName: currentUser.username,
                 bookId: book.id,
@@ -2821,7 +2821,7 @@ async function loadBookShares() {
         const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action:  'get_book_shares',
+                action:  'get_book_shares', token:currentUser.token,
                 userId:  currentUser.id,
                 bookId:  currentActionBookId
             })
@@ -2982,7 +2982,7 @@ async function confirmShareChanges() {
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action:   'update_share',
+                    action:   'update_share', token:currentUser.token,
                     userId:   currentUser.id,
                     shareId:  shareId,
                     changes:  changes
@@ -2997,7 +2997,7 @@ async function confirmShareChanges() {
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action:  'delete_share',
+                    action:  'delete_share', token:currentUser.token,
                     userId:  currentUser.id,
                     shareId: shareId
                 })
@@ -3094,7 +3094,7 @@ async function confirmShareChanges() {
             await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action:   'update_profile',
+                    action:   'update_profile', token:currentUser.token,
                     userId:   currentUser.id,
                     userName: currentUser.username,
                     profile:  currentUser
