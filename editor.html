@@ -559,8 +559,16 @@
         @media print {
             body > *:not(#book-container) { display:none !important; }
             body { background:white; padding:0; }
-            #book-container { display:flex !important; gap:0 !important; width:100%; margin:0; padding:0; }
-            .page-wrapper   { margin:0 !important; box-shadow:none !important; border:none !important; }
+            /* [FIX-حرج] كانت هذه القاعدة تفرض display:flex بدون flex-direction:column
+               ولا عرض ثابت — فيرجع flex-direction افتراضياً إلى row، فتتراصف كل صفحات
+               الكتاب جنباً إلى جنب أفقياً في صف واحد طويل بدل التراص عمودياً صفحة بعد
+               صفحة كما في المعاينة على الشاشة. والنتيجة: صفحة الطباعة الأولى تظهر فارغة
+               أو مقصوصة (لأن كل الصفحات الفعلية انزاحت أفقياً خارج حدود ورقة الطباعة)،
+               ولا تظهر بقية الصفحات إطلاقاً. يجب أن تطابق قواعد الطباعة تصميم الشاشة
+               تماماً: عمود واحد رأسي، وعرض صفحة ثابت مطابق لحجم @page أعلاه.
+            */
+            #book-container { display:flex !important; flex-direction:column !important; align-items:center !important; gap:0 !important; width:250mm; margin:0; padding:0; }
+            .page-wrapper   { margin:0 !important; box-shadow:none !important; border:none !important; flex-shrink:0 !important; }
         }
     </style>
 
