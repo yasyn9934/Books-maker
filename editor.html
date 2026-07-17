@@ -190,7 +190,7 @@
 
         /* ── BOOK CONTAINER ─────────────────────────────────── */
         #book-container { display:flex; flex-direction:column; gap:30px; width:250mm; margin:50px auto 70px; }
-        .page-wrapper   { width:250mm; height:353mm; position:relative; overflow:hidden; background-color:var(--global-page-bg)!important; color:var(--global-page-text)!important; page-break-after:always; box-shadow:0 10px 45px rgba(0,0,0,.55); box-sizing:border-box; }
+        .page-wrapper   { width:250mm; height:353mm; position:relative; overflow:hidden; background-color:var(--global-page-bg)!important; color:var(--global-page-text)!important; page-break-after:always; break-after:page; box-shadow:0 10px 45px rgba(0,0,0,.55); box-sizing:border-box; }
         .page-header    { position:absolute; width:100%; display:flex; justify-content:space-between; padding:0 35mm; font-size:14pt; color:#4a3f35; font-family:'Amiri'; font-weight:bold; z-index:10; }
         .style-islamic .page-header { top:6mm; } .style-classic .page-header { top:5mm; } .style-floral .page-header { top:7mm; } .style-royal .page-header { top:8mm; } .style-minimal .page-header { top:5mm; } .style-clean .page-header { top:10mm; }
         .content-body   { position:absolute; top:42mm; bottom:25mm; left:35mm; right:35mm; font-size:var(--global-font-size); line-height:2.2; z-index:2; overflow:hidden; }
@@ -561,15 +561,22 @@
                داخل #main-content. القاعدة القديمة "body > *:not(#book-container)"
                كانت تُخفي #main-content نفسه (لأنه ابن مباشر لـ body ولا يساوي
                #book-container) — وإخفاء عنصر أب يُخفي كل ما بداخله تلقائياً مهما كانت
-               قيمة display الخاصة به هو. هذا هو السبب الحقيقي لظهور صفحة فارغة تماماً:
-               محتوى الكتاب كان موجوداً في DOM، لكن أباه المباشر (#main-content) مخفي.
-               الإصلاح: نُخفي بدقة على كل مستوى تداخل حتى نصل لـ #book-container. */
+               قيمة display الخاصة به هو. */
             body > *:not(#main-content) { display:none !important; }
             #main-content { display:block !important; overflow:visible !important; height:auto !important; }
             #main-content > *:not(#book-container) { display:none !important; }
             body { background:white; padding:0; }
-            #book-container { display:flex !important; flex-direction:column !important; align-items:center !important; gap:0 !important; width:250mm; margin:0; padding:0; }
-            .page-wrapper   { margin:0 !important; box-shadow:none !important; border:none !important; flex-shrink:0 !important; }
+            /* [FIX-السبب الجذري الفعلي] خاصية page-break-after (تقسيم الصفحات) لا يُعتد
+               بها من محركات الطباعة عندما تكون العناصر أبناء حاوية display:flex — قيد
+               معروف وموثّق في Chrome/Firefox. النتيجة: يتجاهل المتصفح فواصل الصفحات بين
+               .page-wrapper، ويحاول حشو المحتوى في تدفق طباعة واحد؛ وبما أن كل صفحة لها
+               ارتفاع ثابت (353مم) مع overflow:hidden، ينقطع المحتوى الفعلي ويظهر بياض
+               فارغ بدل تقسيم صحيح متعدد الصفحات. الحل: display:block عند الطباعة فقط —
+               تُحترم فواصل الصفحات بشكل صحيح وموثوق مع عناصر block. */
+            #book-container { display:block !important; width:250mm; margin:0 auto; padding:0; }
+            .page-wrapper   { margin:0 auto !important; box-shadow:none !important; border:none !important; }
+            /* [FIX] تجنّب صفحة بيضاء زائدة بعد آخر صفحة في الكتاب */
+            .page-wrapper:last-child { page-break-after:auto !important; break-after:auto !important; }
         }
     </style>
 
@@ -2411,23 +2418,44 @@
         // بلا استخدام أبداً — عبء تحميل بلا فائدة. الطريقة الحالية (طباعة المتصفح) هي
         // فعلياً الأنسب هنا لأنها تحافظ على التنسيق البصري الدقيق للصفحات (خطوط، ألوان،
         // خلفيات مخصصة لكل صفحة) الذي يصعب إعادة إنتاجه بدقة عبر jsPDF من HTML معقّد.
-        // لكن كانت فيها مشكلتان حقيقيتان تم إصلاحهما:
-        //  1) اسم الملف الناتج من "طباعة كـ PDF" في المتصفح يعتمد على document.title —
-        //     وكان دائماً العنوان العام للصفحة، وليس عنوان الكتاب.
-        //  2) لم يكن هناك ضمان لاكتمال بناء الصفحات (خاصة بعد تفعيل تأجير buildBook أعلاه)
-        //     قبل استدعاء الطباعة مباشرة.
+
+        // [FIX-السبب الجذري] buildBook() يحسب تقسيم الصفحات بقياس ارتفاع كل صفحة فعلياً
+        // (clientHeight/scrollHeight) في .content-body. هذا القياس يعتمد على أن
+        // #book-container ظاهر فعلاً وله تخطيط حقيقي على الشاشة في تلك اللحظة. لو كان
+        // "وضع التركيز" (focus-mode) مفعّلاً، فإن #book-container يكون display:none —
+        // وأي عنصر داخل display:none يُعيد 0 لكل من clientHeight وscrollHeight، فيصبح
+        // شرط الفيضان "scrollHeight > clientHeight + 5" ⇐ "0 > 5" خطأً دائماً، فلا تُنشأ
+        // أي صفحة جديدة إطلاقاً مهما طال النص — ويُحشر الكتاب كله في صفحة معاينة واحدة
+        // ثم يُقتصّ معظمه بصمت بسبب overflow:hidden. هذا يطابق تماماً العرض المُبلَّغ:
+        // صفحة أو صفحتان فارغتان تقريباً رغم أن الكتاب أطول من ذلك بكثير. زر "طباعة PDF"
+        // يبقى قابلاً للنقر حتى أثناء وضع التركيز، لذا لا بد من الخروج منه أولاً هنا.
+        const wasFocusMode = document.body.classList.contains('focus-mode');
+        if (wasFocusMode) document.body.classList.remove('focus-mode');
+
         clearTimeout(_buildDebounceTimer);
-        buildBook(); // تأكيد اكتمال البناء بأحدث بيانات قبل الطباعة مباشرة
+
+        // [FIX] احتياط إضافي: تأكيد أن #book-container ظاهر فعلاً (له تخطيط حقيقي)
+        // قبل البناء والقياس — لو كان مخفياً لأي سبب آخر غير متوقع مستقبلاً، نحذّر
+        // بدل إنتاج ملف مقتصّ بصمت.
+        const bookContainerEl = document.getElementById('book-container');
+        if (bookContainerEl.offsetParent === null) {
+            alert("تعذّر تجهيز المعاينة للطباعة — يبدو أن نافذة المحرر غير ظاهرة بالكامل حالياً. أغلق أي وضع عرض خاص (مثل وضع التركيز) ثم أعد المحاولة.");
+            if (wasFocusMode) document.body.classList.add('focus-mode');
+            return;
+        }
+
+        buildBook(); // الآن #book-container ظاهر فعلاً، فالقياس والتقسيم سيكونان صحيحين
 
         const bookTitle = (document.getElementById('cTitle').value || '').trim() || 'كتاب_ملكي';
         const originalTitle = document.title;
         document.title = bookTitle; // [FIX] يجعل اسم ملف PDF الناتج مطابقاً لعنوان الكتاب
 
-        const restoreTitle = () => {
+        const restoreAfterPrint = () => {
             document.title = originalTitle;
-            window.removeEventListener('afterprint', restoreTitle);
+            if (wasFocusMode) document.body.classList.add('focus-mode'); // إعادة وضع التركيز كما كان
+            window.removeEventListener('afterprint', restoreAfterPrint);
         };
-        window.addEventListener('afterprint', restoreTitle);
+        window.addEventListener('afterprint', restoreAfterPrint);
 
         // مهلة قصيرة تمنح المتصفح فرصة لإكمال أي رسم/تحميل صور معلّق قبل فتح حوار الطباعة
         setTimeout(() => window.print(), 60);
