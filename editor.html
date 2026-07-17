@@ -199,13 +199,39 @@
         .content-body   { position:absolute; top:42mm; left:35mm; right:35mm; max-height:286mm; font-size:var(--global-font-size); line-height:2.2; z-index:2; overflow:hidden; }
         /* منطقة الحواشي: ملتصقة بأسفل الصفحة (نفس هامش content-body السفلي القديم)، وتنمو
            لأعلى تلقائياً كلما زاد ارتفاع محتواها لأنها لا تملك top محدداً — فقط bottom. */
-        .footnotes-section { position:absolute; bottom:25mm; left:35mm; right:35mm; z-index:2; font-size:calc(var(--global-font-size) * 0.6); line-height:1.85; text-align:justify; }
-        .footnotes-section:not(:empty) { border-top:0.5mm solid var(--global-page-text); padding-top:5mm; opacity:0.94; }
-        .footnote-entry { margin-bottom:2.2mm; }
-        .footnote-num-link, .footnote-split-mark { text-decoration:none; font-weight:bold; cursor:pointer; }
-        .footnote-num-link { color:#8a1414; }
-        .footnote-split-mark { color:#b8860b; letter-spacing:1px; }
-        .footnote-ref a { text-decoration:none; }
+        /* [تحسين بصري] منطقة الحواشي بطابع كتب التحقيق الكلاسيكية: فاصل زخرفي متدرّج
+           قصير بدل خط كامل العرض، ومسافة معلّقة (hanging indent) تُحاذي أي سطر يلتف
+           تحت رقم الحاشية تماماً كما في الطباعة التقليدية. كل الألوان هنا ثابتة (ليست
+           متغيرات سمة المحرر) حتى تبقى صفحة الكتاب بمنأى عن تبديل السمة أو الوضع الليلي/النهاري.
+        */
+        .footnotes-section { position:absolute; bottom:25mm; left:35mm; right:35mm; z-index:2; font-family:'Amiri',serif; font-size:calc(var(--global-font-size) * 0.58); line-height:1.95; text-align:justify; }
+        .footnotes-section:not(:empty) { padding-top:6mm; }
+        .footnotes-section:not(:empty)::before {
+            content:"";
+            display:block;
+            width:42mm; height:0.55mm;
+            background:linear-gradient(to left, var(--global-page-text) 0%, transparent 100%);
+            opacity:0.5;
+            margin-bottom:4.5mm;
+        }
+        .footnote-entry {
+            margin-bottom:2.8mm;
+            padding-right:6.5mm;      /* مسافة معلّقة لمحاذاة الأسطر الملتفة تحت الرقم */
+            text-indent:-6.5mm;
+            opacity:0.92;
+        }
+        .footnote-num-link {
+            display:inline-block; min-width:6mm; text-align:center;
+            color:#8a1414; font-weight:bold; text-decoration:none; cursor:pointer;
+            font-size:1.05em; letter-spacing:0;
+        }
+        .footnote-split-mark {
+            color:#b8860b; font-weight:bold; letter-spacing:2.5px; cursor:pointer;
+            text-decoration:none; font-size:0.92em; padding:0 1px;
+        }
+        .footnote-num-link:hover, .footnote-split-mark:hover { text-decoration:underline; text-underline-offset:2px; }
+        .footnote-ref a { text-decoration:none; color:#8a1414; padding:0 1px; border-radius:2px; transition:background-color .15s; }
+        .footnote-ref a:hover { background-color:rgba(138,20,20,0.12); }
         .cover-page { background-size:cover; background-position:center; }
         .cover-page .content-body { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
         .toc-link { text-decoration:none; color:inherit; display:flex; justify-content:space-between; width:100%; transition:color .2s; cursor:pointer; }
@@ -2372,32 +2398,40 @@
             }
         }
 
-        cur = null; // سيُنشأ أول صفحة محتوى حقيقية عند أول سطر فعلي (الغلاف أُنشئ مسبقاً أعلاه بمعزل عن منطق الحواشي)
-
         while (lineQueue.length > 0 || carryLines.length > 0) {
-            if (!cur) startNewPage(true);
-
             if (lineQueue.length === 0) {
-                // لا مزيد من نص جديد — فقط أنهِ أي تصادم متبقٍّ، وأعد فحص الحلقة (carryLines/carryFootnote قد يحتاجان صفحة إضافية)
+                // لا مزيد من نص جديد — فقط تأكد من عدم وجود تصادم متبقٍّ (بعد إنشاء صفحة إن
+                // كان هناك محتوى مُرحَّل معلّق ينتظر مكاناً)، ثم أعد فحص الحلقة
+                if (!cur) startNewPage(true);
                 if (isOverflowing()) resolveOverflow();
                 cur = null;
                 continue;
             }
 
             const line = lineQueue[0];
-            if (!line.trim() && cur.body.childNodes.length === 0 && pageFootnotes.length === 0) { lineQueue.shift(); continue; }
+            if (!line.trim() && (!cur || cur.body.childNodes.length === 0) && pageFootnotes.length === 0 && carryLines.length === 0) { lineQueue.shift(); continue; }
 
             if (line.startsWith('# ')) {
+                if (carryLines.length > 0) {
+                    // [FIX] يوجد محتوى مُرحَّل من صفحة سابقة بانتظار مكان — يحصل على صفحته
+                    // المستقلة أولاً، ثم يُعاد فحص عنوان الفصل من جديد في التكرار التالي
+                    // فيحصل بدوره على صفحة نظيفة خاصة به وحده (بلا خلطه بمحتوى آخر).
+                    cur = null; startNewPage(true);
+                    if (isOverflowing()) resolveOverflow();
+                    continue;
+                }
                 lineQueue.shift();
                 chapterCounter++;
                 const hText = line.replace('# ','');
                 tocItems.push({title:hText, ch:chapterCounter});
-                cur = null; // فصل جديد يبدأ صفحة جديدة دائماً
+                cur = null; // فصل جديد يبدأ صفحة جديدة دائماً، حتى لو كانت الصفحة الحالية فارغة تماماً
                 startNewPage(true);
                 let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter; h.style.textAlign='center'; h.style.fontFamily="'Aref Ruqaa'"; h.style.marginBottom='10mm'; h.innerHTML = applyStyles(hText,[]);
                 cur.body.appendChild(h);
                 continue;
             }
+
+            if (!cur) startNewPage(true); // [FIX] إنشاء كسول — فقط الآن نحن متأكدون أن هذا سطر متن حقيقي يحتاج صفحة
 
             const tempFns = [];
             let d = document.createElement('div'); d.style.whiteSpace='pre-wrap'; d.style.marginBottom='5px';

@@ -139,7 +139,7 @@ const RoyalFeatures = {
         .toc-item::after { content: "............................................................................................................................................"; position: absolute; left: 0; right: 0; bottom: 5px; z-index: -1; color: #aaa; overflow: hidden; white-space: nowrap; }
         .toc-text { background: var(--global-page-bg); padding-right: 15px; color: #2c3e50; font-weight: bold; }
         .toc-page { background: var(--global-page-bg); padding-left: 15px; font-weight: bold; color: #6B8E23; }
-        .footnote-ref { color: #8a1414; font-size: 0.7em; vertical-align: super; font-weight: bold; }
+        .footnote-ref { color: #8a1414; font-size: 0.78em; vertical-align: super; font-weight: bold; line-height: 0; }
         `,
         // [ميزة الحواشي الاحترافية] لم يعد يُدرَج رقم نهائي هنا — فرقم/مصير الحاشية (قد تُرحَّل
         // لصفحة أخرى أو تُقسَّم) لا يُحسم إلا لاحقاً عبر محرك الصفحات في editor.html. هنا فقط
