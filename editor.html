@@ -193,7 +193,19 @@
         .page-wrapper   { width:250mm; height:353mm; position:relative; overflow:hidden; background-color:var(--global-page-bg)!important; color:var(--global-page-text)!important; page-break-after:always; break-after:page; box-shadow:0 10px 45px rgba(0,0,0,.55); box-sizing:border-box; }
         .page-header    { position:absolute; width:100%; display:flex; justify-content:space-between; padding:0 35mm; font-size:14pt; color:#4a3f35; font-family:'Amiri'; font-weight:bold; z-index:10; }
         .style-islamic .page-header { top:6mm; } .style-classic .page-header { top:5mm; } .style-floral .page-header { top:7mm; } .style-royal .page-header { top:8mm; } .style-minimal .page-header { top:5mm; } .style-clean .page-header { top:10mm; }
-        .content-body   { position:absolute; top:42mm; bottom:25mm; left:35mm; right:35mm; font-size:var(--global-font-size); line-height:2.2; z-index:2; overflow:hidden; }
+        /* [ميزة الحواشي الاحترافية] content-body لم يعد له ارتفاع ثابت (bottom) — يتمدد بطول
+           محتواه الفعلي فقط، مع سقف أقصى (max-height) كشبكة أمان تمنع كسر تصميم الصفحة لو
+           حدث خطأ حسابي غير متوقع في خوارزمية القياس بالجافاسكربت. */
+        .content-body   { position:absolute; top:42mm; left:35mm; right:35mm; max-height:286mm; font-size:var(--global-font-size); line-height:2.2; z-index:2; overflow:hidden; }
+        /* منطقة الحواشي: ملتصقة بأسفل الصفحة (نفس هامش content-body السفلي القديم)، وتنمو
+           لأعلى تلقائياً كلما زاد ارتفاع محتواها لأنها لا تملك top محدداً — فقط bottom. */
+        .footnotes-section { position:absolute; bottom:25mm; left:35mm; right:35mm; z-index:2; font-size:calc(var(--global-font-size) * 0.6); line-height:1.85; text-align:justify; }
+        .footnotes-section:not(:empty) { border-top:0.5mm solid var(--global-page-text); padding-top:5mm; opacity:0.94; }
+        .footnote-entry { margin-bottom:2.2mm; }
+        .footnote-num-link, .footnote-split-mark { text-decoration:none; font-weight:bold; cursor:pointer; }
+        .footnote-num-link { color:#8a1414; }
+        .footnote-split-mark { color:#b8860b; letter-spacing:1px; }
+        .footnote-ref a { text-decoration:none; }
         .cover-page { background-size:cover; background-position:center; }
         .cover-page .content-body { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
         .toc-link { text-decoration:none; color:inherit; display:flex; justify-content:space-between; width:100%; transition:color .2s; cursor:pointer; }
@@ -2205,6 +2217,18 @@
     function toArabicNum(n)           { return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
     function goToChapter(e, chapterId){ e.preventDefault(); const el = document.getElementById(chapterId); if(el){ const w = el.closest('.page-wrapper'); if(w) w.scrollIntoView({behavior:'smooth',block:'start'}); } }
 
+    // [ميزة الحواشي الاحترافية] رموز ترقيم الحواشي — يُعاد الترقيم من ⑴ في كل صفحة
+    const FOOTNOTE_NUMERALS = ['⑴','⑵','⑶','⑷','⑸','⑹','⑺','⑻','⑼','⑽','⑾','⑿','⒀','⒁','⒂','⒃','⒄','⒅','⒆','⒇'];
+    function footnoteNumeral(n) { return FOOTNOTE_NUMERALS[n-1] || ('『'+n+'』'); }
+    /** الانتقال الدقيق بين رقم الحاشية في المتن وموضعها في الحواشي، وبالعكس — يعمل أيضاً
+        كرابط داخلي حقيقي يبقى قابلاً للنقر داخل ملف PDF المُصدَّر دون فتح أي صفحة خارجية. */
+    function jumpToFootnote(e, targetId) {
+        if (e) e.preventDefault();
+        const el = document.getElementById(targetId);
+        if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
+        return false;
+    }
+
     function processMediaKeys(text) {
         return text.replace(/\{وسائط:\s*(.*?)\}/g, (match, key) => {
             let media = mediaVault[key.trim()];
@@ -2222,46 +2246,195 @@
         return processMediaKeys(res);
     }
 
-    // --- 5. بناء صفحات الكتاب ---
+    // --- 5. بناء صفحات الكتاب (مع محرك الحواشي الاحترافي) ---
     function buildBook() {
         updateFontSize(document.getElementById('cFontSize').value);
         const container = document.getElementById('book-container'); container.innerHTML = '';
-        const coverPageBody = createPage(container, false);
-        coverPageBody.parentElement.classList.add('cover-page');
+        const coverPage = createPage(container, false);
+        coverPage.page.classList.add('cover-page');
         const img = document.getElementById('cCoverImg').value;
-        if (img) coverPageBody.parentElement.style.backgroundImage = `url('${img}')`;
-        coverPageBody.innerHTML = `<div style="width:100%;margin-top:-40mm;">
+        if (img) coverPage.page.style.backgroundImage = `url('${img}')`;
+        coverPage.body.innerHTML = `<div style="width:100%;margin-top:-40mm;">
             <div style="font-size:55pt;font-family:'Aref Ruqaa';margin-bottom:25mm;line-height:1.1;">${applyStyles(document.getElementById('cTitle').value,[])}</div>
             <div style="font-size:30pt;margin-bottom:15px;color:#4a3f35;">${applyStyles(document.getElementById('cAuthor').value,[])}</div>
             <div style="font-size:20pt;color:#777;">${document.getElementById('cDate').value}</div>
         </div>`;
+
         let rawText = document.getElementById('mainText').value;
         rawText = rawText.replace(/\[«([\s\S]+?)»\]\{([\s\S]*?)\}\[اقتباس:\s*([\s\S]*?)\]/g, m => m.replace(/\n/g,'<br>'));
-        const lines = rawText.split('\n');
-        let currentBody = null; let currentFns = []; let tocItems = []; let chapterCounter = 0;
-        lines.forEach(line => {
-            if (!line.trim() && !currentBody) return;
-            if (line.startsWith('# ')) {
-                if (currentBody && currentFns.length > 0) printFns(currentBody, currentFns);
-                currentFns = []; currentBody = createPage(container, true); chapterCounter++;
-                let hText = line.replace('# ',''); tocItems.push({title:hText, ch:chapterCounter});
-                let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter; h.style.textAlign='center'; h.style.fontFamily="'Aref Ruqaa'"; h.style.marginBottom='10mm'; h.innerHTML = applyStyles(hText,[]); currentBody.appendChild(h);
-            } else {
-                if (!currentBody) currentBody = createPage(container, true);
-                let d = document.createElement('div'); d.style.whiteSpace='pre-wrap'; d.style.marginBottom='5px';
-                d.innerHTML = line.trim() === "" ? '&nbsp;' : applyStyles(line, currentFns);
-                currentBody.appendChild(d);
-                if (currentBody.scrollHeight > currentBody.clientHeight + 5) {
-                    if (currentBody.childNodes.length > 1) { currentBody.removeChild(d); currentBody = createPage(container, true); currentBody.appendChild(d); } else { currentBody.style.overflow = "visible"; }
-                }
+        // نستهلك الأسطر عبر shift() لأننا نحتاج القدرة على "إعادة" سطر مُرحَّل لبداية الصفحة التالية
+        const lineQueue = rawText.split('\n');
+
+        let cur = null;                    // {page, body, fn} — الصفحة الحالية
+        let pageFootnotes = [];            // حواشي الصفحة الحالية بترتيب ظهورها: [{id, text, anchorDiv, entryDiv}]
+        let carryLines = [];               // عناصر <div> جاهزة من الصفحة السابقة يجب أن تبدأ بها الصفحة التالية
+        let carryFootnote = null;          // {id, text, part} بقية حاشية "١" المجزأة (سواء أصلية أو استمرار سابق)
+        let tocItems = [], chapterCounter = 0;
+
+        // -- قياس التصادم بالبكسل الفعلي بين آخر المتن وأعلى الحواشي --
+        function isOverflowing() {
+            // [تنبيه] لا نُرجع false مبكراً حين يكون المتن فارغاً — فقد تكون حاشية محمولة
+            // من صفحة سابقة وحدها أطول من المساحة المتاحة كاملة (صفحة حواشٍ بلا متن إطلاقاً).
+            const bodyRect = cur.body.getBoundingClientRect();
+            const fnRect   = cur.fn.getBoundingClientRect();
+            return bodyRect.bottom > (fnRect.top - 1);
+        }
+
+        function renderFootnoteEntry(id, text, kind, number) {
+            // kind: 'normal' (رقم عادي) | 'continuation' (== بلا رقم، رابط عودة لموضع الحاشية الأصلي)
+            const d = document.createElement('div');
+            d.className = 'footnote-entry';
+            d.id = 'fnbody-' + id;
+            const headHtml = kind === 'continuation'
+                ? `<a href="#fnref-${id}" class="footnote-split-mark" onclick="return jumpToFootnote(event,'fnref-${id}')">==</a> `
+                : `<a href="#fnref-${id}" class="footnote-num-link" onclick="return jumpToFootnote(event,'fnref-${id}')">${footnoteNumeral(number)}</a> `;
+            d.innerHTML = headHtml + applyStyles(text, []);
+            d.dataset.headHtml = headHtml; // نحتفظ بالرأس منفصلاً لإعادة بناء المحتوى بأمان عند التقسيم
+            cur.fn.appendChild(d);
+            if (kind === 'normal') {
+                // نملأ/نحدّث رقم العلامة في المتن دائماً عبر معرّفها الدائم fnref-{id} —
+                // وليس فقط أول مرة، لأن الحاشية قد تُرحَّل لصفحة جديدة فيتغيّر رقمها،
+                // فيجب تحديث الرقم المعروض في المتن ليطابق موضعها النهائي دائماً.
+                const marker = document.getElementById('fnref-' + id);
+                if (marker) marker.textContent = footnoteNumeral(number);
             }
-        });
-        if (currentBody && currentFns.length > 0) printFns(currentBody, currentFns);
+            return d;
+        }
+
+        // ينهي الصفحة الحالية: إن بقيت حاشية "١" (أو استمرارها) بحاجة لمزيد من التقسيم، تُعرض بلا مزيد من الأسطر
+        function startNewPage(withHeader) {
+            cur = createPage(container, withHeader);
+            pageFootnotes = [];
+            if (carryFootnote) {
+                carryFootnote.entryDiv = renderFootnoteEntry(carryFootnote.id, carryFootnote.text, 'continuation', null);
+                carryFootnote.isCarry = true;
+            }
+            // إعادة الأسطر المُرحَّلة من الصفحة السابقة إلى بداية هذه الصفحة، بترتيبها الطبيعي
+            carryLines.forEach(item => {
+                cur.body.appendChild(item.div);
+                if (item.fn) {
+                    item.fn.anchorDiv = item.div; // [إصلاح] بدون هذا الربط تفشل حماية الحاشية "١" على الصفحة الجديدة
+                    item.fn.entryDiv  = renderFootnoteEntry(item.fn.id, item.fn.text, 'normal', pageFootnotes.length + 1);
+                    pageFootnotes.push(item.fn);
+                }
+            });
+            carryLines = [];
+        }
+
+        // يبحث بحثاً ثنائياً عن أطول جزء من نص الحاشية المحمية يناسب المساحة المتبقية دون تلامس
+        function splitProtectedFootnote(fnObj) {
+            const words = fnObj.text.split(/(\s+)/).filter(w => w !== '');
+            const headHtml = fnObj.entryDiv.dataset.headHtml;
+            if (words.length === 0) { carryFootnote = null; return; }
+            let lo = 0, hi = words.length;
+            while (lo < hi) {
+                const mid = Math.ceil((lo + hi) / 2);
+                fnObj.entryDiv.innerHTML = headHtml + applyStyles(words.slice(0, mid).join(''), []) + ' <span class="footnote-split-mark">==</span>';
+                if (isOverflowing()) hi = mid - 1; else lo = mid;
+            }
+            const keptCount = Math.max(lo, 1); // نُبقي كلمة واحدة على الأقل تفادياً لحلقة عالقة في حالة نادرة جداً
+            const keptText  = words.slice(0, keptCount).join('');
+            const restText  = words.slice(keptCount).join('').trim();
+            fnObj.entryDiv.innerHTML = headHtml + applyStyles(keptText, []) + ' <span class="footnote-split-mark">==</span>';
+            carryFootnote = restText ? { id: fnObj.id, text: restText } : null;
+        }
+
+        // يحل تصادم المتن/الحواشي: يُرحِّل أسطراً من الأسفل أولاً، فإن وصل لحد الحماية (سطر
+        // الحاشية "١" أو حاشية محمولة بلا سطر أصلاً) يُقسِّم الحاشية المحمولة أولاً (الأقل ضرراً
+        // لأنها مُجزَّأة أصلاً)، ثم حاشية "١" نفسها إن لزم الأمر. حارس تكرار كحل أخير يمنع أي حلقة لا نهائية.
+        function resolveOverflow() {
+            let guard = 0;
+            while (isOverflowing() && guard++ < 2000) {
+                const kids = cur.body.children;
+                const lastLine = kids.length > 0 ? kids[kids.length - 1] : null;
+                const protectedLine = pageFootnotes.length > 0 ? pageFootnotes[0].anchorDiv : null;
+
+                if (lastLine && lastLine !== protectedLine) {
+                    cur.body.removeChild(lastLine);
+                    let movedFn = null;
+                    for (let i = pageFootnotes.length - 1; i >= 0; i--) {
+                        if (pageFootnotes[i].anchorDiv === lastLine) {
+                            movedFn = pageFootnotes[i];
+                            movedFn.entryDiv.remove();
+                            pageFootnotes.splice(i, 1);
+                            break;
+                        }
+                    }
+                    carryLines.unshift({ div: lastLine, fn: movedFn ? { id: movedFn.id, text: movedFn.text } : null });
+                    continue;
+                }
+
+                // وصلنا لحد الحماية: حاشية محمولة (استمرار) أولاً إن وُجدت، ثم حاشية "١" نفسها
+                if (carryFootnote && carryFootnote.isCarry) { splitProtectedFootnote(carryFootnote); continue; }
+                if (pageFootnotes.length > 0) { splitProtectedFootnote(pageFootnotes[0]); continue; }
+                if (lastLine) { cur.body.removeChild(lastLine); carryLines.unshift({div:lastLine, fn:null}); continue; }
+                break; // لا شيء يمكن فعله إطلاقاً
+            }
+        }
+
+        cur = null; // سيُنشأ أول صفحة محتوى حقيقية عند أول سطر فعلي (الغلاف أُنشئ مسبقاً أعلاه بمعزل عن منطق الحواشي)
+
+        while (lineQueue.length > 0 || carryLines.length > 0) {
+            if (!cur) startNewPage(true);
+
+            if (lineQueue.length === 0) {
+                // لا مزيد من نص جديد — فقط أنهِ أي تصادم متبقٍّ، وأعد فحص الحلقة (carryLines/carryFootnote قد يحتاجان صفحة إضافية)
+                if (isOverflowing()) resolveOverflow();
+                cur = null;
+                continue;
+            }
+
+            const line = lineQueue[0];
+            if (!line.trim() && cur.body.childNodes.length === 0 && pageFootnotes.length === 0) { lineQueue.shift(); continue; }
+
+            if (line.startsWith('# ')) {
+                lineQueue.shift();
+                chapterCounter++;
+                const hText = line.replace('# ','');
+                tocItems.push({title:hText, ch:chapterCounter});
+                cur = null; // فصل جديد يبدأ صفحة جديدة دائماً
+                startNewPage(true);
+                let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter; h.style.textAlign='center'; h.style.fontFamily="'Aref Ruqaa'"; h.style.marginBottom='10mm'; h.innerHTML = applyStyles(hText,[]);
+                cur.body.appendChild(h);
+                continue;
+            }
+
+            const tempFns = [];
+            let d = document.createElement('div'); d.style.whiteSpace='pre-wrap'; d.style.marginBottom='5px';
+            d.innerHTML = line.trim() === "" ? '&nbsp;' : applyStyles(line, tempFns);
+            cur.body.appendChild(d);
+            lineQueue.shift();
+
+            // tempFns مصفوفة {id, text} وُلِّدت بالفعل في plugins.js (نفس id المُضمَّن أصلاً في
+            // رابط العلامة داخل d.innerHTML) — لا نولّد id جديداً، فقط نحدد رقمها ونعرضها
+            tempFns.forEach(fnObj => {
+                const entryDiv = renderFootnoteEntry(fnObj.id, fnObj.text, 'normal', pageFootnotes.length + 1);
+                pageFootnotes.push({ id: fnObj.id, text: fnObj.text, anchorDiv: d, entryDiv });
+            });
+
+            if (isOverflowing()) {
+                resolveOverflow();
+                // [مهم] لو رُحِّل أي سطر متن فعلي للصفحة التالية، يجب "إغلاق" هذه الصفحة فوراً —
+                // وإلا قد يُضاف السطر التالي من lineQueue إلى هذه الصفحة، متجاوزاً بذلك
+                // المحتوى المُرحَّل ومُفسِداً ترتيب القراءة الطبيعي للكتاب. أما تقسيم حاشية
+                // محمية وحده (بلا ترحيل أي سطر) فلا يُفسد الترتيب، فلا داعٍ لإغلاق الصفحة له.
+                if (carryLines.length > 0) cur = null;
+            }
+        }
+        if (cur && isOverflowing()) resolveOverflow();
+
+        // إن تبقّت حاشية "١" لم تنتهِ بعد آخر سطر في الكتاب، تُخصَّص لها صفحات إضافية حتى تكتمل
+        let safetyGuard = 0;
+        while (carryFootnote && safetyGuard++ < 500) {
+            startNewPage(true);
+            if (isOverflowing()) resolveOverflow();
+        }
+
         if (tocItems.length > 0) {
             let p = createPage(container, true);
             let html = `<div class="toc-title">فهرس المحتويات</div>`;
             tocItems.forEach(item => { html += `<div class="toc-item"><a href="#chapter-${item.ch}" onclick="goToChapter(event,'chapter-${item.ch}')" class="toc-link"><span class="toc-text">${applyStyles(item.title,[])}</span><span class="toc-page">الفصل ${item.ch}</span></a></div>`; });
-            p.innerHTML = html;
+            p.body.innerHTML = html;
         }
         let allPages = document.querySelectorAll('.page-wrapper');
         for (let pNum in customPageBackgrounds) {
@@ -2280,9 +2453,11 @@
     function createPage(c, hasHeader) {
         const w = document.createElement('div'); w.className = 'page-wrapper ' + document.getElementById('pageStyle').value;
         if (hasHeader) w.innerHTML = `<div class="page-header"><span>${applyStyles(document.getElementById('cTitle').value,[])}</span><span>${document.getElementById('cDate').value}</span></div>`;
-        const b = document.createElement('div'); b.className = 'content-body'; w.appendChild(b); c.appendChild(w); return b;
+        const b  = document.createElement('div'); b.className = 'content-body';
+        const fn = document.createElement('div'); fn.className = 'footnotes-section';
+        w.appendChild(b); w.appendChild(fn); c.appendChild(w);
+        return { page: w, body: b, fn: fn };
     }
-    function printFns(body, fns) { let h = '<div class="footnotes-section">'; fns.forEach((f,i) => h += `<div>[${i+1}] ${applyStyles(f,[])}</div>`); body.innerHTML += h + '</div>'; }
 
     // --- 6. التصدير التفاعلي ---
     function exportInteractiveBook() {
@@ -2385,7 +2560,7 @@
             lines.forEach(line => {
                 if (line.startsWith('# ')) {
                     if (hasContent||currentHtml!=="") {
-                        if (currentFns.length>0){currentHtml+='<div style="border-top:1px solid var(--border);margin-top:40px;padding-top:15px;font-size:.8em;color:gray;">';currentFns.forEach((f,i)=>currentHtml+='<div style="margin-bottom:8px;">[' +(i+1)+'] '+applyStyles(f,[])+' </div>');currentHtml+='</div>';currentFns=[];}
+                        if (currentFns.length>0){currentHtml+='<div style="border-top:1px solid var(--border);margin-top:40px;padding-top:15px;font-size:.8em;color:gray;">';currentFns.forEach((f,i)=>currentHtml+='<div style="margin-bottom:8px;">[' +(i+1)+'] '+applyStyles((f&&f.text!==undefined)?f.text:f,[])+' </div>');currentHtml+='</div>';currentFns=[];}
                         chapters.push({title:currentTitle,html:currentHtml});
                     }
                     currentTitle=line.replace('# ','').trim(); currentHtml='<h1>'+applyStyles(currentTitle,[])+'</h1>'; hasContent=true;
@@ -2393,7 +2568,7 @@
                     if(line.trim()!==""){currentHtml+='<div style="white-space:pre-wrap;margin-bottom:15px;">'+applyStyles(line,currentFns)+'</div>';hasContent=true;}else if(hasContent){currentHtml+='<br>';}
                 }
             });
-            if(hasContent||currentHtml!==""){if(currentFns.length>0){currentHtml+='<div style="border-top:1px solid var(--border);margin-top:40px;padding-top:15px;font-size:.8em;color:gray;">';currentFns.forEach((f,i)=>currentHtml+='<div style="margin-bottom:8px;">[' +(i+1)+'] '+applyStyles(f,[])+' </div>');currentHtml+='</div>';}chapters.push({title:currentTitle,html:currentHtml});}
+            if(hasContent||currentHtml!==""){if(currentFns.length>0){currentHtml+='<div style="border-top:1px solid var(--border);margin-top:40px;padding-top:15px;font-size:.8em;color:gray;">';currentFns.forEach((f,i)=>currentHtml+='<div style="margin-bottom:8px;">[' +(i+1)+'] '+applyStyles((f&&f.text!==undefined)?f.text:f,[])+' </div>');currentHtml+='</div>';}chapters.push({title:currentTitle,html:currentHtml});}
         }
         function renderTOC(){let t=document.getElementById('toc-container');let h='';chapters.forEach((ch,i)=>{h+='<button class="toc-item" onclick="goToChapter('+i+')">'+ch.title+'</button>';});t.innerHTML=h;}
         function goToChapter(index){currentChapterIndex=index;document.getElementById('chapter-content').innerHTML=chapters[index].html;document.querySelectorAll('.toc-item').forEach((btn,i)=>{btn.className='toc-item'+(i===index?' active':'');});document.getElementById('btn-prev').style.visibility=index===0?'hidden':'visible';document.getElementById('btn-next').style.visibility=index===chapters.length-1?'hidden':'visible';document.getElementById('page-indicator').innerText=(index+1)+" / "+chapters.length;window.scrollTo({top:0,behavior:'smooth'});toggleSidebar(true);}

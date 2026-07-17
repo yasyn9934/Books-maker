@@ -139,15 +139,19 @@ const RoyalFeatures = {
         .toc-item::after { content: "............................................................................................................................................"; position: absolute; left: 0; right: 0; bottom: 5px; z-index: -1; color: #aaa; overflow: hidden; white-space: nowrap; }
         .toc-text { background: var(--global-page-bg); padding-right: 15px; color: #2c3e50; font-weight: bold; }
         .toc-page { background: var(--global-page-bg); padding-left: 15px; font-weight: bold; color: #6B8E23; }
-        .footnote-ref { color: #d32f2f; font-size: 0.65em; vertical-align: super; font-weight: bold; }
-        .footnotes-section { margin-top: 30px; border-top: 2px solid #b8860b; padding-top: 15px; font-size: 0.8em; line-height: 1.9; color: #444; text-align: justify; }
+        .footnote-ref { color: #8a1414; font-size: 0.7em; vertical-align: super; font-weight: bold; }
         `,
+        // [ميزة الحواشي الاحترافية] لم يعد يُدرَج رقم نهائي هنا — فرقم/مصير الحاشية (قد تُرحَّل
+        // لصفحة أخرى أو تُقسَّم) لا يُحسم إلا لاحقاً عبر محرك الصفحات في editor.html. هنا فقط
+        // نُنشئ معرّفاً فريداً ورابط علامة قابلة للنقر (تُملأ برقمها ⑴⑵⑶... لاحقاً)، وندفع
+        // كائن {id, text} (وليس نصاً خاماً) إلى footnoteList.
         execute: function(text, footnoteList) {
             if (!text) return "";
             if (!footnoteList) return text;
             return text.replace(/\(\((.*?)\)\)/g, (match, content) => {
-                footnoteList.push(content);
-                return `<sup class="footnote-ref">[${footnoteList.length}]</sup>`;
+                const uid = 'fn' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                footnoteList.push({ id: uid, text: content });
+                return `<sup class="footnote-ref"><a href="#fnbody-${uid}" id="fnref-${uid}" class="footnote-marker-link" data-fn-pending="${uid}" onclick="return jumpToFootnote(event,'fnbody-${uid}')"></a></sup>`;
             });
         }
     },
