@@ -232,6 +232,17 @@
         .footnote-num-link:hover, .footnote-split-mark:hover { text-decoration:underline; text-underline-offset:2px; }
         .footnote-ref a { text-decoration:none; color:#8a1414; padding:0 1px; border-radius:2px; transition:background-color .15s; }
         .footnote-ref a:hover { background-color:rgba(138,20,20,0.12); }
+        /* [فصول فرعية] عنوان فصل فرعي تابع لفصل رئيسي — أصغر من h1 الفصل الرئيسي،
+           بلون ثابت مستقل عن سمة المحرر (اتساقاً مع مبدأ عزل محتوى الصفحة). */
+        .sub-chapter-heading {
+            font-family:'Aref Ruqaa', serif; font-size:1.7em; font-weight:bold;
+            text-align:center; color:#6B4226; margin:8mm 0 5mm 0;
+            position:relative;
+        }
+        .sub-chapter-heading::after {
+            content:""; display:block; width:22mm; height:0.4mm;
+            background:#b8860b; opacity:0.6; margin:2.5mm auto 0;
+        }
         .cover-page { background-size:cover; background-position:center; }
         .cover-page .content-body { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
         .toc-link { text-decoration:none; color:inherit; display:flex; justify-content:space-between; width:100%; transition:color .2s; cursor:pointer; }
@@ -2295,7 +2306,7 @@
         let pageFootnotes = [];            // حواشي الصفحة الحالية بترتيب ظهورها: [{id, text, anchorDiv, entryDiv}]
         let carryLines = [];               // عناصر <div> جاهزة من الصفحة السابقة يجب أن تبدأ بها الصفحة التالية
         let carryFootnote = null;          // {id, text, part} بقية حاشية "١" المجزأة (سواء أصلية أو استمرار سابق)
-        let tocItems = [], chapterCounter = 0;
+        let tocItems = [], chapterCounter = 0, subChapterCounter = 0, currentChapterEntry = null;
 
         // -- قياس التصادم بالبكسل الفعلي بين آخر المتن وأعلى الحواشي --
         function isOverflowing() {
@@ -2423,11 +2434,33 @@
                 lineQueue.shift();
                 chapterCounter++;
                 const hText = line.replace('# ','');
-                tocItems.push({title:hText, ch:chapterCounter});
+                const chapterEntry = {title:hText, id:'chapter-'+chapterCounter, subs:[]};
+                tocItems.push(chapterEntry);
+                currentChapterEntry = chapterEntry; // [فصول فرعية] الفصول الفرعية القادمة تُنسب لهذا الفصل
                 cur = null; // فصل جديد يبدأ صفحة جديدة دائماً، حتى لو كانت الصفحة الحالية فارغة تماماً
                 startNewPage(true);
                 let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter; h.style.textAlign='center'; h.style.fontFamily="'Aref Ruqaa'"; h.style.marginBottom='10mm'; h.innerHTML = applyStyles(hText,[]);
                 cur.body.appendChild(h);
+                continue;
+            }
+
+            // [فصول فرعية] سطر بصيغة +- نص -+ وحده (بلا أي شيء آخر) يصبح عنوان فصل فرعي
+            // تابعاً لآخر فصل رئيسي "# " ظهر — لا يفرض صفحة جديدة، يتدفق ضمن نفس الفصل.
+            const subMatch = line.trim().match(/^\+\-(.+)\-\+$/);
+            if (subMatch) {
+                lineQueue.shift();
+                if (!cur) startNewPage(true);
+                subChapterCounter++;
+                const subId = 'subchapter-' + subChapterCounter;
+                const subTitle = subMatch[1].trim();
+                let h2 = document.createElement('h2'); h2.id = subId; h2.className = 'sub-chapter-heading'; h2.innerHTML = applyStyles(subTitle,[]);
+                cur.body.appendChild(h2);
+                const subEntry = {title:subTitle, id:subId};
+                if (currentChapterEntry) currentChapterEntry.subs.push(subEntry); else tocItems.push({title:subTitle, id:subId, subs:[]});
+                if (isOverflowing()) {
+                    resolveOverflow();
+                    if (carryLines.length > 0) cur = null;
+                }
                 continue;
             }
 
@@ -2465,9 +2498,25 @@
         }
 
         if (tocItems.length > 0) {
+            // [الفهرس بأرقام الصفحات] رقم الصفحة الحقيقي لا يُعرف إلا بعد اكتمال بناء كل
+            // الصفحات (قد يتغيّر موضع عنوان بسبب ترحيل الحواشي). نحسبه الآن من DOM النهائي.
+            // الغلاف لا يُحتسب ضمن ترقيم الصفحات (أول صفحة محتوى فعلية = صفحة 1).
+            const allPagesForNum = Array.from(container.querySelectorAll('.page-wrapper'));
+            function pageNumberOf(id) {
+                const el = document.getElementById(id);
+                if (!el) return '';
+                const pageEl = el.closest('.page-wrapper');
+                const idx = allPagesForNum.indexOf(pageEl);
+                return idx > 0 ? idx : ''; // idx=0 هو الغلاف نفسه (نظرياً لا يحدث لعنوان فصل)
+            }
             let p = createPage(container, true);
             let html = `<div class="toc-title">فهرس المحتويات</div>`;
-            tocItems.forEach(item => { html += `<div class="toc-item"><a href="#chapter-${item.ch}" onclick="goToChapter(event,'chapter-${item.ch}')" class="toc-link"><span class="toc-text">${applyStyles(item.title,[])}</span><span class="toc-page">الفصل ${item.ch}</span></a></div>`; });
+            tocItems.forEach(item => {
+                html += `<div class="toc-item"><a href="#${item.id}" onclick="goToChapter(event,'${item.id}')" class="toc-link"><span class="toc-text">${applyStyles(item.title,[])}</span><span class="toc-page">${pageNumberOf(item.id)}</span></a></div>`;
+                (item.subs || []).forEach(sub => {
+                    html += `<div class="toc-item toc-subitem"><a href="#${sub.id}" onclick="goToChapter(event,'${sub.id}')" class="toc-link"><span class="toc-text">${applyStyles(sub.title,[])}</span><span class="toc-page">${pageNumberOf(sub.id)}</span></a></div>`;
+                });
+            });
             p.body.innerHTML = html;
         }
         let allPages = document.querySelectorAll('.page-wrapper');
