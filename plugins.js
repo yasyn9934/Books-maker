@@ -136,9 +136,16 @@ const RoyalFeatures = {
         css: `
         .toc-title { font-family: 'Aref Ruqaa'; font-size: 40pt; text-align: center; color: #b8860b; margin-bottom: 40px; padding-bottom: 15px; border-bottom: 2px solid #b8860b; }
         .toc-item { font-size: 18pt; margin-bottom: 18px; display: flex; justify-content: space-between; position: relative; }
-        .toc-subitem { font-size: 14pt; margin-right: 25px; margin-bottom: 12px; opacity: 0.85; }
-        .toc-subitem .toc-text { font-weight: normal; color: #4a3f35; }
-        .toc-subitem::before { content: "◈"; font-size: 10pt; margin-left: 8px; color: #b8860b; }
+        .toc-subitem {
+            font-size: 13.5pt;
+            margin-right: 32px;
+            margin-bottom: 10px;
+            padding-right: 14px;
+            border-right: 1.5px solid rgba(184,134,11,0.45); /* خط دليل رأسي يربطها بصرياً بفصلها الأب */
+        }
+        .toc-subitem .toc-text { font-weight: normal; color: #5a4a3a; }
+        .toc-subitem .toc-page { font-size: 0.82em; color: #9a8a70; font-weight: normal; }
+        .toc-subitem::before { content: "–"; margin-left: 7px; color: #b8860b; font-weight: bold; }
         .toc-item::after { content: "............................................................................................................................................"; position: absolute; left: 0; right: 0; bottom: 5px; z-index: -1; color: #aaa; overflow: hidden; white-space: nowrap; }
         .toc-text { background: var(--global-page-bg); padding-right: 15px; color: #2c3e50; font-weight: bold; }
         .toc-page { background: var(--global-page-bg); padding-left: 15px; font-weight: bold; color: #6B8E23; }

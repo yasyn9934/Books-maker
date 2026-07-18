@@ -232,17 +232,10 @@
         .footnote-num-link:hover, .footnote-split-mark:hover { text-decoration:underline; text-underline-offset:2px; }
         .footnote-ref a { text-decoration:none; color:#8a1414; padding:0 1px; border-radius:2px; transition:background-color .15s; }
         .footnote-ref a:hover { background-color:rgba(138,20,20,0.12); }
-        /* [فصول فرعية] عنوان فصل فرعي تابع لفصل رئيسي — أصغر من h1 الفصل الرئيسي،
-           بلون ثابت مستقل عن سمة المحرر (اتساقاً مع مبدأ عزل محتوى الصفحة). */
-        .sub-chapter-heading {
-            font-family:'Aref Ruqaa', serif; font-size:1.7em; font-weight:bold;
-            text-align:center; color:#6B4226; margin:8mm 0 5mm 0;
-            position:relative;
-        }
-        .sub-chapter-heading::after {
-            content:""; display:block; width:22mm; height:0.4mm;
-            background:#b8860b; opacity:0.6; margin:2.5mm auto 0;
-        }
+        /* [فصول فرعية] لا تنسيق خاص للعنوان الفرعي داخل الصفحة نفسها بناءً على طلب المستخدم —
+           يظهر كسطر متن عادي تمامًا. التمييز البصري كله ينتقل إلى الفهرس فقط. */
+        /* [فصول فرعية] لا كلاس خاص بها — تستخدم تنسيق .inline-header الأصلي نفسه الذي
+           كانت +- -+ تُعرض به دائمًا قبل هذه الميزة، دون أي تصميم جديد مُضاف من عندي. */
         .cover-page { background-size:cover; background-position:center; }
         .cover-page .content-body { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
         .toc-link { text-decoration:none; color:inherit; display:flex; justify-content:space-between; width:100%; transition:color .2s; cursor:pointer; }
@@ -2387,6 +2380,17 @@
                 const protectedLine = pageFootnotes.length > 0 ? pageFootnotes[0].anchorDiv : null;
 
                 if (lastLine && lastLine !== protectedLine) {
+                    // [FIX-حرج] صمام أمان كان موجوداً في الكود القديم (قبل نظام الحواشي) وسقط
+                    // سهواً في إعادة الكتابة: فقرة أو عنوان واحد أطول من صفحة كاملة (لا يوجد
+                    // نص آخر معه على الصفحة) لا يمكن تقسيمه أبداً (لا نُقسِّم إلا الحواشي، لا
+                    // المتن العادي) — فكان سيُرحَّل من صفحة لأخرى إلى ما لا نهاية (تجمّد كامل
+                    // للمتصفح). الآن: بعد 3 محاولات فاشلة لنفس العنصر، نقبل الفيضان بصرياً
+                    // بدل حلقة صفحات لا تنتهي.
+                    lastLine.__migrationCount = (lastLine.__migrationCount || 0) + 1;
+                    if (kids.length === 1 && lastLine.__migrationCount > 3) {
+                        cur.body.style.overflow = 'visible';
+                        break;
+                    }
                     cur.body.removeChild(lastLine);
                     let movedFn = null;
                     for (let i = pageFootnotes.length - 1; i >= 0; i--) {
@@ -2404,7 +2408,11 @@
                 // وصلنا لحد الحماية: حاشية محمولة (استمرار) أولاً إن وُجدت، ثم حاشية "١" نفسها
                 if (carryFootnote && carryFootnote.isCarry) { splitProtectedFootnote(carryFootnote); continue; }
                 if (pageFootnotes.length > 0) { splitProtectedFootnote(pageFootnotes[0]); continue; }
-                if (lastLine) { cur.body.removeChild(lastLine); carryLines.unshift({div:lastLine, fn:null}); continue; }
+                if (lastLine) {
+                    lastLine.__migrationCount = (lastLine.__migrationCount || 0) + 1;
+                    if (kids.length === 1 && lastLine.__migrationCount > 3) { cur.body.style.overflow = 'visible'; break; }
+                    cur.body.removeChild(lastLine); carryLines.unshift({div:lastLine, fn:null}); continue;
+                }
                 break; // لا شيء يمكن فعله إطلاقاً
             }
         }
@@ -2453,7 +2461,7 @@
                 subChapterCounter++;
                 const subId = 'subchapter-' + subChapterCounter;
                 const subTitle = subMatch[1].trim();
-                let h2 = document.createElement('h2'); h2.id = subId; h2.className = 'sub-chapter-heading'; h2.innerHTML = applyStyles(subTitle,[]);
+                let h2 = document.createElement('h2'); h2.id = subId; h2.className = 'inline-header'; h2.innerHTML = applyStyles(subTitle,[]);
                 cur.body.appendChild(h2);
                 const subEntry = {title:subTitle, id:subId};
                 if (currentChapterEntry) currentChapterEntry.subs.push(subEntry); else tocItems.push({title:subTitle, id:subId, subs:[]});
