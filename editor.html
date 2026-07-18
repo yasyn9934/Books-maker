@@ -305,6 +305,40 @@
         }
         #panel-hide-btn:active { transform:translateY(0); }
 
+        /* ── [تحريك/تحجيم اللوحة] وضع الحرية ────────────────── */
+        #panel-freemode-btn {
+            position:absolute; top:8px; left:12px;
+            background:linear-gradient(135deg, rgba(201,162,39,.22), rgba(150,110,20,.15));
+            border:1.5px solid rgba(201,162,39,.5); color:var(--gold);
+            height:32px; border-radius:9px; padding:0 14px;
+            cursor:pointer; font-size:14pt; font-family:'Amiri',serif;
+            display:flex; align-items:center; gap:6px; white-space:nowrap;
+            z-index:20; transition:all .2s; letter-spacing:.3px;
+        }
+        #panel-freemode-btn:hover { background:linear-gradient(135deg, rgba(201,162,39,.38), rgba(150,110,20,.28)); }
+        #panel-freemode-btn.active { background:linear-gradient(135deg, rgba(201,162,39,.55), rgba(150,110,20,.42)); box-shadow:0 2px 10px rgba(201,162,39,.3); }
+
+        .fp-handle { display:none; position:absolute; z-index:25; align-items:center; justify-content:center; }
+        #floating-panel.fp-free-mode .fp-handle { display:flex; }
+        #panel-drag-handle {
+            top:-2px; left:50%; transform:translateX(-50%);
+            width:70px; height:22px; border-radius:0 0 12px 12px;
+            background:var(--gold); color:#241d08; cursor:grab; font-size:12pt; font-weight:bold;
+            box-shadow:0 4px 12px rgba(0,0,0,.35); user-select:none; touch-action:none;
+        }
+        #panel-drag-handle:active { cursor:grabbing; }
+        #panel-resize-handle {
+            bottom:-2px; left:-2px; width:30px; height:30px; border-radius:9px 0 9px 0;
+            background:var(--surf3); border:1.5px solid var(--gold-line); color:var(--gold);
+            cursor:nesw-resize; font-size:13pt; user-select:none; touch-action:none;
+            box-shadow:0 4px 12px rgba(0,0,0,.3);
+        }
+        #floating-panel.fp-free-mode {
+            border-radius:16px; border:1px solid var(--gold-line);
+            box-shadow:0 14px 55px rgba(0,0,0,.65);
+            transition:none !important; /* لا نريد أي تأخير حركي أثناء السحب اليدوي */
+        }
+
         /* ── Main tabs row ────────────────────────────────── */
         .fp-main-tabs {
             display:flex; flex-shrink:0;
@@ -447,6 +481,21 @@
             transition:all .18s;
         }
         .qs-btn:hover { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); }
+
+        /* [تكبير/تصغير خط الكتابة] */
+        .input-zoom-row {
+            display:flex; align-items:center; gap:8px; flex-shrink:0;
+            padding:5px 16px; border-bottom:1px solid rgba(255,255,255,.04);
+        }
+        .input-zoom-label { font-size:9.5pt; color:var(--text-muted); margin-left:auto; }
+        .input-zoom-btn {
+            background:var(--surf3); border:1px solid rgba(255,255,255,.09); color:var(--text);
+            width:24px; height:24px; border-radius:6px; cursor:pointer;
+            font-size:13pt; line-height:1; display:flex; align-items:center; justify-content:center;
+            transition:all .15s;
+        }
+        .input-zoom-btn:hover { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); }
+        .input-zoom-value { font-size:10pt; color:var(--text-dim); min-width:20px; text-align:center; }
 
         /* Main textarea */
         #mainText {
@@ -810,6 +859,11 @@
 
     <!-- Hide button (top-left) -->
     <button id="panel-hide-btn" onclick="hideFloatingPanel()" title="إخفاء اللوحة">▼ إخفاء اللوحة</button>
+    <!-- [تحريك/تحجيم اللوحة] زر تفعيل وضع الحرية — يفصل اللوحة عن مكانها الأصلي، والنقر
+         عليه مجدداً يعيدها تمامًا كما كانت -->
+    <button id="panel-freemode-btn" onclick="toggleFreeMode()" title="تحريك اللوحة">⛶ تحريك</button>
+    <div id="panel-drag-handle" title="اسحب لتحريك اللوحة">⋮⋮</div>
+    <div id="panel-resize-handle" title="اسحب لتغيير الحجم">⤡</div>
 
     <!-- ── Main tabs row ──────────────────────────────── -->
     <div class="fp-main-tabs">
@@ -920,6 +974,14 @@
             <button class="qs-btn" id="btnFocus"     onclick="toggleFocusMode()">🎯 وضع التركيز</button>
             <button class="qs-btn"                   onclick="openBgModal()">🖼️ خلفيات الصفحات</button>
             <button class="qs-btn"                   onclick="buildBook()">🔄 تحديث المعاينة</button>
+        </div>
+
+        <!-- [تكبير/تصغير خط الكتابة] يؤثر فقط على مظهر صندوق الكتابة نفسه، لا على خط الكتاب المُصدَّر إطلاقاً -->
+        <div class="input-zoom-row">
+            <span class="input-zoom-label">حجم خط الكتابة (للعرض فقط)</span>
+            <button class="input-zoom-btn" onclick="adjustInputFontSize(-1)" title="تصغير">−</button>
+            <span class="input-zoom-value" id="inputZoomValue">16</span>
+            <button class="input-zoom-btn" onclick="adjustInputFontSize(1)" title="تكبير">＋</button>
         </div>
 
         <!-- Main textarea -->
@@ -1629,6 +1691,132 @@
                 btn.style.bottom = Math.max(0, oy - dy) + 'px';
             }
         }, { passive: true });
+    })();
+
+    /* ══════════════════════════════════════════════════════
+       [تكبير/تصغير خط الكتابة] — يخص عرض صندوق الكتابة فقط، منفصل
+       تمامًا عن حجم خط الكتاب الفعلي (cFontSize/--global-font-size)
+    ══════════════════════════════════════════════════════ */
+    const INPUT_FONT_MIN = 12, INPUT_FONT_MAX = 34;
+    function _applyInputFontSize(size) {
+        document.getElementById('mainText').style.fontSize = size + 'pt';
+        const focusT = document.getElementById('focusText');
+        if (focusT) focusT.style.fontSize = size + 'pt'; // نفس الحجم في وضع التركيز أيضاً للاتساق
+        const val = document.getElementById('inputZoomValue');
+        if (val) val.textContent = size;
+    }
+    function _loadInputFontSize() {
+        let saved = parseInt(localStorage.getItem('royal_input_fontsize'), 10);
+        if (isNaN(saved)) saved = 16;
+        saved = Math.max(INPUT_FONT_MIN, Math.min(INPUT_FONT_MAX, saved));
+        _applyInputFontSize(saved);
+    }
+    function adjustInputFontSize(delta) {
+        let cur = parseInt(document.getElementById('mainText').style.fontSize, 10) || 16;
+        cur = Math.max(INPUT_FONT_MIN, Math.min(INPUT_FONT_MAX, cur + delta));
+        _applyInputFontSize(cur);
+        localStorage.setItem('royal_input_fontsize', cur);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       [تحريك/تحجيم اللوحة العائمة] وضع الحرية (الطريقة ب):
+       مقبض تحريك مستقل + مقبض تحجيم مستقل، بزر واحد للتفعيل/الإلغاء
+    ══════════════════════════════════════════════════════ */
+    let freeModeActive = false;
+    function toggleFreeMode() {
+        const panel = document.getElementById('floating-panel');
+        const btn   = document.getElementById('panel-freemode-btn');
+        freeModeActive = !freeModeActive;
+        if (freeModeActive) {
+            const r = panel.getBoundingClientRect();
+            panel.style.top    = r.top + 'px';
+            panel.style.left   = r.left + 'px';
+            panel.style.width  = r.width + 'px';
+            panel.style.height = r.height + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.right  = 'auto';
+            panel.classList.add('fp-free-mode');
+            btn.classList.add('active'); btn.title = 'تثبيت اللوحة';
+        } else {
+            // [يعيدها إلى طبيعتها تمامًا] — إزالة كل تخصيص يدوي، رجوع كامل للوضع الافتراضي
+            panel.style.top = panel.style.left = panel.style.width = panel.style.height = panel.style.bottom = panel.style.right = '';
+            panel.classList.remove('fp-free-mode');
+            btn.classList.remove('active'); btn.title = 'تحريك اللوحة';
+        }
+    }
+
+    const FP_MIN_W = 280, FP_MIN_H = 230; // حد أدنى يضمن ظهور التبويبات والأزرار دائماً كاملة
+
+    function _makeHandleDraggable(handle, onDrag) {
+        let sx, sy, active = false;
+        function start(x, y) { if (!freeModeActive) return; active = true; sx = x; sy = y; }
+        function move(x, y) { if (!active) return; onDrag(x - sx, y - sy); sx = x; sy = y; }
+        function end() { active = false; }
+        handle.addEventListener('mousedown', e => { start(e.clientX, e.clientY); e.preventDefault(); e.stopPropagation(); });
+        document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+        document.addEventListener('mouseup', end);
+        handle.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); e.stopPropagation(); }, { passive: true });
+        handle.addEventListener('touchmove', e => { const t = e.touches[0]; move(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+        handle.addEventListener('touchend', end);
+    }
+
+    (function setupPanelDragAndResize() {
+        const panel = document.getElementById('floating-panel');
+
+        /* مقبض التحريك — يُحرِّك اللوحة بحرية لأي مكان بالشاشة */
+        _makeHandleDraggable(document.getElementById('panel-drag-handle'), (dx, dy) => {
+            const r = panel.getBoundingClientRect();
+            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            let newTop  = Math.max(0, Math.min(r.top  + dy, vh - r.height));
+            let newLeft = Math.max(0, Math.min(r.left + dx, window.innerWidth - r.width));
+            panel.style.top = newTop + 'px'; panel.style.left = newLeft + 'px';
+        });
+
+        /* مقبض التحجيم — في الزاوية السفلية اليسرى: سحب لليسار يُوسِّع، لأسفل يُطوِّل */
+        _makeHandleDraggable(document.getElementById('panel-resize-handle'), (dx, dy) => {
+            const r = panel.getBoundingClientRect();
+            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            let newW = Math.max(FP_MIN_W, Math.min(r.width  - dx, window.innerWidth - r.left));
+            let newH = Math.max(FP_MIN_H, Math.min(r.height + dy, vh - r.top));
+            panel.style.width = newW + 'px'; panel.style.height = newH + 'px';
+        });
+    })();
+
+    /* ══════════════════════════════════════════════════════
+       [التكيّف مع لوحة المفاتيح] عبر visualViewport API — عند ظهور
+       لوحة المفاتيح، نُصغّر اللوحة العائمة (وضعها الملتصق الافتراضي)
+       بحيث تبقى التبويبات والأزرار ظاهرة كاملة دائمًا، وصندوق الكتابة
+       (المرن flex:1) يتقلّص فيُظهر جزءًا منه فقط مع أسطر معدودة —
+       بدل أن تُغطَّى اللوحة أو تُدفَع خارج الرؤية.
+    ══════════════════════════════════════════════════════ */
+    (function setupKeyboardAdaptation() {
+        if (!window.visualViewport) return; // متصفح قديم بلا دعم — لا كسر، فقط بلا تكيّف تلقائي
+        const vv = window.visualViewport;
+        const panel = document.getElementById('floating-panel');
+
+        function adapt() {
+            if (freeModeActive) {
+                // في وضع الحرية: لا نُغيّر حجم/موضع اللوحة تلقائيًا (اختيار المستخدم يدوي)،
+                // فقط نمنعها من الخروج عن المساحة المرئية الحالية فوق لوحة المفاتيح
+                const r = panel.getBoundingClientRect();
+                if (r.bottom > vv.height) {
+                    const newTop = Math.max(0, r.top - (r.bottom - vv.height));
+                    panel.style.top = newTop + 'px';
+                    const availH = vv.height - newTop;
+                    if (r.height > availH) panel.style.height = Math.max(FP_MIN_H, availH) + 'px';
+                }
+                return;
+            }
+            const kbGap = window.innerHeight - vv.height; // تقدير ارتفاع لوحة المفاتيح المُغطّى
+            if (kbGap > 80) {
+                const available = Math.min(window.innerHeight * 0.52, vv.height * 0.85);
+                document.documentElement.style.setProperty('--panel-h', Math.max(220, available) + 'px');
+            } else {
+                document.documentElement.style.setProperty('--panel-h', '52vh'); // عودة للارتفاع الافتراضي
+            }
+        }
+        vv.addEventListener('resize', adapt);
+        vv.addEventListener('scroll', adapt);
     })();
 
     function handleToggleClick(e) {
@@ -2452,8 +2640,10 @@
                 continue;
             }
 
-            // [فصول فرعية] سطر بصيغة +- نص -+ وحده (بلا أي شيء آخر) يصبح عنوان فصل فرعي
-            // تابعاً لآخر فصل رئيسي "# " ظهر — لا يفرض صفحة جديدة، يتدفق ضمن نفس الفصل.
+            // [فصول فرعية] سطر بصيغة +- نص -+ وحده (بلا أي نص آخر في نفس السطر) يصبح
+            // عنوان فصل فرعي تابع لآخر فصل رئيسي "# " ظهر — لا يفرض صفحة جديدة. لو أُريد
+            // نفس التنسيق دون أن يكون فصلاً فرعياً، يكفي إضافة أي نص آخر في نفس السطر
+            // خارج العلامة (فيبقى تنسيقاً مضمَّناً عادياً كما كان دائماً).
             const subMatch = line.trim().match(/^\+\-(.+)\-\+$/);
             if (subMatch) {
                 lineQueue.shift();
@@ -2771,6 +2961,7 @@
         _loadEditorPrefsLocally();
         _refreshDayNightUI();
         applyThemeVars(activeTheme);
+        _loadInputFontSize(); // [تكبير/تصغير خط الكتابة] استرجاع الحجم المفضّل المحفوظ محلياً
 
         loadVaultFromDB((vaultData) => {
             mediaVault = vaultData;
