@@ -280,19 +280,23 @@
         }
         #floating-panel.fp-hidden { transform:translateY(100%); }
 
-        /* Hide button – top-right corner of panel */
+        /* ── [إصلاح تداخل] شريط تحكم مخصص، يسبق التبويبات فلا يتصادم معها أبداً ── */
+        .fp-control-bar {
+            display:flex; justify-content:space-between; align-items:center;
+            flex-shrink:0; padding:6px 12px; gap:8px;
+            border-bottom:1px solid rgba(255,255,255,.04);
+        }
         #panel-hide-btn {
-            position:absolute; top:8px; right:12px;
             background:linear-gradient(135deg, rgba(192,57,43,.22), rgba(150,40,30,.15));
             border:1.5px solid rgba(200,70,60,.45);
             color:#e07070;
-            height:32px; border-radius:9px;
+            height:30px; border-radius:9px;
             padding:0 14px;
-            cursor:pointer; font-size:11pt;
+            cursor:pointer; font-size:10.5pt;
             font-family:'Amiri',serif;
             display:flex; align-items:center; gap:6px;
             white-space:nowrap;
-            z-index:10; transition:all .2s;
+            transition:all .2s;
             box-shadow:0 2px 8px rgba(192,57,43,.15);
             letter-spacing:.3px;
         }
@@ -300,20 +304,16 @@
             background:linear-gradient(135deg, rgba(192,57,43,.38), rgba(150,40,30,.28));
             border-color:rgba(200,70,60,.7);
             color:#ff9898;
-            transform:translateY(-1px);
-            box-shadow:0 4px 14px rgba(192,57,43,.28);
         }
-        #panel-hide-btn:active { transform:translateY(0); }
 
         /* ── [تحريك/تحجيم اللوحة] وضع الحرية ────────────────── */
         #panel-freemode-btn {
-            position:absolute; top:8px; left:12px;
             background:linear-gradient(135deg, rgba(201,162,39,.22), rgba(150,110,20,.15));
             border:1.5px solid rgba(201,162,39,.5); color:var(--gold);
-            height:32px; border-radius:9px; padding:0 14px;
-            cursor:pointer; font-size:14pt; font-family:'Amiri',serif;
+            height:30px; border-radius:9px; padding:0 14px;
+            cursor:pointer; font-size:10.5pt; font-family:'Amiri',serif;
             display:flex; align-items:center; gap:6px; white-space:nowrap;
-            z-index:20; transition:all .2s; letter-spacing:.3px;
+            transition:all .2s; letter-spacing:.3px;
         }
         #panel-freemode-btn:hover { background:linear-gradient(135deg, rgba(201,162,39,.38), rgba(150,110,20,.28)); }
         #panel-freemode-btn.active { background:linear-gradient(135deg, rgba(201,162,39,.55), rgba(150,110,20,.42)); box-shadow:0 2px 10px rgba(201,162,39,.3); }
@@ -333,9 +333,25 @@
             cursor:nesw-resize; font-size:13pt; user-select:none; touch-action:none;
             box-shadow:0 4px 12px rgba(0,0,0,.3);
         }
+        /* [إعادة ضبط سريعة] زاوية سفلية يمينية — تقابل مقبض التحجيم */
+        #panel-reset-btn {
+            bottom:-2px; right:-2px; width:30px; height:30px; border-radius:0 9px 0 9px;
+            background:var(--surf3); border:1.5px solid var(--gold-line); color:var(--gold);
+            cursor:pointer; font-size:14pt; user-select:none;
+            box-shadow:0 4px 12px rgba(0,0,0,.3); transition:all .15s;
+        }
+        #panel-reset-btn:hover { background:var(--gold-dim); transform:rotate(-45deg); }
+        /* [مؤشر وضع التحرير] شارة صغيرة أسفل مقبض التحريك مباشرة */
+        .fp-edit-badge {
+            display:none; top:22px; left:50%; transform:translateX(-50%);
+            background:rgba(201,162,39,.16); border:1px solid rgba(201,162,39,.4); color:var(--gold);
+            font-size:8.5pt; font-family:'Amiri',serif; padding:2px 10px; border-radius:20px;
+            white-space:nowrap; letter-spacing:.3px; pointer-events:none;
+        }
+        #floating-panel.fp-free-mode .fp-edit-badge { display:flex; }
         #floating-panel.fp-free-mode {
-            border-radius:16px; border:1px solid var(--gold-line);
-            box-shadow:0 14px 55px rgba(0,0,0,.65);
+            border-radius:16px; border:2.5px solid var(--gold); /* [مؤشر وضع التحرير] حدود أوضح وأثخن */
+            box-shadow:0 14px 55px rgba(0,0,0,.65), 0 0 0 3px rgba(201,162,39,.15);
             transition:none !important; /* لا نريد أي تأخير حركي أثناء السحب اليدوي */
         }
 
@@ -857,13 +873,18 @@
 ════════════════════════════════════════════════════ -->
 <div id="floating-panel">
 
-    <!-- Hide button (top-left) -->
-    <button id="panel-hide-btn" onclick="hideFloatingPanel()" title="إخفاء اللوحة">▼ إخفاء اللوحة</button>
-    <!-- [تحريك/تحجيم اللوحة] زر تفعيل وضع الحرية — يفصل اللوحة عن مكانها الأصلي، والنقر
-         عليه مجدداً يعيدها تمامًا كما كانت -->
-    <button id="panel-freemode-btn" onclick="toggleFreeMode()" title="تحريك اللوحة">⛶ تحريك</button>
+    <!-- [إصلاح تداخل] شريط تحكم مخصص فوق التبويبات — لم تعد الأزرار تتموضع فوقها إطلاقاً -->
+    <div class="fp-control-bar">
+        <button id="panel-freemode-btn" onclick="toggleFreeMode()" title="تحرير موضع/حجم اللوحة">⛶ تحرير اللوحة</button>
+        <button id="panel-hide-btn" onclick="hideFloatingPanel()" title="إخفاء اللوحة">▼ إخفاء اللوحة</button>
+    </div>
+    <!-- [تحريك/تحجيم اللوحة] يظهران فقط في وضع التحرير (انظر CSS: fp-handle) -->
     <div id="panel-drag-handle" title="اسحب لتحريك اللوحة">⋮⋮</div>
     <div id="panel-resize-handle" title="اسحب لتغيير الحجم">⤡</div>
+    <!-- [إعادة ضبط سريعة] يظهر فقط في وضع التحرير — يمسح الموضع/الحجم المحفوظين فوراً -->
+    <button id="panel-reset-btn" class="fp-handle" onclick="resetFreeModeGeometry()" title="إعادة الضبط للوضع الافتراضي">↺</button>
+    <!-- [مؤشر وضع التحرير] -->
+    <div class="fp-edit-badge">✎ وضع التحرير</div>
 
     <!-- ── Main tabs row ──────────────────────────────── -->
     <div class="fp-main-tabs">
@@ -1723,35 +1744,76 @@
        مقبض تحريك مستقل + مقبض تحجيم مستقل، بزر واحد للتفعيل/الإلغاء
     ══════════════════════════════════════════════════════ */
     let freeModeActive = false;
+    const FP_GEOM_KEY = 'royal_fp_free_geometry';
+
+    function _saveFreeModeGeometry() {
+        const panel = document.getElementById('floating-panel');
+        const r = panel.getBoundingClientRect();
+        try { localStorage.setItem(FP_GEOM_KEY, JSON.stringify({ top:r.top, left:r.left, width:r.width, height:r.height })); } catch(e) {}
+    }
+
     function toggleFreeMode() {
         const panel = document.getElementById('floating-panel');
         const btn   = document.getElementById('panel-freemode-btn');
         freeModeActive = !freeModeActive;
         if (freeModeActive) {
+            // [حفظ الشكل والموقع] نستعيد آخر موضع/حجم استخدمته المرة السابقة إن وُجد،
+            // بدل حساب موضع جديد من الصفر في كل مرة — فلا تتكرر عملية الضبط يدوياً
+            let geom = null;
+            try { geom = JSON.parse(localStorage.getItem(FP_GEOM_KEY) || 'null'); } catch(e) {}
             const r = panel.getBoundingClientRect();
-            panel.style.top    = r.top + 'px';
-            panel.style.left   = r.left + 'px';
-            panel.style.width  = r.width + 'px';
-            panel.style.height = r.height + 'px';
+            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            if (geom) {
+                // تحقّق أنها لا تزال ضمن حدود الشاشة الحالية (قد يكون تغيّر حجمها منذ آخر استخدام)
+                geom.width  = Math.min(geom.width,  window.innerWidth);
+                geom.height = Math.min(geom.height, vh);
+                geom.top    = Math.max(0, Math.min(geom.top,  vh - geom.height));
+                geom.left   = Math.max(0, Math.min(geom.left, window.innerWidth - geom.width));
+            }
+            const g = geom || { top:r.top, left:r.left, width:r.width, height:r.height };
+            panel.style.top    = g.top    + 'px';
+            panel.style.left   = g.left   + 'px';
+            panel.style.width  = g.width  + 'px';
+            panel.style.height = g.height + 'px';
             panel.style.bottom = 'auto';
             panel.style.right  = 'auto';
             panel.classList.add('fp-free-mode');
             btn.classList.add('active'); btn.title = 'تثبيت اللوحة';
         } else {
             // [يعيدها إلى طبيعتها تمامًا] — إزالة كل تخصيص يدوي، رجوع كامل للوضع الافتراضي
+            // (الشكل/الموقع المحفوظان يبقيان في التخزين لاستعادتهما في المرة القادمة)
             panel.style.top = panel.style.left = panel.style.width = panel.style.height = panel.style.bottom = panel.style.right = '';
             panel.classList.remove('fp-free-mode');
-            btn.classList.remove('active'); btn.title = 'تحريك اللوحة';
+            btn.classList.remove('active'); btn.title = 'تحرير موضع/حجم اللوحة';
         }
     }
 
     const FP_MIN_W = 280, FP_MIN_H = 230; // حد أدنى يضمن ظهور التبويبات والأزرار دائماً كاملة
 
+    /** [إعادة ضبط سريعة] يمسح الموضع/الحجم المحفوظين ويعيد اللوحة لوضعها الافتراضي الأول فوراً */
+    function resetFreeModeGeometry() {
+        try { localStorage.removeItem(FP_GEOM_KEY); } catch(e) {}
+        const panel = document.getElementById('floating-panel');
+        // نُزيل التخصيص اليدوي مؤقتاً ليحسب المتصفح الموضع الافتراضي (الملتصق بالأسفل)،
+        // ثم نقرأه فوراً كنقطة انطلاق جديدة للوحة الحرة
+        panel.classList.remove('fp-free-mode');
+        panel.style.top = panel.style.left = panel.style.width = panel.style.height = panel.style.bottom = panel.style.right = '';
+        const r = panel.getBoundingClientRect();
+        panel.style.top    = r.top + 'px';
+        panel.style.left   = r.left + 'px';
+        panel.style.width  = r.width + 'px';
+        panel.style.height = r.height + 'px';
+        panel.style.bottom = 'auto';
+        panel.style.right  = 'auto';
+        panel.classList.add('fp-free-mode');
+        _saveFreeModeGeometry();
+    }
+
     function _makeHandleDraggable(handle, onDrag) {
         let sx, sy, active = false;
         function start(x, y) { if (!freeModeActive) return; active = true; sx = x; sy = y; }
         function move(x, y) { if (!active) return; onDrag(x - sx, y - sy); sx = x; sy = y; }
-        function end() { active = false; }
+        function end() { if (active) _saveFreeModeGeometry(); active = false; } // [حفظ] عند انتهاء كل سحب
         handle.addEventListener('mousedown', e => { start(e.clientX, e.clientY); e.preventDefault(); e.stopPropagation(); });
         document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
         document.addEventListener('mouseup', end);
@@ -1763,12 +1825,19 @@
     (function setupPanelDragAndResize() {
         const panel = document.getElementById('floating-panel');
 
-        /* مقبض التحريك — يُحرِّك اللوحة بحرية لأي مكان بالشاشة */
+        /* مقبض التحريك — يُحرِّك اللوحة بحرية لأي مكان بالشاشة، مع التصاق خفيف بالحواف */
+        const SNAP_THRESHOLD = 18;
         _makeHandleDraggable(document.getElementById('panel-drag-handle'), (dx, dy) => {
             const r = panel.getBoundingClientRect();
             const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const vw = window.innerWidth;
             let newTop  = Math.max(0, Math.min(r.top  + dy, vh - r.height));
-            let newLeft = Math.max(0, Math.min(r.left + dx, window.innerWidth - r.width));
+            let newLeft = Math.max(0, Math.min(r.left + dx, vw - r.width));
+            // [الالتصاق بالحواف] مغناطيس خفيف عند الاقتراب من أي حافة من حواف الشاشة الأربع
+            if (newTop  < SNAP_THRESHOLD)                 newTop  = 0;
+            if (newTop  > vh - r.height - SNAP_THRESHOLD) newTop  = vh - r.height;
+            if (newLeft < SNAP_THRESHOLD)                 newLeft = 0;
+            if (newLeft > vw - r.width  - SNAP_THRESHOLD) newLeft = vw - r.width;
             panel.style.top = newTop + 'px'; panel.style.left = newLeft + 'px';
         });
 
@@ -1780,43 +1849,6 @@
             let newH = Math.max(FP_MIN_H, Math.min(r.height + dy, vh - r.top));
             panel.style.width = newW + 'px'; panel.style.height = newH + 'px';
         });
-    })();
-
-    /* ══════════════════════════════════════════════════════
-       [التكيّف مع لوحة المفاتيح] عبر visualViewport API — عند ظهور
-       لوحة المفاتيح، نُصغّر اللوحة العائمة (وضعها الملتصق الافتراضي)
-       بحيث تبقى التبويبات والأزرار ظاهرة كاملة دائمًا، وصندوق الكتابة
-       (المرن flex:1) يتقلّص فيُظهر جزءًا منه فقط مع أسطر معدودة —
-       بدل أن تُغطَّى اللوحة أو تُدفَع خارج الرؤية.
-    ══════════════════════════════════════════════════════ */
-    (function setupKeyboardAdaptation() {
-        if (!window.visualViewport) return; // متصفح قديم بلا دعم — لا كسر، فقط بلا تكيّف تلقائي
-        const vv = window.visualViewport;
-        const panel = document.getElementById('floating-panel');
-
-        function adapt() {
-            if (freeModeActive) {
-                // في وضع الحرية: لا نُغيّر حجم/موضع اللوحة تلقائيًا (اختيار المستخدم يدوي)،
-                // فقط نمنعها من الخروج عن المساحة المرئية الحالية فوق لوحة المفاتيح
-                const r = panel.getBoundingClientRect();
-                if (r.bottom > vv.height) {
-                    const newTop = Math.max(0, r.top - (r.bottom - vv.height));
-                    panel.style.top = newTop + 'px';
-                    const availH = vv.height - newTop;
-                    if (r.height > availH) panel.style.height = Math.max(FP_MIN_H, availH) + 'px';
-                }
-                return;
-            }
-            const kbGap = window.innerHeight - vv.height; // تقدير ارتفاع لوحة المفاتيح المُغطّى
-            if (kbGap > 80) {
-                const available = Math.min(window.innerHeight * 0.52, vv.height * 0.85);
-                document.documentElement.style.setProperty('--panel-h', Math.max(220, available) + 'px');
-            } else {
-                document.documentElement.style.setProperty('--panel-h', '52vh'); // عودة للارتفاع الافتراضي
-            }
-        }
-        vv.addEventListener('resize', adapt);
-        vv.addEventListener('scroll', adapt);
     })();
 
     function handleToggleClick(e) {
@@ -2157,6 +2189,9 @@
     let mediaVault    = {};
     let customPageBackgrounds = {};
     let currentBookId = null;
+    // [أداء] تصنيف الكتاب الحالي مُخزَّن هنا مرة واحدة عند التحميل، بدل قراءة قائمة كل
+    // الكتب من التخزين المحلي في كل ضغطة حرف — هذا كان السبب الرئيسي لثقل الكتابة.
+    let _cachedBookCategory = "عام";
     let uploadedBookData = null;
     let searchTimer; let searchResultsList = [];
     const DB_NAME    = 'RoyalBookDB';
@@ -2164,9 +2199,9 @@
 
     // --- 1. المزامنة والتحقق من التغييرات ---
     function getCurrentBookObject() {
-        // [FIX] أضفنا category و selectedTheme — كانا يضيعان عند الحفظ
-        const allBooks   = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
-        const existingEntry = allBooks.find(b => b.id === currentBookId);
+        // [أداء] لم نعد نقرأ قائمة كل الكتب هنا فقط لجلب حقل category — كان هذا يعني
+        // JSON.parse لمكتبتك الكاملة (بنصوص كل كتبك) مع كل ضغطة حرف. نستخدم القيمة
+        // المحفوظة مسبقاً في _cachedBookCategory بدلاً من ذلك.
         return {
             id:            currentBookId || 'book_' + Date.now(),
             title:         document.getElementById('cTitle').value,
@@ -2179,7 +2214,7 @@
             cover:         document.getElementById('cCoverImg').value,
             customBgs:     customPageBackgrounds,
             selectedTheme: activeTheme,   // [FIX] كان مفقوداً
-            category:      (existingEntry && existingEntry.category) ? existingEntry.category : "عام",
+            category:      _cachedBookCategory,
             updatedAt:     Date.now()
         };
     }
@@ -2236,13 +2271,18 @@
         document.getElementById('stat-words').innerText   = bookData.text.trim() ? bookData.text.trim().split(/\s+/).length : 0;
         document.getElementById('stat-chars').innerText   = bookData.text.length;
         document.getElementById('stat-headers').innerText = (bookData.text.match(/^# /gm) || []).length;
-        // الحفظ المحلي فوري دائماً (رخيص ومهم ألا نفقد أي حرف يكتبه المستخدم)
+        // الحفظ المحلي الفوري لبيانات هذا الكتاب وحده يبقى فورياً (رخيص، ومهم ألا نفقد
+        // أي حرف يكتبه المستخدم لو أُغلقت الصفحة فجأة)
         localStorage.setItem('bookData', JSON.stringify(bookData));
-        updateGlobalBooksList(bookData);
-        // [FIX] إعادة بناء صفحات الكتاب كاملة كانت تحدث مع كل ضغطة حرف — مكلفة للأداء
-        // في الكتب الطويلة. الآن نؤجّلها قليلاً (debounce) فتُبنى مرة واحدة بعد توقف الكتابة.
+        // [أداء-حرج] كانت مزامنة القائمة الكاملة لكل الكتب (updateGlobalBooksList) تُستدعى هنا
+        // مباشرة — أي قراءة وإعادة كتابة كل مكتبتك (بنصوص كل الكتب) مع كل ضغطة حرف. هذا كان
+        // السبب الرئيسي لثقل الكتابة، ويزداد سوءًا كلما طال الكتاب أو زادت كتبك. الآن أُجِّلت
+        // مع نفس مؤقّت إعادة بناء المعاينة، فتُنفَّذ مرة واحدة فقط بعد توقف الكتابة قليلاً.
+        // [أداء] رفعت مهلة التأجيل من 180ms إلى 700ms — كانت قصيرة جداً بالنسبة لتكلفة
+        // إعادة بناء الترقيم/الحواشي الكاملة لكتاب طويل، فكانت تتكرر مع كل توقف طبيعي بسيط
+        // أثناء الكتابة المتصلة (بين الكلمات مثلاً)، لا فقط عند توقف حقيقي عن الكتابة.
         clearTimeout(_buildDebounceTimer);
-        _buildDebounceTimer = setTimeout(buildBook, 180);
+        _buildDebounceTimer = setTimeout(() => { updateGlobalBooksList(bookData); buildBook(); }, 700);
     }
 
     function updateGlobalBooksList(book) {
@@ -2967,6 +3007,7 @@
             mediaVault = vaultData;
             let s = JSON.parse(localStorage.getItem('bookData') || '{}');
             if (s.id) currentBookId = s.id;
+            if (s.category) _cachedBookCategory = s.category; // [أداء] تحميل التصنيف مرة واحدة فقط
             renderVaultList();
             if (s.text !== undefined || s.title !== undefined) {
                 document.getElementById('mainText').value  = s.text || s.t || "";
