@@ -1926,123 +1926,236 @@ function _pvApply(text, fnList) {
     return r;
 }
 
-/* ─── بناء الصفحات (مطابق لـ buildBook في editor.html) ─── */
+/* ─── ترقيم الحواشي (مطابق تماماً لـ editor.html) ─── */
+const _PV_FOOTNOTE_NUMERALS = ['⑴','⑵','⑶','⑷','⑸','⑹','⑺','⑻','⑼','⑽','⑾','⑿','⒀','⒁','⒂','⒃','⒄','⒅','⒆','⒇'];
+function _pvFootnoteNumeral(n) { return _PV_FOOTNOTE_NUMERALS[n-1] || ('『'+n+'』'); }
+
+/* ─── بناء الصفحات — محرك تقسيم حقيقي بالقياس الفعلي بالبكسل ───
+   [FIX-حرج جداً] النموذج القديم كان يضع كل محتوى الفصل الواحد (مهما طال) في "صفحة"
+   واحدة فقط دون أي قياس فعلي لارتفاعها — فكانت الفصول القصيرة تبدو سليمة بالصدفة،
+   بينما تتكدّس كل نصوص الفصول الطويلة في صندوق واحد ضخم قبل صفحة الفهرس مباشرة. كما أن
+   هذا الصندوق الضخم الواحد (لكتاب بلا عناوين فصول، أو فصل طويل جداً) كان يجعل حساب
+   القياس/التحجيم (scale) لعنصر DOM هائل الارتفاع بطيئاً جداً حتى يبدو المتصفح متجمّداً
+   ولا تظهر المعاينة إطلاقاً — وهذا يطابق تماماً "الكتب كثيرة الصفحات لا تظهر معاينتها".
+   الحل: نفس محرك editor.html (بعد إصلاحاته) — يبني الصفحات في حاوية DOM حقيقية مخفية
+   خارج الشاشة، ويقيس التصادم الفعلي بالبكسل بين آخر سطر والحواشي صفحة بصفحة، فتكون كل
+   صفحة بالحجم الصحيح دائماً مهما طال الكتاب، بأداء مطابق للمحرر (مُختبَر مسبقاً مع كتب
+   طويلة متعددة الفصول بلا أي تباطؤ). */
 function _pvBuild(book) {
     const style  = book.style  || 'style-islamic';
     const fs     = (book.size  || 20) + 'pt';
     const bg     = book.color  || '#FFFDD0';
     const bgs    = book.customBgs || {};
     const css    = _pvPluginCSS();
-    const title  = _pvApply(book.title  || '', []);
+    const titleStyled = _pvApply(book.title  || '', []);
     const author = _pvApply(book.author || '', []);
     const date   = book.date || '';
-    // [FIX] يطابق الآن نفس الإصلاح المطبَّق في editor.html: بلا هامش سالب يدفع النص خارج
-    // الصندوق، واحترام خياري إخفاء العنوان/المؤلف عن الغلاف إن اختارهما المستخدم في المحرر.
     const titleHTML  = book.hideTitleOnCover  ? '' : `<div style="font-size:55pt;font-family:'Aref Ruqaa',serif;
-                          margin-bottom:25mm;line-height:1.1;color:#2c1810">${title}</div>`;
+                          margin-bottom:25mm;line-height:1.1;color:#2c1810">${titleStyled}</div>`;
     const authorHTML = book.hideAuthorOnCover ? '' : `<div style="font-size:30pt;font-family:'Amiri',serif;
                           margin-bottom:15px;color:#4a3f35">${author}</div>`;
 
-    const pages = [];
+    const PAGE_W = 945, PAGE_H = 1334; // يطابق px المستخدمة في العرض النهائي (250mm×353mm)
 
-    /* ── صفحة الغلاف ── */
+    // حاوية بناء حقيقية في DOM لكنها خارج نطاق الرؤية تماماً — مطلوبة لأن getBoundingClientRect
+    // يحتاج تخطيطاً (layout) فعلياً، وهذا غير متاح لعنصر بلا حاوية حيّة.
+    const stage = document.createElement('div');
+    stage.style.cssText = 'position:fixed; top:0; left:-99999px; width:0; height:0; overflow:visible;';
+    document.body.appendChild(stage);
+
+    function createPage(hasHeader) {
+        const w = document.createElement('div');
+        w.className = 'page-wrapper ' + style;
+        w.style.width = PAGE_W + 'px'; w.style.height = PAGE_H + 'px'; w.style.backgroundColor = bg;
+        if (hasHeader) w.innerHTML = `<div class="page-header"><span>${titleStyled}</span><span>${date}</span></div>`;
+        const b  = document.createElement('div'); b.className = 'content-body'; b.style.fontSize = fs;
+        // [FIX-حرج جداً] القاعدة العامة لـ .content-body في هذا الملف تضبط bottom:25mm
+        // ثابتاً (صندوق بارتفاع صفحة كامل ثابت لا يتغيّر)، على عكس editor.html الذي يعتمد
+        // صندوقاً "يتمدد مع المحتوى حتى حد أقصى". بلا هذا التجاوز، getBoundingClientRect()
+        // لصندوق المتن يُرجع نفس الارتفاع الثابت دائماً بصرف النظر عن طول النص فعلياً —
+        // فلا يُكتشف أي فيضان أبداً، ويظل كل فصل مهما طال في صفحة واحدة (بل يُقصّ بصمت
+        // بفعل overflow:hidden). نُجبره هنا على التمدد الحقيقي مع المحتوى حتى 286mm فقط
+        // (=353mm−42mm−25mm، نفس القيمة المستخدمة في editor.html تماماً).
+        b.style.bottom = 'auto'; b.style.maxHeight = '286mm';
+        const fn = document.createElement('div'); fn.className = 'footnotes-section';
+        // [FIX-حرج جداً / السبب الجذري الحقيقي] القاعدة العامة لـ .footnotes-section هنا
+        // تضبط bottom:8mm، بينما content-body أعلاه يتمدد حتى 286mm (=353−42−25). في
+        // editor.html القيمتان متطابقتان هندسياً بدقة: 42mm+286mm=328mm يساوي بالضبط
+        // 353mm−25mm — أي أن حد content-body الأقصى يلامس بالضبط أعلى منطقة الحواشي حين
+        // تكون فارغة (bottom:25mm هناك، لا 8mm). بفارق القيمتين (8mm بدل 25mm)، يظل أعلى
+        // منطقة الحواشي أدنى بكثير من حد content-body الأقصى، فلا تتصادم الحافتان أبداً مهما
+        // طال النص — ولا يُكتشف أي فيضان، وهذا بالضبط سبب "تكدّس كل نص الفصل في صفحة واحدة".
+        fn.style.bottom = '25mm';
+        w.appendChild(b); w.appendChild(fn); stage.appendChild(w);
+        return { page: w, body: b, fn: fn };
+    }
+
+    let cur = null, pageFootnotes = [], carryLines = [], carryFootnote = null;
+    let tocItems = [], chapterCounter = 0;
+
+    function isOverflowing() {
+        const bodyRect = cur.body.getBoundingClientRect();
+        const fnRect   = cur.fn.getBoundingClientRect();
+        return bodyRect.bottom > (fnRect.top - 1);
+    }
+
+    function renderFootnoteEntry(id, text, kind, number) {
+        const d = document.createElement('div');
+        d.className = 'footnote-entry';
+        const headHtml = kind === 'continuation'
+            ? `<span class="footnote-split-mark">==</span> `
+            : `<span class="footnote-num-link">${_pvFootnoteNumeral(number)}</span> `;
+        d.innerHTML = headHtml + _pvApply(text, []);
+        d.dataset.headHtml = headHtml;
+        cur.fn.appendChild(d);
+        return d;
+    }
+
+    function startNewPage(withHeader) {
+        cur = createPage(withHeader);
+        pageFootnotes = [];
+        if (carryFootnote) {
+            const entryDiv = renderFootnoteEntry(carryFootnote.id, carryFootnote.text, 'continuation', null);
+            pageFootnotes.push({ id: carryFootnote.id, text: carryFootnote.text, anchorDiv: null, entryDiv });
+            carryFootnote = null;
+        }
+        carryLines.forEach(item => {
+            cur.body.appendChild(item.div);
+            if (item.fn) {
+                item.fn.anchorDiv = item.div;
+                item.fn.entryDiv  = renderFootnoteEntry(item.fn.id, item.fn.text, 'normal', pageFootnotes.length + 1);
+                pageFootnotes.push(item.fn);
+            }
+        });
+        carryLines = [];
+    }
+
+    function splitProtectedFootnote(fnObj) {
+        const words = fnObj.text.split(/(\s+)/).filter(w => w !== '');
+        const headHtml = fnObj.entryDiv.dataset.headHtml;
+        if (words.length === 0) { carryFootnote = null; return; }
+        let lo = 0, hi = words.length;
+        while (lo < hi) {
+            const mid = Math.ceil((lo + hi) / 2);
+            fnObj.entryDiv.innerHTML = headHtml + _pvApply(words.slice(0, mid).join(''), []) + ' <span class="footnote-split-mark">==</span>';
+            if (isOverflowing()) hi = mid - 1; else lo = mid;
+        }
+        const keptCount = Math.max(lo, 1);
+        const keptText  = words.slice(0, keptCount).join('');
+        const restText  = words.slice(keptCount).join('').trim();
+        fnObj.entryDiv.innerHTML = headHtml + _pvApply(keptText, []) + (restText ? ' <span class="footnote-split-mark">==</span>' : '');
+        carryFootnote = restText ? { id: fnObj.id, text: restText } : null;
+    }
+
+    function resolveOverflow() {
+        let guard = 0;
+        while (isOverflowing() && guard++ < 2000) {
+            const kids = cur.body.children;
+            const lastLine = kids.length > 0 ? kids[kids.length - 1] : null;
+            const firstProtected = pageFootnotes.length > 0 ? pageFootnotes[0] : null;
+            const protectedLine  = firstProtected ? firstProtected.anchorDiv : undefined;
+            const canEvictLastLine = !!lastLine && (protectedLine === undefined ? true : lastLine !== protectedLine);
+
+            if (canEvictLastLine) {
+                lastLine.__migrationCount = (lastLine.__migrationCount || 0) + 1;
+                if (kids.length === 1 && lastLine.__migrationCount > 3) { cur.body.style.overflow = 'visible'; break; }
+                cur.body.removeChild(lastLine);
+                let movedFn = null;
+                for (let i = pageFootnotes.length - 1; i >= 0; i--) {
+                    if (pageFootnotes[i].anchorDiv === lastLine) { movedFn = pageFootnotes[i]; movedFn.entryDiv.remove(); pageFootnotes.splice(i, 1); break; }
+                }
+                carryLines.unshift({ div: lastLine, fn: movedFn ? { id: movedFn.id, text: movedFn.text } : null });
+                continue;
+            }
+            if (firstProtected) { splitProtectedFootnote(firstProtected); continue; }
+            if (lastLine) {
+                lastLine.__migrationCount = (lastLine.__migrationCount || 0) + 1;
+                if (kids.length === 1 && lastLine.__migrationCount > 3) { cur.body.style.overflow = 'visible'; break; }
+                cur.body.removeChild(lastLine); carryLines.unshift({ div: lastLine, fn: null }); continue;
+            }
+            break;
+        }
+    }
+
+    // صفحة الغلاف — أول صفحة دائماً
     const coverBg = book.cover
         ? `background-image:url('${book.cover}');background-size:cover;background-position:center`
         : `background-color:${bg}`;
+    const coverW = document.createElement('div');
+    coverW.className = 'page-wrapper ' + style + ' cover-page';
+    coverW.style.cssText = `width:${PAGE_W}px;height:${PAGE_H}px;background-color:${bg};${coverBg}`;
+    coverW.innerHTML = `${css}<div class="content-body"><div style="width:100%;text-align:center">
+        ${titleHTML}${authorHTML}
+        <div style="font-size:20pt;font-family:'Amiri',serif;color:#777">${date}</div>
+      </div></div>`;
+    stage.appendChild(coverW);
 
-    pages.push({ html: `
-        <div class="page-wrapper ${style} cover-page"
-             style="background-color:${bg};${coverBg}">
-          ${css}
-          <div class="content-body">
-            <div style="width:100%;text-align:center">
-              ${titleHTML}
-              ${authorHTML}
-              <div style="font-size:20pt;font-family:'Amiri',serif;color:#777">
-                ${date}
-              </div>
-            </div>
-          </div>
-        </div>
-    `, bg: null });
-
-    /* ── صفحات المحتوى ── */
     const rawText = book.text || book.t || '';
-    const lines   = rawText.split('\n');
+    const lineQueue = rawText.split('\n');
 
-    let currentBody  = null;
-    let chapterCount = 0;
-    const tocItems   = [];
-
-    const makePage = (hasHeader) => {
-        const pg = { header: hasHeader, items: [], fns: [] };
-        pages.push(pg);
-        return pg;
-    };
-
-    const pageToHTML = (pg) => {
-        const headerHTML = pg.header
-            ? `<div class="page-header"><span>${title}</span><span>${date}</span></div>` : '';
-        const bodyHTML = pg.items.join('');
-        const fnsHTML  = pg.fns.length
-            ? `<div class="footnotes-section">${pg.fns.map((f, i) => `<div>[${i+1}] ${_pvApply(f,[])}</div>`).join('')}</div>` : '';
-        return `
-          <div class="page-wrapper ${style}" style="background-color:${bg}">
-            ${css}${headerHTML}
-            <div class="content-body" style="font-size:${fs}">
-              ${bodyHTML}
-            </div>
-            ${fnsHTML}
-          </div>`;
-    };
-
-    currentBody = makePage(true);
-
-    lines.forEach(line => {
-        if (line.startsWith('# ')) {
-            if (currentBody.items.length > 0) currentBody = makePage(true);
-            chapterCount++;
-            const hText = line.replace('# ', '').trim();
-            tocItems.push({ title: hText, ch: chapterCount });
-            currentBody.items.push(
-                `<h1 id="chapter-${chapterCount}"
-                     style="text-align:center;font-family:'Aref Ruqaa',serif;
-                            margin-bottom:10mm;font-size:${fs}">
-                   ${_pvApply(hText, [])}
-                 </h1>`
-            );
-        } else {
-            const html = line.trim() === ''
-                ? '<div style="margin-bottom:4px">&nbsp;</div>'
-                : `<div style="white-space:pre-wrap;margin-bottom:4px;font-size:${fs}">${_pvApply(line, currentBody.fns)}</div>`;
-            currentBody.items.push(html);
+    while (lineQueue.length > 0 || carryLines.length > 0) {
+        if (lineQueue.length === 0) {
+            if (!cur) startNewPage(true);
+            if (isOverflowing()) resolveOverflow();
+            cur = null;
+            continue;
         }
-    });
+        const line = lineQueue[0];
+        if (!line.trim() && (!cur || cur.body.childNodes.length === 0) && pageFootnotes.length === 0 && carryLines.length === 0) { lineQueue.shift(); continue; }
 
-    /* تحويل كائنات الصفحات إلى HTML */
-    for (let i = 1; i < pages.length; i++) {
-        if (pages[i].html) continue;
-        pages[i].html = pageToHTML(pages[i]);
+        if (line.startsWith('# ')) {
+            if (carryLines.length > 0) { cur = null; startNewPage(true); if (isOverflowing()) resolveOverflow(); continue; }
+            lineQueue.shift();
+            chapterCounter++;
+            const hText = line.replace('# ', '').trim();
+            tocItems.push({ title: hText, id: 'pv-chapter-' + chapterCounter });
+            cur = null; startNewPage(true);
+            let h = document.createElement('h1');
+            h.id = 'pv-chapter-' + chapterCounter;
+            h.style.cssText = "text-align:center;font-family:'Aref Ruqaa',serif;margin-bottom:10mm;";
+            h.innerHTML = _pvApply(hText, []);
+            cur.body.appendChild(h);
+            continue;
+        }
+
+        if (!cur) startNewPage(true);
+        const tempFns = [];
+        let d = document.createElement('div'); d.style.whiteSpace = 'pre-wrap'; d.style.marginBottom = '4px';
+        d.innerHTML = line.trim() === '' ? '&nbsp;' : _pvApply(line, tempFns);
+        cur.body.appendChild(d);
+        lineQueue.shift();
+        tempFns.forEach(fnObj => {
+            const entryDiv = renderFootnoteEntry(fnObj.id, fnObj.text, 'normal', pageFootnotes.length + 1);
+            pageFootnotes.push({ id: fnObj.id, text: fnObj.text, anchorDiv: d, entryDiv });
+        });
+        if (isOverflowing()) {
+            resolveOverflow();
+            if (carryLines.length > 0) cur = null;
+        }
     }
+    if (cur && isOverflowing()) resolveOverflow();
+    let safetyGuard = 0;
+    while (carryFootnote && safetyGuard++ < 500) { startNewPage(true); if (isOverflowing()) resolveOverflow(); }
 
-    /* صفحة الفهرس */
+    /* صفحة الفهرس — برقم الصفحة الحقيقي المحسوب من DOM النهائي (الغلاف = صفحة 0) */
     if (tocItems.length > 0) {
+        const allPagesForNum = Array.from(stage.querySelectorAll('.page-wrapper'));
+        function pageNumberOf(id) {
+            const el = stage.querySelector('#' + CSS.escape(id));
+            if (!el) return '';
+            const idx = allPagesForNum.indexOf(el.closest('.page-wrapper'));
+            return idx > 0 ? idx : '';
+        }
         const rows = tocItems.map(t =>
-            `<div class="toc-item">
-               <span class="toc-text">${_pvApply(t.title, [])}</span>
-               <span class="toc-page">الفصل ${t.ch}</span>
-             </div>`
+            `<div class="toc-item"><span class="toc-text">${_pvApply(t.title, [])}</span><span class="toc-page">${pageNumberOf(t.id)}</span></div>`
         ).join('');
-        pages.push({ html: `
-          <div class="page-wrapper ${style}" style="background-color:${bg}">
-            ${css}
-            <div class="page-header"><span>${title}</span><span>${date}</span></div>
-            <div class="content-body" style="font-size:${fs}">
-              <div class="toc-title">فهرس المحتويات</div>${rows}
-            </div>
-          </div>
-        `});
+        const tocPage = createPage(true);
+        tocPage.body.innerHTML = `<div class="toc-title">فهرس المحتويات</div>${rows}`;
     }
+
+    // استخراج HTML كل صفحة بترتيبها، ثم إزالة حاوية البناء المخفية بالكامل
+    const pages = Array.from(stage.querySelectorAll('.page-wrapper')).map(el => ({ html: el.outerHTML }));
+    stage.remove();
 
     _pvRender(pages, bgs);
 }
