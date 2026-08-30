@@ -237,7 +237,13 @@
         /* [فصول فرعية] لا كلاس خاص بها — تستخدم تنسيق .inline-header الأصلي نفسه الذي
            كانت +- -+ تُعرض به دائمًا قبل هذه الميزة، دون أي تصميم جديد مُضاف من عندي. */
         .cover-page { background-size:cover; background-position:center; }
-        .cover-page .content-body { display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
+        /* [FIX-الغلاف] كانت هذه القاعدة تعتمد على content-body العام (top:42mm بلا bottom،
+           فارتفاعه = ارتفاع محتواه فقط بسبب max-height الجديد الخاص بالحواشي المتمددة).
+           بلا ارتفاع حقيقي، justify-content:center لا معنى له، وكان الكود يعوّض بهامش
+           سالب (margin-top:-40mm) يدفع النص فعلياً خارج حدود الصندوق (overflow:hidden
+           يقصّه). الحل الصحيح: صندوق غلاف بارتفاع صفحة كامل حقيقي، فيعمل التوسيط الرأسي
+           طبيعياً دون أي هاك. */
+        .cover-page .content-body { top:0; bottom:0; max-height:none; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; }
         .toc-link { text-decoration:none; color:inherit; display:flex; justify-content:space-between; width:100%; transition:color .2s; cursor:pointer; }
         .toc-link:hover { color:#b8860b; background-color:rgba(184,134,11,.05); }
         .media-btn { background:var(--royal-gold); color:#fff; border:none; padding:5px 15px; border-radius:20px; font-family:'Amiri'; cursor:pointer; font-size:14pt; margin:5px 0; transition:.2s; }
@@ -950,10 +956,21 @@
         <div class="info-field" style="min-width:210px;">
             <label>صورة الغلاف</label>
             <div class="info-cover-row">
-                <input type="text" id="cCoverImg" oninput="autoSaveAndBuild()" placeholder="رابط أو اختر ملفاً...">
+                <input type="text" id="cCoverImg" oninput="autoSaveAndBuild(); _writeCoverIfChanged(this.value);" placeholder="رابط أو اختر ملفاً...">
                 <button class="info-icon-btn" onclick="document.getElementById('coverFileInput').click()" title="اختر من الجهاز">📁</button>
                 <input type="file" id="coverFileInput" accept="image/*" style="display:none" onchange="handleCoverUpload(event)">
             </div>
+        </div>
+
+        <!-- [ميزة] إخفاء عنوان الكتاب و/أو اسم المؤلف عن الغلاف — مفيد خصوصاً مع صورة غلاف
+             جاهزة تحوي العنوان مطبوعاً عليها أصلاً، فلا نريد تكراره كنص فوقها. -->
+        <div class="info-field" style="min-width:210px; flex-direction:row; align-items:center; gap:14px; flex-wrap:wrap; padding-top:18px;">
+            <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);">
+                <input type="checkbox" id="cHideTitleCover" onchange="autoSaveAndBuild()"> إخفاء العنوان عن الغلاف
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text-dim);">
+                <input type="checkbox" id="cHideAuthorCover" onchange="autoSaveAndBuild()"> إخفاء المؤلف عن الغلاف
+            </label>
         </div>
 
     </div><!-- /fp-tab-info -->
@@ -2212,6 +2229,8 @@
             style:         document.getElementById('pageStyle').value,
             size:          document.getElementById('cFontSize').value,
             cover:         document.getElementById('cCoverImg').value,
+            hideTitleOnCover:  document.getElementById('cHideTitleCover')?.checked  || false,
+            hideAuthorOnCover: document.getElementById('cHideAuthorCover')?.checked || false,
             customBgs:     customPageBackgrounds,
             selectedTheme: activeTheme,   // [FIX] كان مفقوداً
             category:      _cachedBookCategory,
@@ -2235,7 +2254,10 @@
         currentBookId  = bookData.id;
         const btn = document.getElementById('saveCloudBtn');
         if (btn) { btn.innerText = "جاري الحفظ...⏳"; btn.disabled = true; }
-        localStorage.setItem('bookData', JSON.stringify(bookData));
+        // [FIX] هذه لحظة حفظ حقيقية (نادرة، ليست مع كل حرف) — نكتب المفتاحين معاً هنا
+        // لضمان تطابق كامل قبل الرفع لدرايف، بغضّ النظر عن أي تفاصيل تزامن أخرى.
+        _writeLightBookData(bookData);
+        _writeCoverIfChanged(bookData.cover);
         updateGlobalBooksList(bookData);
         localStorage.setItem('pending_sync_book', JSON.stringify(bookData));
         try {
@@ -2265,15 +2287,49 @@
     }
 
     let _buildDebounceTimer = null;
+
+    // [FIX-حرج جداً / بطء الكتابة] السبب الحقيقي للبطء الشديد أثناء الكتابة لم يكن حجم
+    // ملف الكود، بل أن bookData.cover قد يحوي صورة الغلاف كاملة كنص base64 (قد تصل لعدة
+    // ميغابايتات، لأن handleCoverUpload يخزّن نتيجة FileReader.readAsDataURL مباشرة)، وكانت
+    // localStorage.setItem('bookData', JSON.stringify(bookData)) — بكل هذه البايتات — تُنفَّذ
+    // بشكل متزامن (synchronous, blocking) مع كل حرف واحد تُكتب. الحل: فصل تخزين الغلاف عن
+    // تخزين بقية بيانات الكتاب في مفتاحين منفصلين:
+    //   • 'bookData'       → كل شيء ما عدا الغلاف. خفيف جداً حتى لكتاب طويل، فيبقى فورياً
+    //                        مع كل حرف (يحمي من فقدان النص عند إغلاق مفاجئ) دون أي بطء.
+    //   • 'bookData_cover' → الغلاف وحده فقط. لا يُكتب إلا حين يتغيّر الغلاف فعلياً (رفع/
+    //                        لصق رابط جديد)، لا مع كل حرف من النص — وهذا التغيير نادر جداً
+    //                        مقارنة بالكتابة، فتختفي كلفته العملية بالكامل من مسار الكتابة.
+    // مهم: هذا لا يغيّر أي شيء في الحفظ السحابي (درايف) — saveToDrive/saveAndExit ما زالا
+    // يبنيان bookData الكامل عبر getCurrentBookObject() الحيّة (تقرأ من الحقول مباشرة، لا من
+    // localStorage)، ويكتبان المفتاحين معاً عند لحظة الحفظ الفعلي فقط، فيبقى ما يُرفع لدرايف
+    // كاملاً وصحيحاً دائماً كما كان تماماً.
+    function _writeLightBookData(bookData) {
+        const light = Object.assign({}, bookData);
+        delete light.cover;
+        localStorage.setItem('bookData', JSON.stringify(light));
+    }
+    function _writeCoverIfChanged(coverValue) {
+        localStorage.setItem('bookData_cover', JSON.stringify({ cover: coverValue || "" }));
+    }
+    function _readMergedBookData() {
+        let s = {};
+        try { s = JSON.parse(localStorage.getItem('bookData') || '{}'); } catch(e) {}
+        try {
+            const c = JSON.parse(localStorage.getItem('bookData_cover') || '{}');
+            if (c.cover !== undefined) s.cover = c.cover;
+        } catch(e) {}
+        return s;
+    }
+
     function autoSaveAndBuild() {
         const bookData = getCurrentBookObject();
         currentBookId  = bookData.id;
         document.getElementById('stat-words').innerText   = bookData.text.trim() ? bookData.text.trim().split(/\s+/).length : 0;
         document.getElementById('stat-chars').innerText   = bookData.text.length;
         document.getElementById('stat-headers').innerText = (bookData.text.match(/^# /gm) || []).length;
-        // الحفظ المحلي الفوري لبيانات هذا الكتاب وحده يبقى فورياً (رخيص، ومهم ألا نفقد
-        // أي حرف يكتبه المستخدم لو أُغلقت الصفحة فجأة)
-        localStorage.setItem('bookData', JSON.stringify(bookData));
+        // الحفظ المحلي الفوري لبيانات هذا الكتاب وحده يبقى فورياً (رخيص الآن فعلاً، بلا
+        // بايتات الغلاف) ومهم ألا نفقد أي حرف يكتبه المستخدم لو أُغلقت الصفحة فجأة.
+        _writeLightBookData(bookData);
         // [أداء-حرج] كانت مزامنة القائمة الكاملة لكل الكتب (updateGlobalBooksList) تُستدعى هنا
         // مباشرة — أي قراءة وإعادة كتابة كل مكتبتك (بنصوص كل الكتب) مع كل ضغطة حرف. هذا كان
         // السبب الرئيسي لثقل الكتابة، ويزداد سوءًا كلما طال الكتاب أو زادت كتبك. الآن أُجِّلت
@@ -2346,6 +2402,7 @@
     function startNewBook() {
         if (confirm("تنبيه: سيتم مسح العمل الحالي بالكامل. تأكد من الحفظ.")) {
             localStorage.removeItem('bookData');
+            localStorage.removeItem('bookData_cover');
             mediaVault = {}; saveVaultToDB(); currentBookId = null;
             document.getElementById('mainText').value   = "";
             document.getElementById('focusText').value  = "";
@@ -2353,6 +2410,8 @@
             document.getElementById('cAuthor').value    = "";
             document.getElementById('cDate').value      = "";
             document.getElementById('cCoverImg').value  = "";
+            document.getElementById('cHideTitleCover').checked  = false;
+            document.getElementById('cHideAuthorCover').checked = false;
             document.getElementById('cFontSize').value  = 20;
             document.getElementById('globalBgPicker').value = "#FFFDD0";
             document.getElementById('colorCodeInput').value = "FFFDD0";
@@ -2404,6 +2463,9 @@
         document.getElementById('cAuthor').value   = s.author || "";
         document.getElementById('cDate').value     = s.date   || "";
         document.getElementById('cCoverImg').value = s.cover  || "";
+        _writeCoverIfChanged(s.cover || ""); // [FIX] غلاف مستورد جديد — يُحفظ فوراً في مفتاحه الخاص
+        document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;
+        document.getElementById('cHideAuthorCover').checked = !!s.hideAuthorOnCover;
         document.getElementById('cFontSize').value = s.size   || 20;
         document.getElementById('globalBgPicker').value = s.color || s.bgColor || "#FFFDD0";
         document.getElementById('pageStyle').value = s.style  || "style-islamic";
@@ -2512,9 +2574,13 @@
         coverPage.page.classList.add('cover-page');
         const img = document.getElementById('cCoverImg').value;
         if (img) coverPage.page.style.backgroundImage = `url('${img}')`;
-        coverPage.body.innerHTML = `<div style="width:100%;margin-top:-40mm;">
-            <div style="font-size:55pt;font-family:'Aref Ruqaa';margin-bottom:25mm;line-height:1.1;">${applyStyles(document.getElementById('cTitle').value,[])}</div>
-            <div style="font-size:30pt;margin-bottom:15px;color:#4a3f35;">${applyStyles(document.getElementById('cAuthor').value,[])}</div>
+        // [FIX-الغلاف] لا مزيد من margin-top:-40mm — content-body الآن صندوق بارتفاع
+        // صفحة كامل حقيقي (انظر CSS)، فالتوسيط الرأسي يعمل بلا أي هاك يدفع النص للخارج.
+        const hideTitleCover  = document.getElementById('cHideTitleCover')?.checked;
+        const hideAuthorCover = document.getElementById('cHideAuthorCover')?.checked;
+        coverPage.body.innerHTML = `<div style="width:100%;">
+            ${hideTitleCover  ? '' : `<div style="font-size:55pt;font-family:'Aref Ruqaa';margin-bottom:25mm;line-height:1.1;">${applyStyles(document.getElementById('cTitle').value,[])}</div>`}
+            ${hideAuthorCover ? '' : `<div style="font-size:30pt;margin-bottom:15px;color:#4a3f35;">${applyStyles(document.getElementById('cAuthor').value,[])}</div>`}
             <div style="font-size:20pt;color:#777;">${document.getElementById('cDate').value}</div>
         </div>`;
 
@@ -2564,8 +2630,18 @@
             cur = createPage(container, withHeader);
             pageFootnotes = [];
             if (carryFootnote) {
-                carryFootnote.entryDiv = renderFootnoteEntry(carryFootnote.id, carryFootnote.text, 'continuation', null);
-                carryFootnote.isCarry = true;
+                // [FIX-حرج جداً] الحاشية المُرحَّلة كانت تُعرَض في cur.fn لكنها لا تُسجَّل في
+                // pageFootnotes — فتصبح "غير مرئية" تماماً لخوارزمية الفيضان في resolveOverflow،
+                // التي تحمي فقط ما هو مسجَّل في pageFootnotes. النتيجة: كل سطر متن حقيقي على
+                // الصفحة الجديدة كان يُعتبر خطأً "قابلاً للطرد بحرية"، فيُطرَد المتن بالكامل مهما
+                // كانت المساحة المتبقية كافية له، صفحة بعد صفحة، بينما لا يُقتطع من الحاشية سوى
+                // شريحة صغيرة كل مرة — وهذا بالضبط سبب "التكرار اللانهائي" الذي وصفتَه.
+                // الحل: تُسجَّل الحاشية المُرحَّلة الآن كعنصر حماية رسمي بلا anchorDiv (null) —
+                // قيمة null هنا تعني حماية مطلقة الأولوية (لا يوجد سطر متن "بديل" آمن يمكن
+                // الإبقاء عليه معها، فيجب إفراغ الصفحة من أي متن قبل التفكير بتقسيمها مجدداً).
+                const entryDiv = renderFootnoteEntry(carryFootnote.id, carryFootnote.text, 'continuation', null);
+                pageFootnotes.push({ id: carryFootnote.id, text: carryFootnote.text, anchorDiv: null, entryDiv });
+                carryFootnote = null; // استُهلك متغير النقل المؤقت؛ pageFootnotes[0] هو المرجع الرسمي الآن لهذه الصفحة
             }
             // إعادة الأسطر المُرحَّلة من الصفحة السابقة إلى بداية هذه الصفحة، بترتيبها الطبيعي
             carryLines.forEach(item => {
@@ -2593,7 +2669,13 @@
             const keptCount = Math.max(lo, 1); // نُبقي كلمة واحدة على الأقل تفادياً لحلقة عالقة في حالة نادرة جداً
             const keptText  = words.slice(0, keptCount).join('');
             const restText  = words.slice(keptCount).join('').trim();
-            fnObj.entryDiv.innerHTML = headHtml + applyStyles(keptText, []) + ' <span class="footnote-split-mark">==</span>';
+            // [FIX] علامة "==" تعني "تتمة الحاشية في الصفحة التالية" — لا تُعرض إن كان هذا
+            // فعلاً آخر جزء منها (كانت تظهر دائماً سابقاً حتى لو لم يتبقَّ شيء، موهمة القارئ
+            // بوجود تتمة غير موجودة).
+            fnObj.entryDiv.innerHTML = headHtml + applyStyles(keptText, []) + (restText ? ' <span class="footnote-split-mark">==</span>' : '');
+            // [FIX] carryFootnote يمثّل دائماً "ما تبقى ليُعرض بدءاً من الصفحة التالية" —
+            // fnObj نفسه (مسجَّل في pageFootnotes لهذه الصفحة) يبقى كما هو، منتهياً عند هذا
+            // الجزء المقتطع؛ لا نلمس محتواه بعد هذا السطر.
             carryFootnote = restText ? { id: fnObj.id, text: restText } : null;
         }
 
@@ -2605,15 +2687,23 @@
             while (isOverflowing() && guard++ < 2000) {
                 const kids = cur.body.children;
                 const lastLine = kids.length > 0 ? kids[kids.length - 1] : null;
-                const protectedLine = pageFootnotes.length > 0 ? pageFootnotes[0].anchorDiv : null;
+                // [FIX-حرج جداً / القاعدة الهندسية للحواشي]
+                // firstProtected هي أول حاشية مسجَّلة في pageFootnotes لهذه الصفحة (إن وُجدت) —
+                // ويشمل ذلك الآن حاشية مُرحَّلة بلا سطر أصلي (anchorDiv:null)، لا فقط حاشية
+                // سطر عادي. protectedLine بالتالي إما:
+                //   • undefined  → لا توجد أي حاشية محمية على هذه الصفحة إطلاقاً.
+                //   • null       → الحماية "مطلقة": حاشية مُرحَّلة بلا سطر متن مرافق، فأي سطر
+                //                   متن موجود على الصفحة دخيل طارئ يجب طرده بالكامل أولاً.
+                //   • عنصر DOM   → السطر الوحيد المسموح ببقائه هو هذا السطر تحديداً (حاشيته
+                //                   العادية مرتبطة به).
+                const firstProtected = pageFootnotes.length > 0 ? pageFootnotes[0] : null;
+                const protectedLine  = firstProtected ? firstProtected.anchorDiv : undefined;
+                const canEvictLastLine = !!lastLine && (protectedLine === undefined ? true : lastLine !== protectedLine);
 
-                if (lastLine && lastLine !== protectedLine) {
-                    // [FIX-حرج] صمام أمان كان موجوداً في الكود القديم (قبل نظام الحواشي) وسقط
-                    // سهواً في إعادة الكتابة: فقرة أو عنوان واحد أطول من صفحة كاملة (لا يوجد
-                    // نص آخر معه على الصفحة) لا يمكن تقسيمه أبداً (لا نُقسِّم إلا الحواشي، لا
-                    // المتن العادي) — فكان سيُرحَّل من صفحة لأخرى إلى ما لا نهاية (تجمّد كامل
-                    // للمتصفح). الآن: بعد 3 محاولات فاشلة لنفس العنصر، نقبل الفيضان بصرياً
-                    // بدل حلقة صفحات لا تنتهي.
+                if (canEvictLastLine) {
+                    // [FIX-حرج] صمام أمان: فقرة/عنوان أطول من صفحة كاملة وحده على الصفحة لا
+                    // يمكن تقسيمه (لا نُقسِّم إلا الحواشي) — بعد 3 محاولات ترحيل فاشلة لنفس
+                    // العنصر، نقبل الفيضان بصرياً بدل حلقة صفحات لا تنتهي.
                     lastLine.__migrationCount = (lastLine.__migrationCount || 0) + 1;
                     if (kids.length === 1 && lastLine.__migrationCount > 3) {
                         cur.body.style.overflow = 'visible';
@@ -2633,9 +2723,12 @@
                     continue;
                 }
 
-                // وصلنا لحد الحماية: حاشية محمولة (استمرار) أولاً إن وُجدت، ثم حاشية "١" نفسها
-                if (carryFootnote && carryFootnote.isCarry) { splitProtectedFootnote(carryFootnote); continue; }
-                if (pageFootnotes.length > 0) { splitProtectedFootnote(pageFootnotes[0]); continue; }
+                // لا يوجد سطر متن يمكن طرده بعد الآن — الحاشية المحمية الأولى (سواء كانت
+                // مُرحَّلة بلا سطر أو مربوطة بسطر متن) تُقسَّم الآن على المساحة المتبقية فعلياً.
+                if (firstProtected) { splitProtectedFootnote(firstProtected); continue; }
+
+                // حالة نادرة جداً: لا حاشية محمية إطلاقاً لكن الصفحة ما تزال تفيض — آخر ما
+                // تبقى هو المتن وحده، فيُطرَد كحل أخير بنفس صمام الحماية من التكرار.
                 if (lastLine) {
                     lastLine.__migrationCount = (lastLine.__migrationCount || 0) + 1;
                     if (kids.length === 1 && lastLine.__migrationCount > 3) { cur.body.style.overflow = 'visible'; break; }
@@ -2985,7 +3078,11 @@
     function handleCoverUpload(e) {
         let file = e.target.files[0];
         let reader = new FileReader();
-        reader.onload = (ev) => { document.getElementById('cCoverImg').value = ev.target.result; autoSaveAndBuild(); };
+        reader.onload = (ev) => {
+            document.getElementById('cCoverImg').value = ev.target.result;
+            _writeCoverIfChanged(ev.target.result); // [FIX] الغلاف تغيّر فعلاً هنا — يُحفظ فوراً في مفتاحه الخاص
+            autoSaveAndBuild();
+        };
         reader.readAsDataURL(file);
     }
 
@@ -3005,7 +3102,7 @@
 
         loadVaultFromDB((vaultData) => {
             mediaVault = vaultData;
-            let s = JSON.parse(localStorage.getItem('bookData') || '{}');
+            let s = _readMergedBookData();
             if (s.id) currentBookId = s.id;
             if (s.category) _cachedBookCategory = s.category; // [أداء] تحميل التصنيف مرة واحدة فقط
             renderVaultList();
@@ -3016,6 +3113,8 @@
                 document.getElementById('cAuthor').value   = s.author || "";
                 document.getElementById('cDate').value     = s.date   || "";
                 document.getElementById('cCoverImg').value = s.cover  || s.coverImg || "";
+                document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;
+                document.getElementById('cHideAuthorCover').checked = !!s.hideAuthorOnCover;
                 document.getElementById('cFontSize').value = s.size   || s.fontSize || 20;
                 document.getElementById('pageStyle').value = s.style  || "style-islamic";
                 let savedColor = s.color || s.bgColor || "#FFFDD0";
@@ -3080,6 +3179,8 @@
         document.getElementById('cAuthor').value   = s.author || '';
         document.getElementById('cDate').value     = s.date   || '';
         document.getElementById('cCoverImg').value = s.cover  || '';
+        document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;
+        document.getElementById('cHideAuthorCover').checked = !!s.hideAuthorOnCover;
         document.getElementById('cFontSize').value = s.size   || 20;
         document.getElementById('pageStyle').value = s.style  || 'style-islamic';
         let savedColor = s.color || s.bgColor || '#FFFDD0';
@@ -3090,7 +3191,9 @@
         customPageBackgrounds = s.customBgs || {};
         // [FIX] السمة اللونية للمحرر تفضيل عام للمستخدم، لا يجب أن يغيّرها محتوى
         // كتاب قادم من درايف بصمت. تُترك كما هي (مُحمَّلة مسبقاً من EDITOR_PREFS_KEY).
-        localStorage.setItem('bookData', JSON.stringify(s));
+        // [FIX] بيانات قادمة من درايف قد تحمل غلافاً مختلفاً — تُكتب في المفتاحين معاً هنا
+        _writeLightBookData(s);
+        _writeCoverIfChanged(s.cover);
         buildBook();
         lastSavedData = JSON.stringify(getCurrentBookObject());
     }

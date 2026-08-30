@@ -1887,6 +1887,12 @@ function _pvBuild(book) {
     const title  = _pvApply(book.title  || '', []);
     const author = _pvApply(book.author || '', []);
     const date   = book.date || '';
+    // [FIX] يطابق الآن نفس الإصلاح المطبَّق في editor.html: بلا هامش سالب يدفع النص خارج
+    // الصندوق، واحترام خياري إخفاء العنوان/المؤلف عن الغلاف إن اختارهما المستخدم في المحرر.
+    const titleHTML  = book.hideTitleOnCover  ? '' : `<div style="font-size:55pt;font-family:'Aref Ruqaa',serif;
+                          margin-bottom:25mm;line-height:1.1;color:#2c1810">${title}</div>`;
+    const authorHTML = book.hideAuthorOnCover ? '' : `<div style="font-size:30pt;font-family:'Amiri',serif;
+                          margin-bottom:15px;color:#4a3f35">${author}</div>`;
 
     const pages = [];
 
@@ -1900,15 +1906,9 @@ function _pvBuild(book) {
              style="background-color:${bg};${coverBg}">
           ${css}
           <div class="content-body">
-            <div style="width:100%;margin-top:-40mm;text-align:center">
-              <div style="font-size:55pt;font-family:'Aref Ruqaa',serif;
-                          margin-bottom:25mm;line-height:1.1;color:#2c1810">
-                ${title}
-              </div>
-              <div style="font-size:30pt;font-family:'Amiri',serif;
-                          margin-bottom:15px;color:#4a3f35">
-                ${author}
-              </div>
+            <div style="width:100%;text-align:center">
+              ${titleHTML}
+              ${authorHTML}
               <div style="font-size:20pt;font-family:'Amiri',serif;color:#777">
                 ${date}
               </div>
@@ -2492,6 +2492,9 @@ function _pvRenderCoverToCanvas(book, vault, callback) {
     const coverBg = book.cover
         ? `background-image:url('${book.cover}');background-size:cover;background-position:center`
         : `background-color:${bg}`;
+    // [FIX] نفس إصلاح الغلاف: بلا هامش سالب، واحترام خياري إخفاء العنوان/المؤلف
+    const titleHTML  = book.hideTitleOnCover  ? '' : `<div style="font-size:55pt;font-family:'Aref Ruqaa',serif;margin-bottom:25mm;line-height:1.1;color:#2c1810">${applyF(book.title || '')}</div>`;
+    const authorHTML = book.hideAuthorOnCover ? '' : `<div style="font-size:30pt;font-family:'Amiri',serif;margin-bottom:15px;color:#4a3f35">${applyF(book.author || '')}</div>`;
 
     const coverHTML = `
         <!DOCTYPE html>
@@ -2511,13 +2514,9 @@ function _pvRenderCoverToCanvas(book, vault, callback) {
         <body>
           <div class="page-wrapper ${style}">
             <div class="content-body">
-              <div style="width:100%;margin-top:-40mm;text-align:center">
-                <div style="font-size:55pt;font-family:'Aref Ruqaa',serif;margin-bottom:25mm;line-height:1.1;color:#2c1810">
-                  ${applyF(book.title || '')}
-                </div>
-                <div style="font-size:30pt;font-family:'Amiri',serif;margin-bottom:15px;color:#4a3f35">
-                  ${applyF(book.author || '')}
-                </div>
+              <div style="width:100%;text-align:center">
+                ${titleHTML}
+                ${authorHTML}
                 <div style="font-size:20pt;font-family:'Amiri',serif;color:#777">
                   ${book.date || ''}
                 </div>
