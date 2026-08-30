@@ -1800,7 +1800,7 @@ function saveData() {
 // ══════════════════════════════════════════════════════════════
 
 /* ─── فتح النافذة ─── */
-function openBookPreview(bookId) {
+async function openBookPreview(bookId) {
     currentActionBookId = bookId;
     const book = books.find(b => b.id === bookId);
     if (!book) return;
@@ -1829,7 +1829,56 @@ function openBookPreview(bookId) {
 
     updateFavBtn(book);
     document.getElementById('bookModal').style.display = 'flex';
+
+    // [FIX-حرج] مزامنة المكتبة (sync_library) ترجع عادة نسخة "خفيفة" من كل كتاب (عنوان/غلاف/
+    // تاريخ فقط، بلا نص المحتوى الكامل) توفيراً لحجم الاستجابة — النص الكامل يُجلب فقط عند
+    // فتح كتاب بعينه فعلياً عبر fetch_book. لهذا كانت المعاينة تظهر فارغة تماماً رغم أن
+    // العنوان/الاقتباس/الغلاف تظهر بشكل طبيعي (لا تعتمد على النص). الحل: إن غاب النص كلياً
+    // عن النسخة المحلية، نجلبه الآن تحديداً لهذا الكتاب فقط عند الحاجة الفعلية (لا عند تحميل
+    // المكتبة كلها، حفاظاً على الأداء)، ثم نُكمل بناء المعاينة كالمعتاد.
+    if (book.text === undefined && book.t === undefined) {
+        const ok = await _pvEnsureFullContent(book);
+        if (!ok) return; // رسالة توضيحية مناسبة معروضة بالفعل في منطقة المعاينة
+    }
+
     _pvLoadVault(book);
+}
+
+/* ─── [FIX] جلب محتوى الكتاب الكامل من درايف إن كان غائباً محلياً بعد مزامنة خفيفة ───
+   ترجع true إن أصبح النص متاحاً بنجاح (سنُكمل بناء المعاينة)، أو false إن تعذّر ذلك
+   (لا اتصال / فشل الجلب) — وعندها تبقى رسالة توضيحية ظاهرة بدل معاينة فارغة صامتة. */
+async function _pvEnsureFullContent(book) {
+    const side = document.getElementById('modalPreview');
+    if (!navigator.onLine || typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'member') {
+        if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">
+            📡 معاينة المحتوى الكامل تحتاج اتصالاً بالإنترنت حالياً.<br>يمكنك المتابعة للتحرير مباشرة من الأزرار المجاورة.
+        </div>`;
+        return false;
+    }
+    if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:80px 20px;font-family:'Amiri',serif;font-size:13pt;">⏳ جاري تحميل محتوى الكتاب...</div>`;
+    try {
+        const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "fetch_book", userId: currentUser.id, token: currentUser.token, userName: currentUser.username, bookId: book.id })
+        });
+        const data = await res.json();
+        if (data.success && data.book) {
+            // دمج الحقول الكاملة (النص، الغلاف، الخلفيات المخصصة...) في نسخة الكتاب بالذاكرة
+            Object.assign(book, data.book);
+            // تحديث النسخة المخزَّنة محلياً أيضاً، ليصبح فتح المعاينة القادم لهذا الكتاب فورياً
+            const idx = books.findIndex(b => b.id === book.id);
+            if (idx !== -1) {
+                books[idx] = Object.assign({}, books[idx], data.book);
+                localStorage.setItem('royal_books_list', JSON.stringify(books));
+            }
+            return true;
+        }
+        if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">⚠️ تعذّر تحميل محتوى الكتاب الكامل الآن.<br>حاول مجدداً أو تابع التحرير مباشرة.</div>`;
+        return false;
+    } catch (e) {
+        if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">⚠️ تعذّر الاتصال لجلب محتوى الكتاب.<br>حاول مجدداً أو تابع التحرير مباشرة.</div>`;
+        return false;
+    }
 }
 
 /* ─── قراءة IndexedDB ─── */
