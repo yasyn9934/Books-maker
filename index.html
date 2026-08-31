@@ -12,23 +12,40 @@
         @font-face { font-family: 'Aref Ruqaa'; src: url('fonts/ArefRuqaa-Bold.ttf') format('truetype'); font-weight: normal; font-style: normal; }
 
         :root {
-            --royal-gold: #b8860b;
-            --royal-green: #6B8E23;
-            --bg-color: #f4f6f8;
-            --text-color: #333;
-            --card-bg: #fff;
+            /* [إعادة تصميم] هوية بصرية موحّدة مع editor.html بدل اللوحة الرمادية المسطّحة
+               السابقة — نفس طابع "الملكي" الذهبي الداكن في كلا الملفين الآن. */
+            --royal-gold:  #c9a227;
+            --royal-green: #7fa855;
+            --bg-color:    #0d0c09;
+            --text-color:  #ede8d5;
+            --card-bg:     #181510;
+            --surf2:       #21200f;
+            --surf3:       #2c291a;
+            --gold-dim:    rgba(201,162,39,.16);
+            --gold-line:   rgba(201,162,39,.30);
+            --text-dim:    #a89b7c;
+            --text-muted:  #6b5f48;
+            --blue:        #4a90c4;
+            --red:         #d0564a;
+            --rad:         14px;
+            --ease:        cubic-bezier(.4,0,.2,1);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             user-select:none;-webkit-user-select:none;font-family: 'Amiri', serif;
-            background-color: var(--bg-color);
+            background:
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(201,162,39,.09), transparent 60%),
+                radial-gradient(ellipse 700px 500px at 105% 10%, rgba(127,168,85,.06), transparent 60%),
+                var(--bg-color);
+            background-attachment: fixed;
             color: var(--text-color);
-            padding: 40px 20px;
+            padding: 32px 20px 60px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
 
         .container {
@@ -39,23 +56,26 @@
         /* Header */
         .header {
             text-align: center;
-            margin-bottom: 40px;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 16px;
-            border-top: 6px solid var(--royal-gold);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 28px;
+            background: linear-gradient(180deg, var(--surf2), var(--card-bg));
+            padding: 34px 30px;
+            border-radius: var(--rad);
+            border: 1px solid var(--gold-line);
+            border-top: 3px solid var(--royal-gold);
+            box-shadow: 0 14px 34px rgba(0,0,0,0.45);
         }
         .header h1 {
             font-family: 'Aref Ruqaa', serif;
-            font-size: 38pt;
-            color: var(--royal-green);
-            margin-bottom: 15px;
+            font-size: 36pt;
+            background: linear-gradient(90deg, var(--royal-gold), #e6c65c);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 14px;
+            letter-spacing: .5px;
         }
         .header p {
-            font-size: 16pt;
-            line-height: 1.8;
-            color: #555;
+            font-size: 14.5pt;
+            line-height: 1.9;
+            color: var(--text-dim);
             max-width: 900px;
             margin: 0 auto;
         }
@@ -64,32 +84,44 @@
         .top-actions {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 14px;
             flex-wrap: wrap;
-            margin-bottom: 30px;
+            margin-bottom: 26px;
         }
         .btn {
             font-family: 'Aref Ruqaa', serif;
-            font-size: 16pt;
-            padding: 12px 25px;
+            font-size: 15pt;
+            padding: 13px 26px;
             border: 1px solid transparent;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            color: white;
+            transition: all .25s var(--ease);
+            color: var(--bg-color);
             position: relative;
             overflow: hidden;
         }
         .btn::after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.1); opacity: 0; transition: opacity 0.3s;
+            background: rgba(255,255,255,0.14); opacity: 0; transition: opacity 0.25s;
         }
         .btn:hover::after { opacity: 1; }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
-        .btn-info { background-color: #1976d2; }
-        .btn-primary { background-color: var(--royal-green); }
-        .btn-secondary { background-color: var(--royal-gold); }
+        .btn:hover { transform: translateY(-2px); }
+        /* [إعادة تصميم] لوحة ألوان موحّدة بدل تصادم الأخضر/الأزرق/الذهبي السابق: زر
+           رئيسي ذهبي مصمت (الفعل الأهم)، وزرّان ثانويان بحدود ذهبية شفافة فقط، فيتضح
+           الترتيب البصري للأولوية بنظرة واحدة. */
+        .btn-primary {
+            background: linear-gradient(180deg, #e0bb3d, var(--royal-gold));
+            color: #1a1608; font-weight: bold;
+            box-shadow: 0 8px 22px rgba(201,162,39,.35);
+        }
+        .btn-primary:hover { box-shadow: 0 10px 26px rgba(201,162,39,.5); }
+        .btn-secondary, .btn-info {
+            background: var(--surf2);
+            color: var(--text-color);
+            border: 1px solid var(--gold-line);
+            box-shadow: 0 6px 16px rgba(0,0,0,.3);
+        }
+        .btn-secondary:hover, .btn-info:hover { border-color: var(--royal-gold); background: var(--surf3); }
 
         /* Toolbar (Search & Sort) */
         .toolbar {
@@ -97,10 +129,11 @@
             justify-content: space-between;
             align-items: flex-start;
             background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+            padding: 22px;
+            border-radius: var(--rad);
+            border: 1px solid var(--gold-line);
+            margin-bottom: 26px;
+            box-shadow: 0 10px 24px rgba(0,0,0,.35);
             gap: 20px;
             flex-wrap: wrap;
         }
@@ -111,66 +144,69 @@
             flex: 1;
             min-width: 300px;
         }
-        .toolbar label { font-family: 'Aref Ruqaa', serif; font-size: 14pt; color: #4a3f35; }
+        .toolbar label { font-family: 'Aref Ruqaa', serif; font-size: 13.5pt; color: var(--text-dim); }
         .toolbar select, .toolbar input[type="text"] {
             width: 100%;
-            padding: 12px;
+            padding: 12px 14px;
             font-family: 'Amiri', serif;
-            font-size: 14pt;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            font-size: 13.5pt;
+            background: var(--surf2);
+            color: var(--text-color);
+            border: 1px solid var(--gold-line);
+            border-radius: 9px;
             outline: none;
-            transition: border-color 0.3s;
+            transition: border-color .25s;
         }
         .toolbar select:focus, .toolbar input[type="text"]:focus {
             border-color: var(--royal-gold);
         }
+        .toolbar input[type="text"]::placeholder { color: var(--text-muted); }
         .search-options {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px dashed #ccc;
+            background: var(--surf2);
+            padding: 14px;
+            border-radius: 9px;
+            border: 1px dashed var(--gold-line);
         }
-        .search-options select { padding: 8px; font-size: 12pt; }
+        .search-options select { padding: 9px; font-size: 11.5pt; }
 
         /* Books Grid */
         .books-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 25px;
+            gap: 22px;
         }
 
         /* Book Card */
         .book-card {
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: var(--rad);
             overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-            transition: 0.3s;
+            box-shadow: 0 10px 24px rgba(0,0,0,.4);
+            border: 1px solid var(--gold-line);
+            transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s;
             position: relative;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             height: 380px;
-            border: 1px solid #eef0f2;
         }
-        .book-card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); border-color: var(--royal-gold); }
+        .book-card:hover { transform: translateY(-5px); box-shadow: 0 16px 34px rgba(0,0,0,.5); border-color: var(--royal-gold); }
         .card-header {
-            padding: 15px;
+            padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #eee;
-            background: #fafbfc;
+            border-bottom: 1px solid var(--gold-line);
+            background: var(--surf2);
             z-index: 2;
         }
         .card-title {
             font-family: 'Aref Ruqaa', serif;
-            font-size: 16pt;
-            color: #2c3e50;
+            font-size: 15.5pt;
+            color: var(--text-color);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -179,24 +215,26 @@
 
         /* زر النقاط الثلاث المطور */
         .dots-btn {
-            background: #f4f6f8;
-            border: 1px solid transparent;
-            font-size: 18pt;
+            background: var(--surf3);
+            border: 1px solid var(--gold-line);
+            font-size: 16pt;
             cursor: pointer;
-            color: #555;
-            width: 40px;
-            height: 40px;
+            color: var(--text-dim);
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            transition: all 0.25s var(--ease);
+            flex-shrink: 0;
         }
         .dots-btn:hover {
             background: var(--royal-gold);
-            color: white;
+            color: #1a1608;
+            border-color: var(--royal-gold);
             transform: rotate(90deg);
-            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.4);
+            box-shadow: 0 2px 10px rgba(201,162,39,.5);
         }
 
         .card-cover {
@@ -204,7 +242,7 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-color: #e9ecef;
+            background-color: var(--surf2);
             position: relative;
         }
         .card-category {
@@ -216,7 +254,7 @@
             color: white;
             font-size: 11pt;
             font-family: 'Amiri', serif;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
         /* علامة المفضلة على البطاقة */
@@ -225,7 +263,7 @@
             top: 10px;
             left: 10px;
             font-size: 22px;
-            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
             pointer-events: none;
             z-index: 3;
         }
@@ -234,34 +272,37 @@
         .card-categories-container {
             position: absolute; bottom: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 5px; max-width: 90%;
         }
-        .card-category-tag { padding: 4px 10px; border-radius: 20px; color: white; font-size: 10pt; font-family: 'Amiri', serif; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .card-category-tag { padding: 4px 10px; border-radius: 20px; color: white; font-size: 10pt; font-family: 'Amiri', serif; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
         /* Modals */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
             display: none; align-items: center; justify-content: center; z-index: 10000;
-            backdrop-filter: blur(3px);
+            backdrop-filter: blur(4px);
         }
         .modal-content {
-            background: #fff; padding: 30px; border-radius: 16px;
+            background: var(--card-bg); padding: 30px; border-radius: 18px;
             width: 90%; max-width: 450px; text-align: center;
-            border-top: 6px solid var(--royal-gold);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border: 1px solid var(--gold-line);
+            border-top: 3px solid var(--royal-gold);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
         }
-        .modal-title { font-family: 'Aref Ruqaa', serif; font-size: 20pt; margin-bottom: 20px; color: var(--royal-green); }
+        .modal-title { font-family: 'Aref Ruqaa', serif; font-size: 20pt; margin-bottom: 20px; color: var(--royal-gold); }
         .modal-input {
-            width: 100%; padding: 12px; margin-bottom: 15px;
+            width: 100%; padding: 12px 14px; margin-bottom: 15px;
             font-family: 'Amiri', serif; font-size: 14pt;
-            border: 1px solid #ccc; border-radius: 8px;
+            background: var(--surf2); color: var(--text-color);
+            border: 1px solid var(--gold-line); border-radius: 9px;
         }
+        .modal-input::placeholder { color: var(--text-muted); }
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
 
-        .empty-state { text-align: center; padding: 50px; font-size: 18pt; color: #777; grid-column: 1 / -1; }
+        .empty-state { text-align: center; padding: 50px; font-size: 17pt; color: var(--text-dim); grid-column: 1 / -1; }
 
         /* Multi-select styling for categories */
-        .cat-checkbox-group { text-align: right; max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
-        .cat-checkbox-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14pt; }
-        .cat-checkbox-item input { width: 20px; height: 20px; cursor: pointer; accent-color: var(--royal-green); }
+        .cat-checkbox-group { text-align: right; max-height: 200px; overflow-y: auto; border: 1px solid var(--gold-line); padding: 10px; border-radius: 9px; margin-bottom: 15px; background: var(--surf2); }
+        .cat-checkbox-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14pt; color: var(--text-color); }
+        .cat-checkbox-item input { width: 20px; height: 20px; cursor: pointer; accent-color: var(--royal-gold); }
 
         /* نافذة معاينة الكتاب الملكية */
         .book-modal-overlay {
@@ -276,7 +317,7 @@
         }
 
         .book-modal-content {
-            background: white;
+            background: var(--card-bg);
             width: 95%;
             max-width: 1200px;
             height: 90vh;
@@ -284,7 +325,8 @@
             display: flex;
             overflow: hidden;
             animation: slideUp 0.4s ease-out;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            border: 1px solid var(--gold-line);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.6);
         }
 
         .modal-info-side {
@@ -292,15 +334,16 @@
             max-width: 350px;
             padding: 30px;
             overflow-y: auto;
-            border-left: 2px solid #eee;
+            border-left: 1px solid var(--gold-line);
             text-align: right;
-            background: #fafbfc;
+            background: var(--surf2);
+            color: var(--text-color);
         }
 
         /* ── حاوية المعاينة: سحب عمودي ── */
         .modal-preview-side {
             flex: 1;
-            background: #2e2e2e;
+            background: #131110;
             overflow-y: auto;
             overflow-x: hidden;
             display: flex;
@@ -312,8 +355,8 @@
             position: relative;
         }
         .modal-preview-side::-webkit-scrollbar { width: 6px; }
-        .modal-preview-side::-webkit-scrollbar-track { background: #222; }
-        .modal-preview-side::-webkit-scrollbar-thumb { background: #b8860b; border-radius: 3px; }
+        .modal-preview-side::-webkit-scrollbar-track { background: #1a1710; }
+        .modal-preview-side::-webkit-scrollbar-thumb { background: var(--royal-gold); border-radius: 3px; }
 
         /* مؤشر الصفحات العائم */
         .preview-page-counter {
@@ -327,7 +370,7 @@
             font-size: 12pt;
             padding: 5px 18px;
             border-radius: 20px;
-            border: 1px solid rgba(184,134,11,0.4);
+            border: 1px solid var(--gold-line);
             pointer-events: none;
             align-self: flex-end;
             margin-bottom: -10px;
@@ -375,7 +418,7 @@
         }
 
         .highlights-container {
-            background: #fff8e1;
+            background: var(--gold-dim);
             border-right: 4px solid var(--royal-gold);
             padding: 15px;
             margin: 20px 0;
@@ -387,7 +430,7 @@
         .quote {
             font-style: italic;
             font-size: 13pt;
-            color: #5d4037;
+            color: var(--text-dim);
             margin-bottom: 8px;
         }
 
@@ -400,36 +443,40 @@
             margin-bottom: 12px;
             text-align: right;
             padding: 15px;
-            background: #fcfcfc;
-            color: #333;
-            border: 1px solid #e1e4e8;
-            border-radius: 8px;
-            transition: all 0.3s;
+            background: var(--surf3);
+            color: var(--text-color);
+            border: 1px solid var(--gold-line);
+            border-radius: 9px;
+            transition: all 0.25s var(--ease);
             font-family: 'Amiri', serif;
             font-size: 14pt;
             cursor: pointer;
         }
 
         .modal-actions-list button:hover {
-            background: var(--royal-green);
-            color: white;
+            background: var(--royal-gold);
+            color: #1a1608;
             transform: translateX(-5px);
-            border-color: var(--royal-green);
-            box-shadow: 0 4px 10px rgba(107, 142, 35, 0.2);
+            border-color: var(--royal-gold);
+            box-shadow: 0 4px 14px rgba(201,162,39,.35);
         }
 
+        .modal-actions-list button.btn-danger {
+            border-color: rgba(208,86,74,.4);
+        }
         .modal-actions-list button.btn-danger:hover {
-            background: #d32f2f;
-            border-color: #d32f2f;
-            box-shadow: 0 4px 10px rgba(211, 47, 47, 0.2);
+            background: var(--red);
+            color: #fff;
+            border-color: var(--red);
+            box-shadow: 0 4px 14px rgba(208,86,74,.35);
         }
 
         .dropdown-menu {
-            background: #fff;
-            border: 1px solid #e1e4e8;
+            background: var(--card-bg);
+            border: 1px solid var(--gold-line);
             padding: 15px;
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 24px rgba(0,0,0,.4);
             margin-bottom: 15px;
         }
 
@@ -439,23 +486,23 @@
             right: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 56px;
-            height: 56px;
-            background-color: var(--royal-gold);
-            color: white;
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(180deg, #e0bb3d, var(--royal-gold));
+            color: #1a1608;
             border-radius: 50% 0 0 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+            box-shadow: -3px 0 14px rgba(0,0,0,0.4);
             z-index: 9000;
-            transition: all 0.3s ease;
+            transition: all 0.25s var(--ease);
         }
 
         .royal-fab:hover {
-            width: 65px;
-            background-color: var(--royal-green);
+            width: 62px;
+            box-shadow: -3px 0 18px rgba(201,162,39,.5);
         }
 
         /* النافذة المنبثقة للزر العائم */
@@ -466,7 +513,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             z-index: 10000;
             justify-content: center;
             align-items: center;
@@ -474,27 +521,29 @@
         }
 
         .fab-modal-content {
-            background: white;
+            background: var(--card-bg);
             width: 90%;
             max-width: 400px;
             border-radius: 15px;
             padding: 20px;
-            border-top: 5px solid var(--royal-gold);
+            border: 1px solid var(--gold-line);
+            border-top: 3px solid var(--royal-gold);
             text-align: right;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 16px 40px rgba(0,0,0,.5);
         }
 
         .fab-option {
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--gold-line);
             cursor: pointer;
             transition: background 0.2s;
             display: flex;
             align-items: center;
+            color: var(--text-color);
         }
 
         .fab-option:hover {
-            background: #f9f9f9;
+            background: var(--surf3);
             color: var(--royal-gold);
         }
 
@@ -504,7 +553,7 @@
             float: left;
             cursor: pointer;
             font-size: 20px;
-            color: #999;
+            color: var(--text-muted);
         }
         /* ══ صفحات الكتاب — مطابقة لـ editor.html ══ */
         .page-wrapper {
@@ -563,43 +612,45 @@
             align-items: center;
             gap: 8px;
             padding: 10px 12px;
-            border: 1px solid #e8ecf0;
+            border: 1px solid var(--gold-line);
             border-radius: 10px;
             margin-bottom: 8px;
-            background: #fff;
+            background: var(--surf2);
             flex-wrap: wrap;
             transition: box-shadow 0.2s;
         }
-        .cat-edit-row:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+        .cat-edit-row:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
         .cat-edit-row .cat-color-dot {
-            width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(0,0,0,0.1);
+            width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15);
         }
         .cat-edit-row input[type="text"] {
             flex: 1; min-width: 100px; padding: 7px 10px;
-            border: 1px solid #ddd; border-radius: 6px;
+            background: var(--surf3); color: var(--text-color);
+            border: 1px solid var(--gold-line); border-radius: 6px;
             font-family: 'Amiri', serif; font-size: 13pt;
         }
         .cat-edit-row input[type="color"] {
-            width: 38px; height: 36px; border: 1px solid #ddd;
-            border-radius: 6px; cursor: pointer; flex-shrink: 0; padding: 2px;
+            width: 38px; height: 36px; border: 1px solid var(--gold-line);
+            border-radius: 6px; cursor: pointer; flex-shrink: 0; padding: 2px; background: var(--surf3);
         }
         .cat-edit-row input[type="number"] {
-            width: 65px; padding: 7px; border: 1px solid #ddd;
+            width: 65px; padding: 7px; background: var(--surf3); color: var(--text-color);
+            border: 1px solid var(--gold-line);
             border-radius: 6px; font-size: 12pt; flex-shrink: 0;
         }
         .cat-delete-btn {
-            background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2;
+            background: rgba(208,86,74,.15); color: var(--red); border: 1px solid rgba(208,86,74,.35);
             border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 14px;
             flex-shrink: 0; transition: background 0.2s;
         }
-        .cat-delete-btn:hover { background: #d32f2f; color: white; }
+        .cat-delete-btn:hover { background: var(--red); color: white; }
 
         /* ══ نمط عرض الكتب المشاركة ══ */
         #sharedBookViewer {
             display: none;
             position: fixed;
             inset: 0;
-            background: #525659;
+            background: #17150f;
             z-index: 5000;
             flex-direction: column;
             padding: 0;
@@ -607,12 +658,13 @@
         #sharedBookViewer.active { display: flex; }
         .shared-top-bar {
             height: 60px;
-            background: white;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--gold-line);
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 14px rgba(0,0,0,0.35);
             z-index: 1000;
         }
         .shared-top-bar-right, .shared-top-bar-left {
@@ -622,21 +674,21 @@
         }
         .shared-btn {
             padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid var(--gold-line);
+            border-radius: 8px;
             cursor: pointer;
             font-family: 'Amiri', serif;
             font-size: 12pt;
-            transition: 0.3s;
+            transition: 0.25s;
             display: flex;
             align-items: center;
             gap: 5px;
-            background: #f0f0f0;
-            color: #333;
+            background: var(--surf2);
+            color: var(--text-color);
         }
-        .shared-btn:hover { background: #e0e0e0; }
-        .shared-btn.primary { background: var(--royal-green); color: white; }
-        .shared-btn.gold { background: var(--royal-gold); color: white; }
+        .shared-btn:hover { background: var(--surf3); border-color: var(--royal-gold); }
+        .shared-btn.primary { background: var(--royal-green); color: #10190b; border-color: var(--royal-green); }
+        .shared-btn.gold { background: var(--royal-gold); color: #1a1608; border-color: var(--royal-gold); }
         #sharedContentViewer {
             flex: 1;
             overflow-y: auto;
@@ -647,23 +699,24 @@
         #sharedBookContainer {
             width: 250mm;
             background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
         .shared-loading {
             position: fixed;
             inset: 0;
-            background: white;
+            background: var(--bg-color);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 6000;
             font-size: 18pt;
+            color: var(--text-color);
         }
         .shared-spinner {
             width: 50px;
             height: 50px;
-            border: 5px solid #f3f3f3;
+            border: 5px solid var(--surf3);
             border-top: 5px solid var(--royal-gold);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -672,24 +725,28 @@
 
 
         /* ════ HEADER الجديد ════ */
+        /* [إعادة تصميم] شريط علوي داكن ذهبي متماسك مع بقية الصفحة بدل الشريط الأبيض
+           السابق الذي كان يبدو كعنصر غريب مقحم فوق خلفية مختلفة تماماً. */
         #mainHeader {
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 20px;
-            background: white;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-            margin-bottom: 30px;
+            padding: 12px 22px;
+            background: linear-gradient(180deg, var(--surf2), var(--card-bg));
+            border: 1px solid var(--gold-line);
+            box-shadow: 0 8px 22px rgba(0,0,0,.4);
+            margin-bottom: 26px;
             border-radius: 14px;
             gap: 12px;
             position: sticky;
-            top: 0;
+            top: 12px;
             z-index: 150;
         }
         .header-brand h2 {
             font-family: 'Aref Ruqaa', serif;
-            color: var(--royal-green);
+            background: linear-gradient(90deg, var(--royal-gold), #e6c65c);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
             font-size: 20pt;
             white-space: nowrap;
         }
@@ -700,31 +757,31 @@
             align-items: center;
             gap: 10px;
             cursor: pointer;
-            padding: 6px 12px;
+            padding: 6px 14px 6px 6px;
             border-radius: 30px;
-            border: 1.5px solid #eee;
-            background: #fafafa;
+            border: 1px solid var(--gold-line);
+            background: var(--surf2);
             transition: .2s;
             text-decoration: none;
             flex-shrink: 0;
         }
         #userCard:hover {
-            background: #f0f4ec;
-            border-color: var(--royal-green);
-            box-shadow: 0 2px 10px rgba(107,142,35,.15);
+            background: var(--surf3);
+            border-color: var(--royal-gold);
+            box-shadow: 0 2px 12px rgba(201,162,39,.2);
         }
         .user-avatar-sm {
             width: 38px;
             height: 38px;
             border-radius: 50%;
-            background: #e0e8d4;
+            background: var(--surf3);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18pt;
             overflow: hidden;
             flex-shrink: 0;
-            border: 2px solid var(--royal-green);
+            border: 2px solid var(--royal-gold);
         }
         .user-avatar-sm img {
             width: 100%;
@@ -740,7 +797,7 @@
         .user-card-name {
             font-size: 11pt;
             font-weight: bold;
-            color: #333;
+            color: var(--text-color);
             white-space: nowrap;
             max-width: 130px;
             overflow: hidden;
@@ -752,33 +809,34 @@
             white-space: nowrap;
         }
         #userCard.guest-mode {
-            border-color: #ddd;
-            background: #f9f9f9;
+            border-color: var(--gold-line);
+            background: var(--surf2);
         }
         #userCard.guest-mode .user-avatar-sm {
-            background: #eee;
-            border-color: #ccc;
+            background: var(--surf3);
+            border-color: var(--text-muted);
         }
         #userCard.guest-mode .user-card-name {
-            color: #888;
+            color: var(--text-dim);
         }
 
         /* زر دخول/خروج */
         #authStatusArea { flex-shrink: 0; }
         #authActionBtn {
-            padding: 7px 16px;
+            padding: 8px 18px;
             font-family: 'Amiri', serif;
             font-size: 11pt;
             border-radius: 20px;
             cursor: pointer;
-            border: none;
-            background: var(--royal-gold);
-            color: white;
+            border: 1px solid transparent;
+            background: linear-gradient(180deg, #e0bb3d, var(--royal-gold));
+            color: #1a1608;
+            font-weight: bold;
             transition: .25s;
             white-space: nowrap;
         }
         #authActionBtn:hover {
-            background: #9a6f09;
+            box-shadow: 0 4px 14px rgba(201,162,39,.4);
             transform: translateY(-1px);
         }
 
@@ -889,17 +947,17 @@
     <div class="modal-overlay" id="categoriesManagerModal">
         <div class="modal-content" style="max-width: 600px; width: 95%; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;">
             <h2 class="modal-title" style="flex-shrink:0;">📋 قائمة التصنيفات</h2>
-            <div id="catSyncStatus" style="text-align:center; font-size:11pt; color:#888; margin-bottom:10px; flex-shrink:0;"></div>
+            <div id="catSyncStatus" style="text-align:center; font-size:11pt; color:var(--text-dim); margin-bottom:10px; flex-shrink:0;"></div>
 
             <!-- قائمة التصنيفات الحالية (قابلة للتمرير) -->
             <div id="categoriesListContainer" style="flex:1; overflow-y:auto; margin-bottom: 15px; padding-left: 4px;"></div>
 
             <!-- قسم إضافة تصنيف جديد -->
-            <div style="border: 1px dashed #b8860b; padding: 15px; border-radius: 10px; margin-bottom: 15px; background: #fffbf0; flex-shrink:0;">
-                <h3 style="font-family: 'Aref Ruqaa'; color: var(--royal-green); margin-bottom: 12px; font-size:14pt;">➕ إضافة تصنيف جديد</h3>
+            <div style="border: 1px dashed var(--royal-gold); padding: 15px; border-radius: 10px; margin-bottom: 15px; background: var(--gold-dim); flex-shrink:0;">
+                <h3 style="font-family: 'Aref Ruqaa'; color: var(--royal-gold); margin-bottom: 12px; font-size:14pt;">➕ إضافة تصنيف جديد</h3>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                     <input type="text" id="newCatName" class="modal-input" placeholder="اسم التصنيف" style="flex:2; min-width:120px; margin-bottom:0;">
-                    <input type="color" id="newCatColor" value="#6B8E23" style="width:50px; height:42px; border:1px solid #ddd; border-radius:8px; cursor:pointer; flex-shrink:0;">
+                    <input type="color" id="newCatColor" value="#6B8E23" style="width:50px; height:42px; border:1px solid var(--gold-line); border-radius:8px; cursor:pointer; flex-shrink:0; background:var(--surf3);">
                     <input type="number" id="newCatOrder" class="modal-input" placeholder="الترتيب" value="1" style="width:80px; margin-bottom:0; flex-shrink:0;">
                     <button class="btn btn-primary" onclick="addNewCategoryToList()" style="padding:10px 16px; font-size:13pt; flex-shrink:0;">إضافة</button>
                 </div>
@@ -954,7 +1012,7 @@
     <div class="modal-overlay" id="authConfirmModal">
         <div class="modal-content">
             <h2 class="modal-title" style="color: #d32f2f;">تأكيد الحذف</h2>
-            <p style="margin-bottom: 15px; font-size:12pt; color:#666;">يرجى إدخال كلمة المرور لحسابك (أو رمز التحقق) لتأكيد عملية الحذف نهائياً.</p>
+            <p style="margin-bottom: 15px; font-size:12pt; color:var(--text-dim);">يرجى إدخال كلمة المرور لحسابك (أو رمز التحقق) لتأكيد عملية الحذف نهائياً.</p>
             <input type="password" id="authConfirmInput" class="modal-input" placeholder="كلمة المرور..." autocomplete="new-password">
             <div class="modal-actions">
                 <button class="btn" style="background:#d32f2f; color:white;" onclick="executeDeleteBook()">تأكيد الحذف</button>
@@ -983,33 +1041,33 @@
                     <button onclick="showCardImageOptions()"><span>🖼️</span> تعديل صورة بطاقة الكتاب</button>
                     
                     <div id="cardImageOptions" class="dropdown-menu" style="display:none">
-                        <button onclick="generateCoverFromBook()" style="padding: 10px; font-size: 12pt; border: 1px solid #ccc; background: white; width: 100%; border-radius: 5px; margin-bottom: 5px; cursor:pointer;">توليد من بيانات الكتاب (آلي)</button>
+                        <button onclick="generateCoverFromBook()" style="padding: 10px; font-size: 12pt; border: 1px solid var(--gold-line); background: var(--surf3); color: var(--text-color); width: 100%; border-radius: 5px; margin-bottom: 5px; cursor:pointer;">توليد من بيانات الكتاب (آلي)</button>
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
-                            <button onclick="showImageInput('url')" style="padding: 10px; font-size: 12pt; border: 1px solid #ccc; background: white; width: 50%; border-radius: 5px; cursor:pointer;">رابط خارجي</button>
-                            <button onclick="showImageInput('file')" style="padding: 10px; font-size: 12pt; border: 1px solid #ccc; background: white; width: 50%; border-radius: 5px; cursor:pointer;">صورة من الجهاز</button>
+                            <button onclick="showImageInput('url')" style="padding: 10px; font-size: 12pt; border: 1px solid var(--gold-line); background: var(--surf3); color: var(--text-color); width: 50%; border-radius: 5px; cursor:pointer;">رابط خارجي</button>
+                            <button onclick="showImageInput('file')" style="padding: 10px; font-size: 12pt; border: 1px solid var(--gold-line); background: var(--surf3); color: var(--text-color); width: 50%; border-radius: 5px; cursor:pointer;">صورة من الجهاز</button>
                         </div>
                         
-                        <div id="imageInputArea" style="margin-top:10px; display:none; background: #f9f9f9; padding: 10px; border-radius: 5px;">
-                            <input type="text" id="externalUrl" placeholder="ضع رابط الصورة المباشر هنا..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 10px; font-family:'Amiri'; font-size:12pt;">
+                        <div id="imageInputArea" style="margin-top:10px; display:none; background: var(--surf2); padding: 10px; border-radius: 5px;">
+                            <input type="text" id="externalUrl" placeholder="ضع رابط الصورة المباشر هنا..." style="width: 100%; padding: 8px; background: var(--surf3); color: var(--text-color); border: 1px solid var(--gold-line); border-radius: 4px; margin-bottom: 10px; font-family:'Amiri'; font-size:12pt;">
                             <input type="file" id="localFile" style="display:none" accept="image/*" onchange="handleFileSelect(event)">
                             <button id="fileBtn" class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;" onclick="document.getElementById('localFile').click()">اختر ملف من جهازك</button>
                             <div style="display: flex; gap: 5px;">
                                 <button class="btn btn-primary" style="width: 50%; padding: 8px;" onclick="applyCardImage()">تأكيد</button>
-                                <button class="btn" style="width: 50%; padding: 8px; background: #ccc; color: #333;" onclick="hideImageInput()">إلغاء</button>
+                                <button class="btn" style="width: 50%; padding: 8px; background: var(--surf3); color: var(--text-color); border:1px solid var(--gold-line);" onclick="hideImageInput()">إلغاء</button>
                             </div>
                         </div>
                     </div>
 
-                    <button class="btn-danger" style="background:#fff1f1; color:#d32f2f; border-color:#ffcdd2;" onclick="requestDeleteBook()"><span>🗑️</span> حذف الكتاب نهائياً</button>
-                    <button onclick="openShareSettings()" style="background:#e3f2fd; color:#1976d2; border-color:#bbdefb;"><span>🔗</span> مشاركة برابط</button>
+                    <button class="btn-danger" style="background:rgba(208,86,74,.14); color:#e3897d; border-color:rgba(208,86,74,.4);" onclick="requestDeleteBook()"><span>🗑️</span> حذف الكتاب نهائياً</button>
+                    <button onclick="openShareSettings()" style="background:rgba(74,144,196,.14); color:#7fb8e0; border-color:rgba(74,144,196,.4);"><span>🔗</span> مشاركة برابط</button>
                 </div>
 
                 <!-- أزرار الحفظ والإلغاء -->
-                <div id="modalSaveBar" style="margin-top:16px;padding-top:14px;border-top:1px solid #e0e0e0;display:flex;gap:10px;justify-content:center;">
-                    <button id="modalSaveBtn" onclick="saveBookFromModal()" style="flex:1;padding:11px 0;background:var(--royal-green);color:#fff;border:none;border-radius:8px;font-family:'Amiri',serif;font-size:14pt;cursor:pointer;transition:0.2s;">
+                <div id="modalSaveBar" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--gold-line);display:flex;gap:10px;justify-content:center;">
+                    <button id="modalSaveBtn" onclick="saveBookFromModal()" style="flex:1;padding:11px 0;background:var(--royal-green);color:#10190b;border:none;border-radius:8px;font-family:'Amiri',serif;font-size:14pt;cursor:pointer;transition:0.2s;font-weight:bold;">
                         <span id="modalSaveBtnIcon">☁️</span> <span id="modalSaveBtnText">حفظ في درايف</span>
                     </button>
-                    <button onclick="cancelBookModal()" style="flex:1;padding:11px 0;background:#f5f5f5;color:#555;border:1px solid #ccc;border-radius:8px;font-family:'Amiri',serif;font-size:14pt;cursor:pointer;transition:0.2s;">
+                    <button onclick="cancelBookModal()" style="flex:1;padding:11px 0;background:var(--surf3);color:var(--text-color);border:1px solid var(--gold-line);border-radius:8px;font-family:'Amiri',serif;font-size:14pt;cursor:pointer;transition:0.2s;">
                         ✖ إلغاء
                     </button>
                 </div>
@@ -1025,7 +1083,7 @@
     <div class="modal-overlay" id="shareSettingsModal">
         <div class="modal-content" style="max-width: 500px;">
             <h2 class="modal-title">🔗 إعدادات المشاركة</h2>
-            <div style="text-align: right; margin-bottom: 20px;">
+            <div style="text-align: right; margin-bottom: 20px; color: var(--text-color);">
                 <label style="display: block; margin-bottom: 10px; font-weight: bold;">أذونات من لديه الرابط:</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <label><input type="checkbox" id="permEdit"> تعديل الكتاب</label>
@@ -1034,19 +1092,19 @@
                     <label><input type="checkbox" id="permDownload"> تحميل الكتاب</label>
                 </div>
                 
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--gold-line);">
                 
                 <label style="display: block; margin-bottom: 10px; font-weight: bold;">من يمكنه تعديل الكتاب (خاص):</label>
                 <input type="text" id="allowedUsers" class="modal-input" placeholder="أدخل البريد الإلكتروني للمستخدمين المأذون لهم...">
                 
-                <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--gold-line);">
                 
                 <div id="shareTypeSelector" style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button class="btn" id="btnTempShare" onclick="setShareType('temp')" style="flex: 1; background: #f0f0f0; color: #333;">رابط مؤقت</button>
-                    <button class="btn" id="btnPermShare" onclick="setShareType('perm')" style="flex: 1; background: #f0f0f0; color: #333;">رابط دائم</button>
+                    <button class="btn" id="btnTempShare" onclick="setShareType('temp')" style="flex: 1; background: var(--surf3); color: var(--text-color); border:1px solid var(--gold-line);">رابط مؤقت</button>
+                    <button class="btn" id="btnPermShare" onclick="setShareType('perm')" style="flex: 1; background: var(--surf3); color: var(--text-color); border:1px solid var(--gold-line);">رابط دائم</button>
                 </div>
 
-                <div id="tempShareOptions" style="display: none; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                <div id="tempShareOptions" style="display: none; background: var(--surf2); padding: 15px; border-radius: 8px;">
                     <div id="timeOptions">
                         <label style="display: block; margin-bottom: 10px;">انتهاء الصلاحية بالوقت:</label>
                         <div style="display: flex; gap: 5px;">
@@ -1065,8 +1123,8 @@
                     </div>
                 </div>
                 
-                <div id="generatedLinkArea" style="display: none; margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
-                    <p style="font-weight: bold; color: #2e7d32; margin-bottom: 10px;">تم توليد الرابط بنجاح:</p>
+                <div id="generatedLinkArea" style="display: none; margin-top: 20px; padding: 15px; background: rgba(127,168,85,.14); border-radius: 8px; border: 1px solid rgba(127,168,85,.4);">
+                    <p style="font-weight: bold; color: var(--royal-green); margin-bottom: 10px;">تم توليد الرابط بنجاح:</p>
                     <div style="display: flex; gap: 5px;">
                         <input type="text" id="generatedLink" readonly class="modal-input" style="margin-bottom: 0; flex: 1;">
                         <button class="btn btn-primary" onclick="copyShareLink()">نسخ</button>
@@ -1076,8 +1134,8 @@
             
             <!-- ✅ قسم قائمة الروابط الموجودة -->
 <div id="existingSharesSection" style="display:none; margin-top:20px;">
-    <hr style="border:0; border-top:1px solid #eee; margin-bottom:14px;">
-    <p style="font-size:12pt; font-weight:bold; color:#333; margin-bottom:10px;">
+    <hr style="border:0; border-top:1px solid var(--gold-line); margin-bottom:14px;">
+    <p style="font-size:12pt; font-weight:bold; color:var(--text-color); margin-bottom:10px;">
         📋 الروابط الحالية لهذا الكتاب:
     </p>
     <!-- التخطيط: زر التأكيد (اليمين) + القائمة (اليسار) -->
@@ -1108,7 +1166,7 @@
             ">
         </div>
     </div>
-    <div id="sharesListStatus" style="text-align:center; font-size:10pt; color:#888; margin-top:6px; min-height:18px;"></div>
+    <div id="sharesListStatus" style="text-align:center; font-size:10pt; color:var(--text-dim); margin-top:6px; min-height:18px;"></div>
 </div>
             
             <div class="modal-actions">
@@ -1161,6 +1219,9 @@
     // متغيرات نظام المعاينة المتطور
     let _pvBook  = null;
     let _pvVault = {};
+    // [FIX] رقم تسلسلي يزداد مع كل طلب فتح معاينة — يمنع نتيجة بناء متأخرة (لكتاب سابق)
+    // من الكتابة فوق معاينة كتاب أحدث فتحه المستخدم أثناء انتظار الأول.
+    let _pvRequestSeq = 0;
     let _pvScale = 1;
     let _modalBookSnapshot = null;
 
@@ -1346,13 +1407,13 @@ function saveData() {
         if (!container) return;
 
         if (editingCategories.length === 0) {
-            container.innerHTML = '<p style="color:#999; text-align:center; padding:20px;">لا توجد تصنيفات بعد.</p>';
+            container.innerHTML = '<p style="color:var(--text-dim); text-align:center; padding:20px;">لا توجد تصنيفات بعد.</p>';
             return;
         }
 
         container.innerHTML = editingCategories.map(cat => {
             const isDefault = cat.id === 'default';
-            const readonlyAttr = isDefault ? 'readonly style="background:#f5f5f5; color:#999;"' : '';
+            const readonlyAttr = isDefault ? 'readonly style="background:var(--surf2); color:var(--text-muted);"' : '';
             const disabledAttr = isDefault ? 'disabled' : '';
             return `
             <div class="cat-edit-row" id="cat-row-${cat.id}">
@@ -1576,7 +1637,7 @@ function saveData() {
             const cardUrl = book.cardImage || book.cover || book.coverImage || '';
             const coverDisplay = cardUrl
                 ? `background-image: url('${cardUrl}')`
-                : `background-color: #eee; background-image: linear-gradient(45deg, #f3f3f3 25%, transparent 25%), linear-gradient(-45deg, #f3f3f3 25%, transparent 25%); background-size: 20px 20px;`;
+                : `background-color: #211f14; background-image: linear-gradient(45deg, #29271a 25%, transparent 25%), linear-gradient(-45deg, #29271a 25%, transparent 25%); background-size: 20px 20px;`;
 
             // علامة المفضلة
             const favHeart = book.isFavorite
@@ -1594,7 +1655,7 @@ function saveData() {
                     </div>
                 </div>
                 <div class="card-cover" style="${coverDisplay}" onclick="openBook('${book.id}')">
-                    ${!cardUrl ? '<span style="position:absolute; top:45%; width:100%; text-align:center; color:#999; font-weight:bold;">بدون غلاف</span>' : ''}
+                    ${!cardUrl ? '<span style="position:absolute; top:45%; width:100%; text-align:center; color:var(--text-dim); font-weight:bold;">بدون غلاف</span>' : ''}
                     ${favHeart}
                     <div class="card-categories-container">${catsHtml}</div>
                 </div>
@@ -1830,6 +1891,20 @@ async function openBookPreview(bookId) {
     updateFavBtn(book);
     document.getElementById('bookModal').style.display = 'flex';
 
+    // [FIX-تجربة الاستخدام] كانت معاينة الكتاب السابق تبقى ظاهرة كاملة (بمكان التمرير
+    // نفسه) طوال مدة تجهيز معاينة الكتاب الجديد، فيبدو الأمر وكأن معاينة الكتاب الثاني
+    // "تبدأ من نفس صفحة الأول" — بينما الحقيقة أن المحتوى القديم لم يُستبدل بعد فعلياً.
+    // الحل: نُفرغ منطقة المعاينة فوراً ونعيد التمرير لأعلى، ونعرض مؤشر تحميل واضحاً، قبل
+    // البدء بأي عمل فعلي (سواء جلب من الشبكة أو بناء محلي قد يستغرق لحظة لكتاب طويل).
+    // [FIX] رقم تسلسلي فريد لكل طلب معاينة — إن فتح المستخدم كتاباً آخر قبل اكتمال هذا
+    // الطلب، تُهمَل نتيجته بصمت عند اكتماله متأخراً بدل الكتابة فوق معاينة الكتاب الأحدث.
+    const myReqId = ++_pvRequestSeq;
+    const sideEl = document.getElementById('modalPreview');
+    if (sideEl) {
+        sideEl.scrollTop = 0;
+        sideEl.innerHTML = `<div style="color:#ccc;text-align:center;padding:100px 20px;font-family:'Amiri',serif;font-size:13pt;">⏳ جاري تحضير المعاينة...</div>`;
+    }
+
     // [FIX-حرج] مزامنة المكتبة (sync_library) ترجع عادة نسخة "خفيفة" من كل كتاب (عنوان/غلاف/
     // تاريخ فقط، بلا نص المحتوى الكامل) توفيراً لحجم الاستجابة — النص الكامل يُجلب فقط عند
     // فتح كتاب بعينه فعلياً عبر fetch_book. لهذا كانت المعاينة تظهر فارغة تماماً رغم أن
@@ -1837,31 +1912,33 @@ async function openBookPreview(bookId) {
     // عن النسخة المحلية، نجلبه الآن تحديداً لهذا الكتاب فقط عند الحاجة الفعلية (لا عند تحميل
     // المكتبة كلها، حفاظاً على الأداء)، ثم نُكمل بناء المعاينة كالمعتاد.
     if (book.text === undefined && book.t === undefined) {
-        const ok = await _pvEnsureFullContent(book);
+        const ok = await _pvEnsureFullContent(book, myReqId);
         if (!ok) return; // رسالة توضيحية مناسبة معروضة بالفعل في منطقة المعاينة
+        if (myReqId !== _pvRequestSeq) return; // طُلبت معاينة كتاب آخر أثناء الانتظار
     }
 
-    _pvLoadVault(book);
+    _pvLoadVault(book, myReqId);
 }
 
 /* ─── [FIX] جلب محتوى الكتاب الكامل من درايف إن كان غائباً محلياً بعد مزامنة خفيفة ───
    ترجع true إن أصبح النص متاحاً بنجاح (سنُكمل بناء المعاينة)، أو false إن تعذّر ذلك
    (لا اتصال / فشل الجلب) — وعندها تبقى رسالة توضيحية ظاهرة بدل معاينة فارغة صامتة. */
-async function _pvEnsureFullContent(book) {
+async function _pvEnsureFullContent(book, reqId) {
     const side = document.getElementById('modalPreview');
     if (!navigator.onLine || typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'member') {
-        if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">
+        if (side && reqId === _pvRequestSeq) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">
             📡 معاينة المحتوى الكامل تحتاج اتصالاً بالإنترنت حالياً.<br>يمكنك المتابعة للتحرير مباشرة من الأزرار المجاورة.
         </div>`;
         return false;
     }
-    if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:80px 20px;font-family:'Amiri',serif;font-size:13pt;">⏳ جاري تحميل محتوى الكتاب...</div>`;
+    if (side && reqId === _pvRequestSeq) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:80px 20px;font-family:'Amiri',serif;font-size:13pt;">⏳ جاري تحميل محتوى الكتاب...</div>`;
     try {
         const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({ action: "fetch_book", userId: currentUser.id, token: currentUser.token, userName: currentUser.username, bookId: book.id })
         });
         const data = await res.json();
+        if (reqId !== _pvRequestSeq) return false; // فُتح كتاب آخر أثناء الانتظار — تُهمَل هذه النتيجة
         if (data.success && data.book) {
             // دمج الحقول الكاملة (النص، الغلاف، الخلفيات المخصصة...) في نسخة الكتاب بالذاكرة
             Object.assign(book, data.book);
@@ -1873,16 +1950,16 @@ async function _pvEnsureFullContent(book) {
             }
             return true;
         }
-        if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">⚠️ تعذّر تحميل محتوى الكتاب الكامل الآن.<br>حاول مجدداً أو تابع التحرير مباشرة.</div>`;
+        if (side && reqId === _pvRequestSeq) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">⚠️ تعذّر تحميل محتوى الكتاب الكامل الآن.<br>حاول مجدداً أو تابع التحرير مباشرة.</div>`;
         return false;
     } catch (e) {
-        if (side) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">⚠️ تعذّر الاتصال لجلب محتوى الكتاب.<br>حاول مجدداً أو تابع التحرير مباشرة.</div>`;
+        if (side && reqId === _pvRequestSeq) side.innerHTML = `<div style="color:#ccc;text-align:center;padding:60px 20px;font-family:'Amiri',serif;font-size:13pt;line-height:1.8;">⚠️ تعذّر الاتصال لجلب محتوى الكتاب.<br>حاول مجدداً أو تابع التحرير مباشرة.</div>`;
         return false;
     }
 }
 
 /* ─── قراءة IndexedDB ─── */
-function _pvLoadVault(book) {
+function _pvLoadVault(book, reqId) {
     try {
         const r = indexedDB.open('RoyalBookDB', 1);
         r.onsuccess = e => {
@@ -1891,12 +1968,12 @@ function _pvLoadVault(book) {
                     .transaction('mediaVaultStore', 'readonly')
                     .objectStore('mediaVaultStore')
                     .get('currentVault');
-                g.onsuccess = () => { _pvVault = g.result || {}; _pvBuild(book); };
-                g.onerror   = () => { _pvVault = {};             _pvBuild(book); };
-            } catch(_) { _pvVault = {}; _pvBuild(book); }
+                g.onsuccess = () => { _pvVault = g.result || {}; if (reqId === _pvRequestSeq) _pvBuild(book, reqId); };
+                g.onerror   = () => { _pvVault = {};             if (reqId === _pvRequestSeq) _pvBuild(book, reqId); };
+            } catch(_) { _pvVault = {}; if (reqId === _pvRequestSeq) _pvBuild(book, reqId); }
         };
-        r.onerror = () => { _pvVault = {}; _pvBuild(book); };
-    } catch(_) { _pvVault = {}; _pvBuild(book); }
+        r.onerror = () => { _pvVault = {}; if (reqId === _pvRequestSeq) _pvBuild(book, reqId); };
+    } catch(_) { _pvVault = {}; if (reqId === _pvRequestSeq) _pvBuild(book, reqId); }
 }
 
 /* ─── CSS من RoyalFeatures ─── */
@@ -1941,7 +2018,15 @@ function _pvFootnoteNumeral(n) { return _PV_FOOTNOTE_NUMERALS[n-1] || ('『'+n+'
    خارج الشاشة، ويقيس التصادم الفعلي بالبكسل بين آخر سطر والحواشي صفحة بصفحة، فتكون كل
    صفحة بالحجم الصحيح دائماً مهما طال الكتاب، بأداء مطابق للمحرر (مُختبَر مسبقاً مع كتب
    طويلة متعددة الفصول بلا أي تباطؤ). */
-function _pvBuild(book) {
+async function _pvBuild(book, reqId) {
+    // [FIX-حرج] نفس إصلاح editor.html بالضبط: القياس الفعلي لتقسيم الصفحات يعتمد على
+    // ارتفاع النص المُقاس بالخط الحقيقي (Amiri/Aref Ruqaa). لو بُني قبل اكتمال تحميل
+    // هذين الخطين، يُقاس النص بخط بديل مؤقت له مقاسات مختلفة، فيلتف بشكل مختلف ويختلف
+    // تقسيم الصفحات النهائي عن نتيجة editor.html — وهذا كان أحد أسباب عدم التطابق بين
+    // المعاينتين. بخلاف editor.html (الذي يُعاد بناؤه تلقائياً مع كل تعديل فيصحّح نفسه
+    // لاحقاً)، هذه معاينة تُبنى مرة واحدة فقط، فلا فرصة للتصحيح التلقائي بلا هذا الانتظار.
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(e) {} }
+    if (reqId !== undefined && reqId !== _pvRequestSeq) return; // فُتح كتاب آخر أثناء الانتظار
     const style  = book.style  || 'style-islamic';
     const fs     = (book.size  || 20) + 'pt';
     const bg     = book.color  || '#FFFDD0';
@@ -1991,7 +2076,7 @@ function _pvBuild(book) {
     }
 
     let cur = null, pageFootnotes = [], carryLines = [], carryFootnote = null;
-    let tocItems = [], chapterCounter = 0;
+    let tocItems = [], chapterCounter = 0, subChapterCounter = 0, currentChapterEntry = null;
 
     function isOverflowing() {
         const bodyRect = cur.body.getBoundingClientRect();
@@ -2108,13 +2193,39 @@ function _pvBuild(book) {
             lineQueue.shift();
             chapterCounter++;
             const hText = line.replace('# ', '').trim();
-            tocItems.push({ title: hText, id: 'pv-chapter-' + chapterCounter });
+            const chapterEntry = { title: hText, id: 'pv-chapter-' + chapterCounter, subs: [] };
+            tocItems.push(chapterEntry);
+            currentChapterEntry = chapterEntry;
             cur = null; startNewPage(true);
             let h = document.createElement('h1');
             h.id = 'pv-chapter-' + chapterCounter;
             h.style.cssText = "text-align:center;font-family:'Aref Ruqaa',serif;margin-bottom:10mm;";
             h.innerHTML = _pvApply(hText, []);
             cur.body.appendChild(h);
+            continue;
+        }
+
+        // [FIX-التطابق مع editor.html] صياغة +-عنوان-+ في سطر منفرد = فصل فرعي، تماماً
+        // كما في editor.html — كانت غائبة كلياً هنا، فتُعامَل كنص عادي بدل عنوان فرعي منسَّق
+        // مع مُدخَل في الفهرس، وهذا أحد أسباب اختلاف النتيجة بين المعاينتين.
+        const subMatch = line.trim().match(/^\+\-(.+)\-\+$/);
+        if (subMatch) {
+            lineQueue.shift();
+            if (!cur) startNewPage(true);
+            subChapterCounter++;
+            const subId = 'pv-subchapter-' + subChapterCounter;
+            const subTitle = subMatch[1].trim();
+            let h2 = document.createElement('h2');
+            h2.id = subId; h2.className = 'inline-header';
+            h2.innerHTML = _pvApply(subTitle, []);
+            cur.body.appendChild(h2);
+            const subEntry = { title: subTitle, id: subId };
+            if (currentChapterEntry) currentChapterEntry.subs.push(subEntry);
+            else tocItems.push({ title: subTitle, id: subId, subs: [] });
+            if (isOverflowing()) {
+                resolveOverflow();
+                if (carryLines.length > 0) cur = null;
+            }
             continue;
         }
 
@@ -2137,7 +2248,10 @@ function _pvBuild(book) {
     let safetyGuard = 0;
     while (carryFootnote && safetyGuard++ < 500) { startNewPage(true); if (isOverflowing()) resolveOverflow(); }
 
-    /* صفحة الفهرس — برقم الصفحة الحقيقي المحسوب من DOM النهائي (الغلاف = صفحة 0) */
+    /* صفحة الفهرس — برقم الصفحة الحقيقي المحسوب من DOM النهائي (الغلاف = صفحة 0) ───
+       [FIX-الفهرس متعدد الصفحات] نفس إصلاح editor.html بالضبط: كل عنصر فهرس يُضاف على
+       حدة ويُقاس فيضانه فعلياً، فتُفتح صفحة فهرس إضافية تلقائياً عند الحاجة بدل قصّ
+       الفائض بصمت — لضمان تطابق تام مع نتيجة editor.html دائماً. */
     if (tocItems.length > 0) {
         const allPagesForNum = Array.from(stage.querySelectorAll('.page-wrapper'));
         function pageNumberOf(id) {
@@ -2146,17 +2260,34 @@ function _pvBuild(book) {
             const idx = allPagesForNum.indexOf(el.closest('.page-wrapper'));
             return idx > 0 ? idx : '';
         }
-        const rows = tocItems.map(t =>
-            `<div class="toc-item"><span class="toc-text">${_pvApply(t.title, [])}</span><span class="toc-page">${pageNumberOf(t.id)}</span></div>`
-        ).join('');
-        const tocPage = createPage(true);
-        tocPage.body.innerHTML = `<div class="toc-title">فهرس المحتويات</div>${rows}`;
+        cur = createPage(true);
+        let tocTitleDiv = document.createElement('div');
+        tocTitleDiv.className = 'toc-title';
+        tocTitleDiv.textContent = 'فهرس المحتويات';
+        cur.body.appendChild(tocTitleDiv);
+
+        function addTocRow(id, titleText, isSub) {
+            const row = document.createElement('div');
+            row.className = 'toc-item' + (isSub ? ' toc-subitem' : '');
+            row.innerHTML = `<span class="toc-text">${_pvApply(titleText, [])}</span><span class="toc-page">${pageNumberOf(id)}</span>`;
+            cur.body.appendChild(row);
+            if (isOverflowing()) {
+                cur.body.removeChild(row);
+                cur = createPage(true);
+                cur.body.appendChild(row);
+            }
+        }
+        tocItems.forEach(item => {
+            addTocRow(item.id, item.title, false);
+            (item.subs || []).forEach(sub => addTocRow(sub.id, sub.title, true));
+        });
     }
 
     // استخراج HTML كل صفحة بترتيبها، ثم إزالة حاوية البناء المخفية بالكامل
     const pages = Array.from(stage.querySelectorAll('.page-wrapper')).map(el => ({ html: el.outerHTML }));
     stage.remove();
 
+    if (reqId !== undefined && reqId !== _pvRequestSeq) return; // فُتح كتاب آخر أثناء البناء — تُهمَل هذه النتيجة
     _pvRender(pages, bgs);
 }
 
@@ -2177,6 +2308,10 @@ function _pvRender(pages, bgs) {
         </div>
         ${pagesHTML}
     `;
+    // [FIX] ضمان بدء كل معاينة جديدة من الصفحة الأولى دائماً — بدون هذا، كان موضع
+    // التمرير من الكتاب السابق يبقى كما هو (نفس القيمة بالبكسل) رغم استبدال innerHTML
+    // بالكامل، فيبدو الأمر كأن الكتاب الجديد "يبدأ من نفس صفحة القديم".
+    side.scrollTop = 0;
 
     /* تطبيق الخلفيات المخصصة */
     Object.keys(bgs).forEach(num => {
@@ -3074,7 +3209,7 @@ function renderSharesList(shares) {
               value="${share.useLimit || ''}"
               title="حد عدد مرات الاستخدام (0 = غير محدود)"
               onchange="setPendingChange('${sid}', 'useLimit', parseInt(this.value) || 0);"
-              style="width:140px; padding:5px 8px; border:1px solid #ddd;
+              style="width:140px; padding:5px 8px; border:1px solid var(--gold-line); background:var(--surf3); color:var(--text-color);
                      border-radius:7px; font-family:'Amiri',serif; font-size:11pt;"
             >
 
@@ -3083,19 +3218,19 @@ function renderSharesList(shares) {
               id="share_time_${sid}"
               style="display:${isTemp ? 'flex' : 'none'}; gap:4px; align-items:center;"
             >
-              <span style="font-size:10pt; color:#888;">ينتهي بعد:</span>
+              <span style="font-size:10pt; color:var(--text-dim);">ينتهي بعد:</span>
               <input type="number" min="0" placeholder="س"  title="ساعات"
                 value="${expH || ''}"
                 onchange="setPendingChange('${sid}', 'expireH', parseInt(this.value)||0);"
-                style="width:48px; padding:5px 4px; border:1px solid #ddd; border-radius:7px; font-size:10pt; text-align:center;">
+                style="width:48px; padding:5px 4px; border:1px solid var(--gold-line); background:var(--surf3); color:var(--text-color); border-radius:7px; font-size:10pt; text-align:center;">
               <input type="number" min="0" placeholder="د"   title="دقائق"
                 value="${expM || ''}"
                 onchange="setPendingChange('${sid}', 'expireM', parseInt(this.value)||0);"
-                style="width:48px; padding:5px 4px; border:1px solid #ddd; border-radius:7px; font-size:10pt; text-align:center;">
+                style="width:48px; padding:5px 4px; border:1px solid var(--gold-line); background:var(--surf3); color:var(--text-color); border-radius:7px; font-size:10pt; text-align:center;">
               <input type="number" min="0" placeholder="ث"   title="ثواني"
                 value="${expS || ''}"
                 onchange="setPendingChange('${sid}', 'expireS', parseInt(this.value)||0);"
-                style="width:48px; padding:5px 4px; border:1px solid #ddd; border-radius:7px; font-size:10pt; text-align:center;">
+                style="width:48px; padding:5px 4px; border:1px solid var(--gold-line); background:var(--surf3); color:var(--text-color); border-radius:7px; font-size:10pt; text-align:center;">
             </div>
 
           </div>

@@ -385,30 +385,39 @@
         /* ════════════════════════
            TAB: BOOK INFO
         ════════════════════════ */
+        /* [إعادة تصميم] كانت هذه المنطقة صفاً أفقياً واحداً بتمرير جانبي إجباري وحقول
+           متلاصقة بفواصل رفيعة فقط — يشبه جدول بيانات ضاغط لا نموذج إدخال مريح. الآن:
+           شبكة بطاقات تلتف تلقائياً لأسطر جديدة حسب المساحة المتاحة (بلا تمرير أفقي
+           مضطر)، وكل حقل بطاقته الخاصة بمسافات وحدود واضحة، فيسهل تتبّع كل حقل ووظيفته
+           بنظرة واحدة، خصوصاً على الشاشات الأضيق. */
         #fp-tab-info {
             flex-direction:row;
-            flex-wrap:nowrap;
-            overflow-x:auto;
-            overflow-y:hidden;
-            align-items:stretch;
-            padding:8px 12px;
-            gap:0;
+            flex-wrap:wrap;
+            overflow-x:hidden;
+            overflow-y:auto;
+            align-items:flex-start;
+            align-content:flex-start;
+            padding:16px;
+            gap:12px;
         }
         .info-field {
-            display:flex; flex-direction:column; gap:4px;
-            flex-shrink:0; min-width:120px;
-            padding:0 10px;
-            border-left:1px solid var(--gold-line);
+            display:flex; flex-direction:column; gap:7px;
+            flex-shrink:0;
+            padding:11px 15px 13px;
+            background:var(--surf2);
+            border:1px solid rgba(255,255,255,.07);
+            border-radius:11px;
+            transition:border-color .18s, background .18s;
         }
-        .info-field:first-child { padding-right:0; }
-        .info-field:last-child  { border-left:none; }
+        .info-field:hover { border-color:var(--gold-line); background:var(--surf3); }
         .info-field label { font-family:'Aref Ruqaa'; color:var(--text-muted); font-size:9.5pt; white-space:nowrap; }
         .info-field input, .info-field select {
-            background:var(--surf3); border:1px solid rgba(255,255,255,.07);
-            border-radius:6px; color:var(--text);
-            font-family:'Amiri'; font-size:12pt; padding:5px 8px;
+            background:var(--surf3); border:1px solid rgba(255,255,255,.09);
+            border-radius:7px; color:var(--text);
+            font-family:'Amiri'; font-size:12pt; padding:6px 9px;
             outline:none; width:100%; transition:border-color .18s;
         }
+        .info-field:hover input, .info-field:hover select { background:var(--surf2); }
         .info-field input:focus, .info-field select:focus { border-color:var(--gold); }
         .info-field input[type="color"] { padding:2px 3px; height:34px; width:55px; cursor:pointer; }
         .info-field input[type="number"] { width:72px; }
@@ -487,11 +496,16 @@
             background:var(--surf3); border:1px solid rgba(255,255,255,.07);
             border-radius:8px; color:var(--text);
             font-family:'Amiri'; font-size:11.5pt;
-            padding:5px 12px; cursor:pointer;
+            padding:7px 14px; cursor:pointer;
             white-space:nowrap; flex-shrink:0;
             transition:all .18s;
         }
+        .feat-btn:hover { box-shadow:0 3px 10px rgba(0,0,0,.3); transform:translateY(-1px); }
         .feat-btn:hover, .feat-btn.feat-active { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); }
+        /* [تنظيم بصري] فاصل رفيع بين مجموعات الأزرار المتقاربة وظيفياً (استشهادات نصية،
+           ثم تنسيق ومحتوى، ثم إضافات أخرى) — يساعد العين على تجميعها بسرعة بدل صف واحد
+           متجانس بلا أي تدرّج بصري. */
+        .feat-sep { width:1px; align-self:stretch; background:var(--gold-line); flex-shrink:0; margin:2px 4px; }
 
         /* Quick-settings buttons */
         .qs-btn {
@@ -556,7 +570,15 @@
         .other-btn:hover { background:var(--gold-dim); border-color:var(--gold); color:var(--gold); transform:translateY(-1px); }
         .other-btn-home:hover   { background:rgba(78,124,95,.15);  border-color:var(--green); color:#88d4a8; }
         .other-btn-exp:hover    { background:rgba(25,118,210,.11); border-color:var(--blue);  color:#80c4e0; }
-        .other-btn-delete:hover { background:rgba(192,57,43,.13);  border-color:var(--red);   color:#e08080; }
+        /* [تحسين أمان الاستخدام] كان زر "حذف كل شيء" (إجراء خطر لا يمكن التراجع عنه)
+           مطابقاً بصرياً تماماً لبقية الأزرار الآمنة في حالته الافتراضية — لا يتميّز إلا
+           عند التمرير فوقه بالماوس، وهذا عديم الفائدة على اللمس (لا يوجد hover إطلاقاً
+           على الجوال/التابلت) حيث قد يُنقر بالخطأ دون أي تحذير بصري مسبق. الآن يحمل لوناً
+           تحذيرياً واضحاً منذ البداية، مطابقاً لأسلوب زر الحذف في index.html للاتساق. */
+        .other-btn-delete {
+            background:rgba(192,57,43,.10); border-color:rgba(192,57,43,.35); color:#e3897d;
+        }
+        .other-btn-delete:hover { background:rgba(192,57,43,.22); border-color:var(--red); color:#f0a89c; }
 
         /* Vault section inside other tab */
         .vault-section { width:100%; border-top:1px solid var(--gold-line); padding-top:10px; margin-top:2px; }
@@ -1000,9 +1022,11 @@
             <button class="feat-btn" onclick="openFeature('quote',this)">🗣 الاقتباس المميز</button>
             <button class="feat-btn" onclick="openQuranModal()">﴿﴾ البحث في القرآن الكريم</button>
             <button class="feat-btn" onclick="openHadithModal()">« » البحث في الأحاديث</button>
+            <span class="feat-sep"></span>
             <button class="feat-btn" onclick="openFeature('media',this)">📦 استدعاء الوسائط</button>
             <button class="feat-btn" onclick="openFeature('format',this)">🖋 تنسيق النصوص</button>
             <button class="feat-btn" onclick="openFeature('footnote',this)">📝 الحواشي</button>
+            <span class="feat-sep"></span>
             <button class="feat-btn" onclick="openFeature('misc',this)">✨ ميزات أخرى</button>
         </div>
 
@@ -1042,6 +1066,7 @@
         <button class="other-btn"                  onclick="document.getElementById('importFile').click()">📂 استيراد ملف</button>
         <input  type="file" id="importFile" accept=".rbook" style="display:none" onchange="handleFileSelect(event)">
         <button class="other-btn"                  onclick="downloadPDF()">🖨️ طباعة PDF</button>
+        <div style="flex-basis:100%; height:1px; background:var(--gold-line); margin:6px 2px;"></div>
         <button class="other-btn other-btn-delete" onclick="startNewBook()">🗑️ حذف كل شيء (عمل جديد)</button>
 
         <!-- Vault mini-section -->
@@ -2840,15 +2865,33 @@
                 const idx = allPagesForNum.indexOf(pageEl);
                 return idx > 0 ? idx : ''; // idx=0 هو الغلاف نفسه (نظرياً لا يحدث لعنوان فصل)
             }
-            let p = createPage(container, true);
-            let html = `<div class="toc-title">فهرس المحتويات</div>`;
+            // [FIX-الفهرس متعدد الصفحات] كانت كل عناوين الفصول تُحشر دفعة واحدة عبر
+            // innerHTML بلا أي قياس فعلي لارتفاعها — فإن زاد عدد الفصول (أو طالت عناوينها)
+            // عن ما تستوعبه صفحة واحدة، يُقتصّ الفائض بصمت (overflow:hidden) بدل فتح صفحة
+            // فهرس تالية. الحل: نضيف كل عنصر فهرس على حدة ونقيس الفيضان الفعلي بالبكسل
+            // (بنفس آلية المتن تماماً عبر isOverflowing())، فتُفتح صفحة فهرس إضافية تلقائياً
+            // كلما لزم الأمر — تماماً كما تفعل صفحات المتن العادية.
+            cur = createPage(container, true);
+            let tocTitleDiv = document.createElement('div');
+            tocTitleDiv.className = 'toc-title';
+            tocTitleDiv.textContent = 'فهرس المحتويات';
+            cur.body.appendChild(tocTitleDiv);
+
+            function addTocRow(id, titleText, isSub) {
+                const row = document.createElement('div');
+                row.className = 'toc-item' + (isSub ? ' toc-subitem' : '');
+                row.innerHTML = `<a href="#${id}" onclick="goToChapter(event,'${id}')" class="toc-link"><span class="toc-text">${applyStyles(titleText,[])}</span><span class="toc-page">${pageNumberOf(id)}</span></a>`;
+                cur.body.appendChild(row);
+                if (isOverflowing()) {
+                    cur.body.removeChild(row);
+                    cur = createPage(container, true); // صفحة فهرس إضافية (تكملة تلقائية)
+                    cur.body.appendChild(row);
+                }
+            }
             tocItems.forEach(item => {
-                html += `<div class="toc-item"><a href="#${item.id}" onclick="goToChapter(event,'${item.id}')" class="toc-link"><span class="toc-text">${applyStyles(item.title,[])}</span><span class="toc-page">${pageNumberOf(item.id)}</span></a></div>`;
-                (item.subs || []).forEach(sub => {
-                    html += `<div class="toc-item toc-subitem"><a href="#${sub.id}" onclick="goToChapter(event,'${sub.id}')" class="toc-link"><span class="toc-text">${applyStyles(sub.title,[])}</span><span class="toc-page">${pageNumberOf(sub.id)}</span></a></div>`;
-                });
+                addTocRow(item.id, item.title, false);
+                (item.subs || []).forEach(sub => addTocRow(sub.id, sub.title, true));
             });
-            p.body.innerHTML = html;
         }
         let allPages = document.querySelectorAll('.page-wrapper');
         for (let pNum in customPageBackgrounds) {
@@ -3134,6 +3177,18 @@
             }
             // بناء swatches بعد تحميل البيانات
             renderThemeSwatches();
+            // [FIX-حرج] القياس الفعلي لتقسيم الصفحات (buildBook) يعتمد على ارتفاع النص
+            // المُقاس بالخط الحقيقي (Amiri/Aref Ruqaa عبر @font-face من ملفات محلية). لو
+            // بُني الكتاب قبل اكتمال تحميل هذين الخطين، يُقاس النص بخط بديل مؤقت (fallback)
+            // له مقاسات مختلفة تماماً، فيلتف النص بشكل مختلف ويختلف تقسيم الصفحات النهائي
+            // عن القياس الصحيح — وهذا التفاوت هو أحد أسباب عدم تطابق نتيجة هذا العرض مع
+            // معاينة index.html التي تُبنى مرة واحدة فقط بلا فرصة لتصحيح النتيجة لاحقاً.
+            // buildBook القديمة (السطر التالي) تبقى كما هي (بناء فوري لا ننتظر فيه، حتى
+            // يرى المستخدم شيئاً فوراً)، ثم نُعيد البناء بصمت فور اكتمال تحميل الخطوط
+            // فعلياً لضمان نتيجة نهائية صحيحة دائماً بصرف النظر عن سرعة الشبكة/القرص.
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => { try { buildBook(); } catch(e) {} });
+            }
             setTimeout(() => {
                 buildBook();
                 lastSavedData = JSON.stringify(getCurrentBookObject());
