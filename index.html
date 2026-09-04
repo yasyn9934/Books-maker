@@ -29,9 +29,30 @@
             --red:         #d0564a;
             --rad:         14px;
             --ease:        cubic-bezier(.4,0,.2,1);
+            /* [FIX-حرج] لون نص صفحات الكتاب نفسها يجب أن يبقى داكناً دائماً (حبر على ورق)
+               بصرف النظر عن سمة واجهة التطبيق (فاتحة كانت أم داكنة) — تماماً كمتغير
+               --global-page-text المنفصل في editor.html. بدون هذا الفصل، صفحة الكتاب
+               ترث لون نص التطبيق العام (--text-color) فيصبح النص فاتحاً غير مقروء على
+               خلفية الورق الفاتحة عند تفعيل الوضع الداكن للتطبيق. */
+            --global-page-text: #2b2013;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* [ميزة] وضع نهاري فاتح — يُفعَّل بإضافة كلاس day-mode على body، ويُقرأ/يُحفظ في
+           نفس مفتاح تفضيلات المحرر المشترك (royal_editor_prefs) حتى يبقى اختيار المستخدم
+           موحّداً بين هذه الصفحة و editor.html، لا إعداداً منفصلاً لكل صفحة على حدة. */
+        body.day-mode {
+            --bg-color:   #f3efdf;
+            --card-bg:    #fffdf6;
+            --surf2:      #ece6cf;
+            --surf3:      #e1d9bb;
+            --gold-dim:   rgba(184,134,11,.13);
+            --gold-line:  rgba(184,134,11,.38);
+            --text-color: #2b2013;
+            --text-dim:   #5c5138;
+            --text-muted: #8a7d5f;
+        }
 
         body {
             user-select:none;-webkit-user-select:none;font-family: 'Amiri', serif;
@@ -562,6 +583,9 @@
             box-sizing: border-box;
             box-shadow: 0 10px 35px rgba(0,0,0,0.5);
             flex-shrink: 0;
+            /* [FIX-حرج] لون النص هنا مستقل تماماً عن سمة واجهة التطبيق — انظر التعليق
+               على --global-page-text في :root. */
+            color: var(--global-page-text) !important;
         }
         .page-header {
             position: absolute; width: 100%;
@@ -822,6 +846,20 @@
 
         /* زر دخول/خروج */
         #authStatusArea { flex-shrink: 0; }
+        .day-night-toggle {
+            display:inline-flex; align-items:center; gap:6px;
+            background:var(--surf3);
+            border:1px solid var(--gold-line);
+            border-radius:20px;
+            color:var(--text-color);
+            font-family:'Amiri',serif; font-size:10.5pt;
+            padding:7px 15px;
+            cursor:pointer;
+            transition:all .18s;
+            user-select:none;
+            flex-shrink:0;
+        }
+        .day-night-toggle:hover { border-color:var(--royal-gold); background:var(--gold-dim); }
         #authActionBtn {
             padding: 8px 18px;
             font-family: 'Amiri', serif;
@@ -857,6 +895,12 @@
         <div class="header-brand">
             <h2>صانع الكتب</h2>
         </div>
+
+        <!-- [ميزة] تبديل الوضع الليلي/النهاري — مشترك مع editor.html عبر نفس التفضيل المحفوظ -->
+        <button class="day-night-toggle" id="pvDayNightToggle" onclick="togglePageDayNight()" title="تبديل بين الوضع الليلي والنهاري">
+            <span id="pvDayNightIcon">🌙</span>
+            <span id="pvDayNightLabel">ليلي</span>
+        </button>
 
         <!-- بطاقة المستخدم — قابلة للنقر للانتقال للملف الشخصي -->
         <div id="userCard" onclick="goToProfile()" title="الملف الشخصي">
@@ -1041,6 +1085,7 @@
                     <button onclick="showCardImageOptions()"><span>🖼️</span> تعديل صورة بطاقة الكتاب</button>
                     
                     <div id="cardImageOptions" class="dropdown-menu" style="display:none">
+                        <button onclick="resetCardImageToCover()" style="padding: 10px; font-size: 12pt; border: 1px solid rgba(127,168,85,.4); background: rgba(127,168,85,.12); color: #a3c98a; width: 100%; border-radius: 5px; margin-bottom: 5px; cursor:pointer;">↺ استخدام غلاف الكتاب تلقائياً (إلغاء التخصيص)</button>
                         <button onclick="generateCoverFromBook()" style="padding: 10px; font-size: 12pt; border: 1px solid var(--gold-line); background: var(--surf3); color: var(--text-color); width: 100%; border-radius: 5px; margin-bottom: 5px; cursor:pointer;">توليد من بيانات الكتاب (آلي)</button>
                         <div style="display: flex; gap: 5px; margin-bottom: 5px;">
                             <button onclick="showImageInput('url')" style="padding: 10px; font-size: 12pt; border: 1px solid var(--gold-line); background: var(--surf3); color: var(--text-color); width: 50%; border-radius: 5px; cursor:pointer;">رابط خارجي</button>
@@ -1208,6 +1253,37 @@
 
     <script>
     // 1. تهيئة البيانات
+    // [ميزة] الوضع الليلي/النهاري — تفضيل عام مشترك مع editor.html عبر نفس مفتاح
+    // localStorage (royal_editor_prefs)، بدل أن يكون إعداداً منفصلاً لكل صفحة على حدة.
+    // نقرأه ونطبّقه فوراً هنا (قبل أي رسم للواجهة) لتفادي وميض بالوضع الخاطئ عند التحميل.
+    const EDITOR_PREFS_KEY = 'royal_editor_prefs';
+    function _pvReadDayMode() {
+        try { return !!JSON.parse(localStorage.getItem(EDITOR_PREFS_KEY) || '{}').dayMode; }
+        catch(e) { return false; }
+    }
+    function _pvApplyDayMode(dayMode) {
+        document.body.classList.toggle('day-mode', dayMode);
+        const icon  = document.getElementById('pvDayNightIcon');
+        const label = document.getElementById('pvDayNightLabel');
+        if (icon)  icon.textContent  = dayMode ? '☀️' : '🌙';
+        if (label) label.textContent = dayMode ? 'نهاري' : 'ليلي';
+    }
+    function togglePageDayNight() {
+        const newVal = !_pvReadDayMode();
+        // نُبقي على أي حقول أخرى محفوظة في نفس المفتاح (كسمة editor.html اللونية) بلا مساس
+        let prefs = {};
+        try { prefs = JSON.parse(localStorage.getItem(EDITOR_PREFS_KEY) || '{}'); } catch(e) {}
+        prefs.dayMode = newVal;
+        try { localStorage.setItem(EDITOR_PREFS_KEY, JSON.stringify(prefs)); } catch(e) {}
+        _pvApplyDayMode(newVal);
+    }
+    _pvApplyDayMode(_pvReadDayMode());
+    // [مزامنة حيّة] إن كانت هذه الصفحة و editor.html مفتوحتين معاً في تبويبين، يُطبَّق أي
+    // تبديل يحدث في أحدهما على الآخر فوراً بلا حاجة لإعادة تحميل.
+    window.addEventListener('storage', (e) => {
+        if (e.key === EDITOR_PREFS_KEY) _pvApplyDayMode(_pvReadDayMode());
+    });
+
     let books = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
     let categories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
     let currentActionBookId = null;
@@ -1633,8 +1709,12 @@ function saveData() {
                 `<span class="card-category-tag" style="background-color: ${c.color}">${c.name}</span>`
             ).join('');
 
-            // صورة البطاقة منفصلة عن غلاف الكتاب
-            const cardUrl = book.cardImage || book.cover || book.coverImage || '';
+            // [FIX] صورة البطاقة تتبع غلاف الكتاب تلقائياً بشكل افتراضي — لا يوجد داعٍ
+            // لتكرار اختيار صورة الغلاف مرتين (مرة في editor كغلاف، ومرة هنا كبطاقة).
+            // "cardImage" يبقى موجوداً فقط كخيار تخصيص صريح واعٍ (زر "تعديل صورة بطاقة
+            // الكتاب")، ويُستخدَم فقط إذا اختاره المستخدم فعلياً (cardImageManual=true)
+            // — لا يُترَك ليطغى بصمت على الغلاف الحقيقي كما كان يحدث سابقاً.
+            const cardUrl = (book.cardImageManual && book.cardImage) ? book.cardImage : (book.cover || book.coverImage || '');
             const coverDisplay = cardUrl
                 ? `background-image: url('${cardUrl}')`
                 : `background-color: #211f14; background-image: linear-gradient(45deg, #29271a 25%, transparent 25%), linear-gradient(-45deg, #29271a 25%, transparent 25%); background-size: 20px 20px;`;
@@ -2025,7 +2105,24 @@ async function _pvBuild(book, reqId) {
     // تقسيم الصفحات النهائي عن نتيجة editor.html — وهذا كان أحد أسباب عدم التطابق بين
     // المعاينتين. بخلاف editor.html (الذي يُعاد بناؤه تلقائياً مع كل تعديل فيصحّح نفسه
     // لاحقاً)، هذه معاينة تُبنى مرة واحدة فقط، فلا فرصة للتصحيح التلقائي بلا هذا الانتظار.
-    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(e) {} }
+    // [FIX-حرج جداً] document.fonts.ready وحدها غير كافية: هي تعد فقط بأن أي خط "طُلب
+    // بالفعل" (استُخدم فعلياً في عرض نص) سيكتمل تحميله — لكنها لا تُجبر المتصفح على بدء
+    // تحميل خط لم يُستخدَم بعد في أي مكان من الصفحة أصلاً! فإن كانت هذه أول معاينة تُفتح
+    // منذ تحميل index.html (ولم يظهر أي نص بخط Amiri/Aref Ruqaa على الصفحة بعد)، فقد
+    // تكتمل fonts.ready فوراً دون أن يبدأ تحميل الخط الحقيقي إطلاقاً، فيُقاس النص بخط
+    // بديل مؤقت — وهذا يفسّر بالضبط اختلاف تقسيم الصفحات عن editor.html حيث الخط يكون
+    // غالباً محمَّلاً بالفعل من نشاط سابق. الحل: نطلب الخطين صراحةً أولاً (يبدأ تحميلهما
+    // فوراً إن لم يكونا محمَّلين)، ثم ننتظر اكتمال الكل.
+    if (document.fonts) {
+        try {
+            await Promise.all([
+                document.fonts.load("20pt Amiri"),
+                document.fonts.load("20pt 'Aref Ruqaa'"),
+                document.fonts.load("bold 20pt Amiri"),
+            ]);
+            await document.fonts.ready;
+        } catch(e) {}
+    }
     if (reqId !== undefined && reqId !== _pvRequestSeq) return; // فُتح كتاب آخر أثناء الانتظار
     const style  = book.style  || 'style-islamic';
     const fs     = (book.size  || 20) + 'pt';
@@ -2519,17 +2616,20 @@ function _pvObserve(side, total) {
                 reader.onloadend = () => {
                     // حفظ صورة البطاقة في حقل منفصل لا يؤثر على غلاف الكتاب
                     book.cardImage = reader.result;
+                    book.cardImageManual = true; // [FIX] اختيار صريح من المستخدم — لا يُستبدَل تلقائياً بالغلاف بعد الآن
                     finalizeImageUpdate();
                 };
                 reader.readAsDataURL(blob);
             } catch (e) {
                 console.warn("فشل التحويل بسبب CORS، سيتم حفظ الرابط كنص.");
                 book.cardImage = urlInput.value.trim();
+                book.cardImageManual = true;
                 finalizeImageUpdate();
             }
         } else if (customCardImage) {
             // حفظ صورة البطاقة في حقل منفصل لا يؤثر على غلاف الكتاب
             book.cardImage = customCardImage;
+            book.cardImageManual = true;
             finalizeImageUpdate();
         } else {
             alert("الرجاء اختيار صورة أو إدخال رابط أولاً.");
@@ -2593,11 +2693,27 @@ function setCoverFromBookData() {
 
 
     function finalizeImageUpdate() {
+        // [FIX] تمييز هذا الاختيار كتخصيص واعٍ وصريح من المستخدم — من الآن فصاعداً هذه
+        // الصورة (لا الغلاف) هي ما يُعرض في البطاقة، حتى لو تغيّر الغلاف لاحقاً في المحرر.
+        const book = books.find(b => b.id === currentActionBookId);
+        if (book) book.cardImageManual = true;
         saveData();
         renderBooks();
         hideImageInput();
         alert("تم تحديث صورة بطاقة الكتاب بنجاح.");
         document.getElementById('bookModal').style.display = 'none';
+    }
+
+    // [FIX] إلغاء تخصيص صورة البطاقة والعودة لاتّباع غلاف الكتاب تلقائياً
+    function resetCardImageToCover() {
+        const book = books.find(b => b.id === currentActionBookId);
+        if (!book) return;
+        delete book.cardImage;
+        delete book.cardImageManual;
+        saveData();
+        renderBooks();
+        document.getElementById('cardImageOptions').style.display = 'none';
+        alert("ستُستخدَم صورة غلاف الكتاب الآن كصورة للبطاقة تلقائياً.");
     }
 
 // ══════════════════════════════════════════════════════════════
@@ -2729,6 +2845,7 @@ function generateCoverFromBook() {
                 return;
             }
             book.cardImage = dataURL;
+            book.cardImageManual = true; // [FIX] اختيار صريح من المستخدم لتوليد صورة مختلفة عن الغلاف
             book.updatedAt = Date.now();
             saveData();
             renderBooks();

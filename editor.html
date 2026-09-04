@@ -3143,6 +3143,16 @@
         applyThemeVars(activeTheme);
         _loadInputFontSize(); // [تكبير/تصغير خط الكتابة] استرجاع الحجم المفضّل المحفوظ محلياً
 
+        // [مزامنة حيّة] إن كانت index.html مفتوحة معاً في تبويب آخر، أي تبديل للوضع
+        // الليلي/النهاري يحدث هناك يُطبَّق هنا فوراً بلا حاجة لإعادة تحميل، والعكس صحيح.
+        window.addEventListener('storage', (e) => {
+            if (e.key === EDITOR_PREFS_KEY) {
+                _loadEditorPrefsLocally();
+                _refreshDayNightUI();
+                applyThemeVars(activeTheme);
+            }
+        });
+
         loadVaultFromDB((vaultData) => {
             mediaVault = vaultData;
             let s = _readMergedBookData();
@@ -3186,8 +3196,12 @@
             // buildBook القديمة (السطر التالي) تبقى كما هي (بناء فوري لا ننتظر فيه، حتى
             // يرى المستخدم شيئاً فوراً)، ثم نُعيد البناء بصمت فور اكتمال تحميل الخطوط
             // فعلياً لضمان نتيجة نهائية صحيحة دائماً بصرف النظر عن سرعة الشبكة/القرص.
-            if (document.fonts && document.fonts.ready) {
-                document.fonts.ready.then(() => { try { buildBook(); } catch(e) {} });
+            if (document.fonts) {
+                Promise.all([
+                    document.fonts.load("20pt Amiri"),
+                    document.fonts.load("20pt 'Aref Ruqaa'"),
+                    document.fonts.load("bold 20pt Amiri"),
+                ]).catch(()=>{}).then(() => document.fonts.ready).then(() => { try { buildBook(); } catch(e) {} });
             }
             setTimeout(() => {
                 buildBook();
