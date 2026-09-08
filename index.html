@@ -611,6 +611,12 @@
         }
         .cover-page { background-size: cover; background-position: center; }
 
+        /* [ميزة تنسيق الفصول] خط زخرفي أسفل عنوان الفصل — مطابق تماماً لـ editor.html */
+        .chapter-decor::after {
+            content:''; display:block; width:42mm; height:.6mm; margin:4mm auto 0;
+            background:linear-gradient(to left, currentColor 0%, transparent 100%); opacity:.55;
+        }
+
         /* فهرس المحتويات */
         .toc-title {
             font-family: 'Aref Ruqaa', serif; font-size: 26pt; text-align: center;
@@ -2128,6 +2134,11 @@ async function _pvBuild(book, reqId) {
     const fs     = (book.size  || 20) + 'pt';
     const bg     = book.color  || '#FFFDD0';
     const bgs    = book.customBgs || {};
+    // [FIX-التطابق] نفس إعدادات الإطارات وتنسيق الفصول المستخدمة في buildBook()، لضمان
+    // معاينة مطابقة تماماً — بلا هذا، أي كتاب يستخدم إطاراً أو تنسيق فصل مخصص سيظهر
+    // بشكل مختلف هنا عن المحرر.
+    const frames    = book.frames    || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
+    const chapterFmt = book.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
     const css    = _pvPluginCSS();
     const titleStyled = _pvApply(book.title  || '', []);
     const author = _pvApply(book.author || '', []);
@@ -2296,7 +2307,14 @@ async function _pvBuild(book, reqId) {
             cur = null; startNewPage(true);
             let h = document.createElement('h1');
             h.id = 'pv-chapter-' + chapterCounter;
-            h.style.cssText = "text-align:center;font-family:'Aref Ruqaa',serif;margin-bottom:10mm;";
+            // [FIX-التطابق] تنسيق مخصَّص لهذا الفصل إن وُجد، وإلا التنسيق العام — مطابق لـ editor.html
+            const cfmt = chapterFmt.chapters[chapterCounter] || chapterFmt.general;
+            h.style.textAlign = cfmt.align || 'center';
+            h.style.fontFamily = cfmt.font || "'Aref Ruqaa'";
+            h.style.fontSize = (cfmt.size || 28) + 'pt';
+            h.style.color = cfmt.color || '';
+            h.style.marginBottom = '10mm';
+            if (cfmt.decor !== false) h.classList.add('chapter-decor');
             h.innerHTML = _pvApply(hText, []);
             cur.body.appendChild(h);
             continue;
@@ -2379,6 +2397,28 @@ async function _pvBuild(book, reqId) {
             (item.subs || []).forEach(sub => addTocRow(sub.id, sub.title, true));
         });
     }
+
+    // [FIX-التطابق] تطبيق الإطارات بنفس منطق applyAllFrames() في editor.html بالضبط —
+    // يجب أن يحدث هنا (على عناصر حاوية البناء المخفية) قبل استخراج outerHTML، لا بعده.
+    (function applyAllFramesToStage() {
+        const allPages = stage.querySelectorAll('.page-wrapper');
+        allPages.forEach((pageEl, idx) => {
+            const pNum = idx + 1; // الغلاف = صفحة 1، مطابقة لتقويم الخلفيات المخصصة القائم أصلاً
+            const cfg = frames.pages[pNum] || frames.general;
+            if (!cfg || cfg.style === 'none') return;
+            const outer = document.createElement('div');
+            outer.className = 'page-frame-outer';
+            outer.style.cssText = `position:absolute; inset:10mm; pointer-events:none; z-index:6; border-style:${cfg.style==='ornate'?'solid':cfg.style}; border-width:${cfg.width}mm; border-color:${cfg.color};`;
+            pageEl.appendChild(outer);
+            if (cfg.style === 'ornate') {
+                const inner = document.createElement('div');
+                inner.className = 'page-frame-inner';
+                const w2 = Math.max(1, cfg.width - 1);
+                inner.style.cssText = `position:absolute; inset:calc(10mm + 4mm); pointer-events:none; z-index:6; border-style:solid; border-width:${w2}mm; border-color:${cfg.color};`;
+                pageEl.appendChild(inner);
+            }
+        });
+    })();
 
     // استخراج HTML كل صفحة بترتيبها، ثم إزالة حاوية البناء المخفية بالكامل
     const pages = Array.from(stage.querySelectorAll('.page-wrapper')).map(el => ({ html: el.outerHTML }));
