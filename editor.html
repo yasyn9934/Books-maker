@@ -603,10 +603,33 @@
         .fmt-list-item button {
             background:none; border:none; color:#e3897d; cursor:pointer; font-size:13pt;
         }
+        .fmt-hint { font-family:'Amiri'; font-size:9.5pt; color:var(--text-muted); margin-bottom:8px; }
+        .fmt-image-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+        .fmt-image-preview {
+            height:60px; max-width:110px; object-fit:cover; border-radius:6px;
+            border:1px solid var(--gold-line);
+        }
+        .fmt-remove-img-btn {
+            background:rgba(208,86,74,.14); border:1px solid rgba(208,86,74,.4); color:#e3897d;
+            border-radius:7px; padding:6px 12px; cursor:pointer; font-family:'Amiri'; font-size:10.5pt;
+        }
         /* خط زخرفي أسفل عنوان الفصل (حين مفعَّل) */
         .chapter-decor::after {
             content:''; display:block; width:42mm; height:.6mm; margin:4mm auto 0;
             background:linear-gradient(to left, currentColor 0%, transparent 100%); opacity:.55;
+        }
+        /* [ميزة صورة/زخرفة الفصل] صندوق بمقاس ثابت لا يمكن تجاوزه — الصورة تُنسَّب
+           (background-size:cover) لتملأ هذا المقاس بالضبط، والعنوان (إن لم يُخفَ) يُقيَّد
+           داخله بـ overflow:hidden فلا يخرج عن حدود الصورة أبداً. */
+        .chapter-image-frame {
+            width:100%; height:55mm; background-size:cover; background-position:center;
+            background-repeat:no-repeat; position:relative; margin-bottom:10mm;
+            display:flex; align-items:center; justify-content:center;
+            overflow:hidden; border-radius:4px;
+        }
+        .chapter-image-frame-title {
+            width:92%; max-height:88%; overflow:hidden; word-wrap:break-word;
+            text-shadow:0 1px 4px rgba(0,0,0,.65), 0 0 14px rgba(0,0,0,.45);
         }
         .other-btn {
             background:var(--surf3); border:1px solid rgba(255,255,255,.07);
@@ -1122,28 +1145,36 @@
                 <div class="fmt-row">
                     <div class="fmt-field">
                         <label>نمط الإطار</label>
-                        <select id="frameGeneralStyle" onchange="updateGeneralFrame()">
+                        <select id="frameGeneralStyle" onchange="onFrameStyleChange('General'); updateGeneralFrame();">
                             <option value="none">بدون إطار</option>
                             <option value="solid">خط بسيط</option>
                             <option value="double">خط مزدوج</option>
                             <option value="dashed">خط متقطع</option>
                             <option value="dotted">خط منقّط</option>
                             <option value="ornate">زخرفي (إطار داخل إطار)</option>
+                            <option value="image">🖼️ صورة إطار مرفوعة</option>
                         </select>
                     </div>
-                    <div class="fmt-field">
+                    <div class="fmt-field" id="frameGeneralColorWrap">
                         <label>اللون</label>
                         <input type="color" id="frameGeneralColor" value="#8a6d1f" onchange="updateGeneralFrame()">
                     </div>
-                    <div class="fmt-field">
+                    <div class="fmt-field" id="frameGeneralWidthWrap">
                         <label>السُّمك (مم)</label>
                         <input type="number" id="frameGeneralWidth" value="2" min="1" max="10" step="0.5" onchange="updateGeneralFrame()">
                     </div>
+                </div>
+                <div id="frameGeneralImageWrap" class="fmt-image-row" style="display:none;">
+                    <input type="file" id="frameGeneralImageInput" accept="image/*" style="display:none" onchange="handleFrameImageUpload(event,'General')">
+                    <button class="fmt-apply-btn" onclick="document.getElementById('frameGeneralImageInput').click()">📁 اختيار صورة من الجهاز</button>
+                    <img id="frameGeneralImagePreview" class="fmt-image-preview" style="display:none;">
+                    <button class="fmt-remove-img-btn" id="frameGeneralImageRemove" style="display:none;" onclick="clearFrameImage('General')">✖ إزالة الصورة</button>
                 </div>
             </div>
 
             <div class="fmt-section">
                 <h4>تخصيص صفحة معينة</h4>
+                <p class="fmt-hint">إطار الصورة هنا خاص بهذه الصفحة فقط، ولا يُضاف إلى الإطار العام للكتاب.</p>
                 <div class="fmt-row">
                     <div class="fmt-field">
                         <label>رقم الصفحة</label>
@@ -1151,23 +1182,30 @@
                     </div>
                     <div class="fmt-field">
                         <label>نمط الإطار</label>
-                        <select id="framePageStyle">
+                        <select id="framePageStyle" onchange="onFrameStyleChange('Page')">
                             <option value="none">بدون إطار</option>
                             <option value="solid">خط بسيط</option>
                             <option value="double">خط مزدوج</option>
                             <option value="dashed">خط متقطع</option>
                             <option value="dotted">خط منقّط</option>
                             <option value="ornate">زخرفي</option>
+                            <option value="image">🖼️ صورة إطار مرفوعة</option>
                         </select>
                     </div>
-                    <div class="fmt-field">
+                    <div class="fmt-field" id="framePageColorWrap">
                         <label>اللون</label>
                         <input type="color" id="framePageColor" value="#8a6d1f">
                     </div>
-                    <div class="fmt-field">
+                    <div class="fmt-field" id="framePageWidthWrap">
                         <label>السُّمك (مم)</label>
                         <input type="number" id="framePageWidth" value="2" min="1" max="10" step="0.5">
                     </div>
+                </div>
+                <div id="framePageImageWrap" class="fmt-image-row" style="display:none;">
+                    <input type="file" id="framePageImageInput" accept="image/*" style="display:none" onchange="handleFrameImageUpload(event,'Page')">
+                    <button class="fmt-apply-btn" onclick="document.getElementById('framePageImageInput').click()">📁 اختيار صورة من الجهاز</button>
+                    <img id="framePageImagePreview" class="fmt-image-preview" style="display:none;">
+                    <button class="fmt-remove-img-btn" id="framePageImageRemove" style="display:none;" onclick="clearFrameImage('Page')">✖ إزالة الصورة</button>
                 </div>
                 <button class="fmt-apply-btn" onclick="applyPageFrame()">✚ تطبيق على هذه الصفحة</button>
                 <div id="framePagesList" class="fmt-list"></div>
@@ -1204,6 +1242,15 @@
                     </div>
                 </div>
                 <label class="fmt-checkbox"><input type="checkbox" id="chapterGeneralDecor" checked onchange="updateGeneralChapterFormat()"> خط زخرفي أسفل العنوان</label>
+
+                <p class="fmt-hint">يمكن إضافة صورة/زخرفة جاهزة كخلفية لعنوان كل فصل (بمقاس ثابت لا يتجاوزه العنوان).</p>
+                <div class="fmt-image-row">
+                    <input type="file" id="chapterGeneralImageInput" accept="image/*" style="display:none" onchange="handleChapterImageUpload(event,'General')">
+                    <button class="fmt-apply-btn" onclick="document.getElementById('chapterGeneralImageInput').click()">📁 اختيار صورة/زخرفة</button>
+                    <img id="chapterGeneralImagePreview" class="fmt-image-preview" style="display:none;">
+                    <button class="fmt-remove-img-btn" id="chapterGeneralImageRemove" style="display:none;" onclick="clearChapterImage('General')">✖ إزالة الصورة</button>
+                </div>
+                <label class="fmt-checkbox"><input type="checkbox" id="chapterGeneralHideTitle" onchange="updateGeneralChapterFormat()"> إخفاء عنوان الفصل (إن كانت الصورة تتضمّن العنوان جاهزاً)</label>
             </div>
 
             <div class="fmt-section">
@@ -1241,6 +1288,14 @@
                     </div>
                 </div>
                 <label class="fmt-checkbox"><input type="checkbox" id="chapterCustomDecor" checked> خط زخرفي أسفل العنوان</label>
+
+                <div class="fmt-image-row">
+                    <input type="file" id="chapterCustomImageInput" accept="image/*" style="display:none" onchange="handleChapterImageUpload(event,'Custom')">
+                    <button class="fmt-apply-btn" onclick="document.getElementById('chapterCustomImageInput').click()">📁 اختيار صورة/زخرفة</button>
+                    <img id="chapterCustomImagePreview" class="fmt-image-preview" style="display:none;">
+                    <button class="fmt-remove-img-btn" id="chapterCustomImageRemove" style="display:none;" onclick="clearChapterImage('Custom')">✖ إزالة الصورة</button>
+                </div>
+                <label class="fmt-checkbox"><input type="checkbox" id="chapterCustomHideTitle"> إخفاء عنوان الفصل (إن كانت الصورة تتضمّن العنوان جاهزاً)</label>
                 <button class="fmt-apply-btn" onclick="applyChapterCustomFormat()">✚ تطبيق على هذا الفصل</button>
                 <div id="chapterCustomList" class="fmt-list"></div>
             </div>
@@ -3006,9 +3061,29 @@
                 currentChapterEntry = chapterEntry; // [فصول فرعية] الفصول الفرعية القادمة تُنسب لهذا الفصل
                 cur = null; // فصل جديد يبدأ صفحة جديدة دائماً، حتى لو كانت الصفحة الحالية فارغة تماماً
                 startNewPage(true);
-                let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter;
                 // [ميزة تنسيق الفصول] تنسيق مخصَّص لهذا الفصل تحديداً إن وُجد، وإلا التنسيق العام
                 const cfmt = chapterFormat.chapters[chapterCounter] || chapterFormat.general;
+                if (cfmt.frameImage) {
+                    // [ميزة صورة/زخرفة الفصل] صندوق بمقاس ثابت (CSS: .chapter-image-frame)
+                    // — العنوان (إن لم يُخفَ) يُقيَّد داخله فلا يخرج عن حدود الصورة أبداً.
+                    let wrap = document.createElement('div');
+                    wrap.id = 'chapter-' + chapterCounter;
+                    wrap.className = 'chapter-image-frame';
+                    wrap.style.backgroundImage = `url('${cfmt.frameImage}')`;
+                    if (!cfmt.hideTitle) {
+                        let titleEl = document.createElement('div');
+                        titleEl.className = 'chapter-image-frame-title';
+                        titleEl.style.textAlign = cfmt.align || 'center';
+                        titleEl.style.fontFamily = cfmt.font || "'Aref Ruqaa'";
+                        titleEl.style.fontSize = (cfmt.size || 28) + 'pt';
+                        titleEl.style.color = cfmt.color || '#fff';
+                        titleEl.innerHTML = applyStyles(hText,[]);
+                        wrap.appendChild(titleEl);
+                    }
+                    cur.body.appendChild(wrap);
+                    continue;
+                }
+                let h = document.createElement('h1'); h.id = 'chapter-' + chapterCounter;
                 h.style.textAlign = cfmt.align || 'center';
                 h.style.fontFamily = cfmt.font || "'Aref Ruqaa'";
                 h.style.fontSize = (cfmt.size || 28) + 'pt';
@@ -3336,14 +3411,27 @@
     function _syncFormatUIFromState() {
         try {
             document.getElementById('frameGeneralStyle').value = frameSettings.general.style;
-            document.getElementById('frameGeneralColor').value = frameSettings.general.color;
-            document.getElementById('frameGeneralWidth').value = frameSettings.general.width;
+            document.getElementById('frameGeneralColor').value = frameSettings.general.color || '#8a6d1f';
+            document.getElementById('frameGeneralWidth').value = frameSettings.general.width || 2;
+            onFrameStyleChange('General');
+            _frameGeneralImageData = frameSettings.general.style === 'image' ? (frameSettings.general.imageData || null) : null;
+            const fgPrev = document.getElementById('frameGeneralImagePreview');
+            const fgRem  = document.getElementById('frameGeneralImageRemove');
+            if (_frameGeneralImageData) { fgPrev.src = _frameGeneralImageData; fgPrev.style.display = 'inline-block'; fgRem.style.display = 'inline-block'; }
+            else { fgPrev.style.display = 'none'; fgRem.style.display = 'none'; }
             renderFramesList();
+
             document.getElementById('chapterGeneralFont').value  = chapterFormat.general.font;
             document.getElementById('chapterGeneralSize').value  = chapterFormat.general.size;
             document.getElementById('chapterGeneralAlign').value = chapterFormat.general.align;
             document.getElementById('chapterGeneralColor').value = chapterFormat.general.color;
             document.getElementById('chapterGeneralDecor').checked = chapterFormat.general.decor !== false;
+            document.getElementById('chapterGeneralHideTitle').checked = !!chapterFormat.general.hideTitle;
+            _chapterGeneralImageData = chapterFormat.general.frameImage || null;
+            const cgPrev = document.getElementById('chapterGeneralImagePreview');
+            const cgRem  = document.getElementById('chapterGeneralImageRemove');
+            if (_chapterGeneralImageData) { cgPrev.src = _chapterGeneralImageData; cgPrev.style.display = 'inline-block'; cgRem.style.display = 'inline-block'; }
+            else { cgPrev.style.display = 'none'; cgRem.style.display = 'none'; }
             renderChapterFormatList();
         } catch(e) {}
     }
@@ -3362,25 +3450,68 @@
        رقم الصفحة هنا يُحسب بنفس تقويم customPageBackgrounds تماماً
        (الغلاف = صفحة 1)، حفاظاً على الاتساق مع ميزة موجودة مسبقاً.
     ══════════════════════════════════════════════════ */
-    const FRAME_STYLE_LABELS = { none:'بدون إطار', solid:'خط بسيط', double:'خط مزدوج', dashed:'خط متقطع', dotted:'خط منقّط', ornate:'زخرفي' };
+    const FRAME_STYLE_LABELS = { none:'بدون إطار', solid:'خط بسيط', double:'خط مزدوج', dashed:'خط متقطع', dotted:'خط منقّط', ornate:'زخرفي', image:'صورة مرفوعة' };
+
+    // بيانات الصورة المرفوعة مؤقتاً (بانتظار الضغط على "تطبيق"/التغيير الفعلي)
+    let _frameGeneralImageData = null;
+    let _framePageImageData = null;
+
+    /** إظهار/إخفاء حقول اللون والسُّمك مقابل حقل رفع الصورة بحسب النمط المختار */
+    function onFrameStyleChange(which) {
+        const isImage = document.getElementById('frame' + which + 'Style').value === 'image';
+        document.getElementById('frame' + which + 'ColorWrap').style.display = isImage ? 'none' : 'flex';
+        document.getElementById('frame' + which + 'WidthWrap').style.display = isImage ? 'none' : 'flex';
+        document.getElementById('frame' + which + 'ImageWrap').style.display = isImage ? 'flex' : 'none';
+    }
+
+    function handleFrameImageUpload(e, which) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const dataUrl = ev.target.result;
+            if (which === 'General') { _frameGeneralImageData = dataUrl; updateGeneralFrame(); }
+            else { _framePageImageData = dataUrl; }
+            const prev = document.getElementById('frame' + which + 'ImagePreview');
+            prev.src = dataUrl; prev.style.display = 'inline-block';
+            document.getElementById('frame' + which + 'ImageRemove').style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearFrameImage(which) {
+        if (which === 'General') { _frameGeneralImageData = null; updateGeneralFrame(); }
+        else { _framePageImageData = null; }
+        document.getElementById('frame' + which + 'ImagePreview').style.display = 'none';
+        document.getElementById('frame' + which + 'ImageRemove').style.display = 'none';
+        document.getElementById('frame' + which + 'ImageInput').value = '';
+    }
 
     function updateGeneralFrame() {
-        frameSettings.general = {
-            style: document.getElementById('frameGeneralStyle').value,
-            color: document.getElementById('frameGeneralColor').value,
-            width: parseFloat(document.getElementById('frameGeneralWidth').value) || 2,
-        };
+        const style = document.getElementById('frameGeneralStyle').value;
+        frameSettings.general = style === 'image'
+            ? { style: 'image', imageData: _frameGeneralImageData }
+            : {
+                style: style,
+                color: document.getElementById('frameGeneralColor').value,
+                width: parseFloat(document.getElementById('frameGeneralWidth').value) || 2,
+              };
         autoSaveAndBuild();
     }
 
     function applyPageFrame() {
         const pageNum = document.getElementById('framePageNum').value;
         if (!pageNum || parseInt(pageNum) < 1) return alert('الرجاء إدخال رقم صفحة صحيح أولاً.');
-        frameSettings.pages[pageNum] = {
-            style: document.getElementById('framePageStyle').value,
-            color: document.getElementById('framePageColor').value,
-            width: parseFloat(document.getElementById('framePageWidth').value) || 2,
-        };
+        const style = document.getElementById('framePageStyle').value;
+        // [ميزة] إطار الصورة هنا "خاص" بهذه الصفحة فقط — يُخزَّن حصراً في frameSettings.pages
+        // ولا يمسّ frameSettings.general إطلاقاً مهما فعلنا، فلا يظهر ضمن إطارات الكتاب العامة.
+        frameSettings.pages[pageNum] = style === 'image'
+            ? { style: 'image', imageData: _framePageImageData }
+            : {
+                style: style,
+                color: document.getElementById('framePageColor').value,
+                width: parseFloat(document.getElementById('framePageWidth').value) || 2,
+              };
         renderFramesList();
         autoSaveAndBuild();
     }
@@ -3393,7 +3524,10 @@
         let html = '';
         for (let p in frameSettings.pages) {
             const f = frameSettings.pages[p];
-            html += `<div class="fmt-list-item"><span>صفحة ${p}: ${FRAME_STYLE_LABELS[f.style]||f.style} <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${f.color};vertical-align:middle;"></span></span><button onclick="removePageFrame('${p}')">✖</button></div>`;
+            const swatch = f.style === 'image'
+                ? (f.imageData ? `<img src="${f.imageData}" style="height:18px;width:26px;object-fit:cover;border-radius:3px;vertical-align:middle;">` : '')
+                : `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${f.color};vertical-align:middle;"></span>`;
+            html += `<div class="fmt-list-item"><span>صفحة ${p}: ${FRAME_STYLE_LABELS[f.style]||f.style} ${swatch}</span><button onclick="removePageFrame('${p}')">✖</button></div>`;
         }
         el.innerHTML = html || "<div style='text-align:center;color:var(--text-muted);padding:8px;font-size:10pt;'>لا توجد صفحات مخصَّصة بإطار مختلف</div>";
     }
@@ -3409,15 +3543,29 @@
             if (outer) outer.remove();
             if (inner) inner.remove();
             if (!cfg || cfg.style === 'none') return;
+            // [FIX-تداخل الترويسة] كان الإطار يبدأ من 10mm ثابتة من أعلى الصفحة دائماً،
+            // فيتقاطع بصرياً مع الترويسة (عنوان الكتاب/التاريخ) التي تظهر عادة بين 5mm
+            // و17mm تقريباً بحسب طراز الصفحة. الآن: إن كانت هذه الصفحة تحمل ترويسة، يبدأ
+            // الإطار من أسفلها (28mm) بدل تجاوزها.
+            const hasHeader = !!pageEl.querySelector(':scope > .page-header');
+            const topInset = hasHeader ? '28mm' : '10mm';
             outer = document.createElement('div');
             outer.className = 'page-frame-outer';
-            outer.style.cssText = `position:absolute; inset:10mm; pointer-events:none; z-index:6; border-style:${cfg.style==='ornate'?'solid':cfg.style}; border-width:${cfg.width}mm; border-color:${cfg.color};`;
+            if (cfg.style === 'image' && cfg.imageData) {
+                // [ميزة الإطار المصوَّر] صورة إطار كاملة الصفحة (حواف زخرفية بوسط شفاف
+                // عادة) — تُمدَّد لتغطي حدود الصفحة بالضبط بصرف النظر عن الترويسة (الترويسة
+                // أعلى منها في الطبقات z-index فتبقى مقروءة فوقها دائماً).
+                outer.style.cssText = `position:absolute; inset:0; pointer-events:none; z-index:6; background-image:url('${cfg.imageData}'); background-size:100% 100%; background-repeat:no-repeat;`;
+                pageEl.appendChild(outer);
+                return;
+            }
+            outer.style.cssText = `position:absolute; top:${topInset}; left:10mm; right:10mm; bottom:10mm; pointer-events:none; z-index:6; border-style:${cfg.style==='ornate'?'solid':cfg.style}; border-width:${cfg.width}mm; border-color:${cfg.color};`;
             pageEl.appendChild(outer);
             if (cfg.style === 'ornate') {
                 inner = document.createElement('div');
                 inner.className = 'page-frame-inner';
                 const w2 = Math.max(1, cfg.width - 1);
-                inner.style.cssText = `position:absolute; inset:calc(10mm + 4mm); pointer-events:none; z-index:6; border-style:solid; border-width:${w2}mm; border-color:${cfg.color};`;
+                inner.style.cssText = `position:absolute; top:calc(${topInset} + 4mm); left:14mm; right:14mm; bottom:14mm; pointer-events:none; z-index:6; border-style:solid; border-width:${w2}mm; border-color:${cfg.color};`;
                 pageEl.appendChild(inner);
             }
         });
@@ -3427,6 +3575,33 @@
        [ميزة] تنسيق الفصول — عام + مخصَّص لفصل بعينه
        الفصل يُعرَّف برقم ترتيب ظهوره (١=أول "# " في النص، ٢=الثاني...).
     ══════════════════════════════════════════════════ */
+    // بيانات صورة/زخرفة الفصل المرفوعة مؤقتاً
+    let _chapterGeneralImageData = null;
+    let _chapterCustomImageData  = null;
+
+    function handleChapterImageUpload(e, which) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const dataUrl = ev.target.result;
+            if (which === 'General') { _chapterGeneralImageData = dataUrl; updateGeneralChapterFormat(); }
+            else { _chapterCustomImageData = dataUrl; }
+            const prev = document.getElementById('chapter' + which + 'ImagePreview');
+            prev.src = dataUrl; prev.style.display = 'inline-block';
+            document.getElementById('chapter' + which + 'ImageRemove').style.display = 'inline-block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearChapterImage(which) {
+        if (which === 'General') { _chapterGeneralImageData = null; updateGeneralChapterFormat(); }
+        else { _chapterCustomImageData = null; }
+        document.getElementById('chapter' + which + 'ImagePreview').style.display = 'none';
+        document.getElementById('chapter' + which + 'ImageRemove').style.display = 'none';
+        document.getElementById('chapter' + which + 'ImageInput').value = '';
+    }
+
     function updateGeneralChapterFormat() {
         chapterFormat.general = {
             font:  document.getElementById('chapterGeneralFont').value,
@@ -3434,6 +3609,8 @@
             align: document.getElementById('chapterGeneralAlign').value,
             color: document.getElementById('chapterGeneralColor').value,
             decor: document.getElementById('chapterGeneralDecor').checked,
+            frameImage: _chapterGeneralImageData,
+            hideTitle: document.getElementById('chapterGeneralHideTitle').checked,
         };
         autoSaveAndBuild();
     }
@@ -3462,9 +3639,15 @@
             align: document.getElementById('chapterCustomAlign').value,
             color: document.getElementById('chapterCustomColor').value,
             decor: document.getElementById('chapterCustomDecor').checked,
+            frameImage: _chapterCustomImageData,
+            hideTitle: document.getElementById('chapterCustomHideTitle').checked,
         };
         renderChapterFormatList();
         autoSaveAndBuild();
+        // تصفير حقل الصورة المؤقت استعداداً لتخصيص فصل آخر
+        _chapterCustomImageData = null;
+        document.getElementById('chapterCustomImagePreview').style.display = 'none';
+        document.getElementById('chapterCustomImageRemove').style.display = 'none';
     }
 
     function removeChapterCustomFormat(idx) { delete chapterFormat.chapters[idx]; renderChapterFormatList(); autoSaveAndBuild(); }
@@ -3476,7 +3659,8 @@
         let html = '';
         for (let idx in chapterFormat.chapters) {
             const title = titles[idx-1] ? titles[idx-1].slice(0,30) : ('#' + idx);
-            html += `<div class="fmt-list-item"><span>فصل ${idx}: ${title}</span><button onclick="removeChapterCustomFormat('${idx}')">✖</button></div>`;
+            const imgTag = chapterFormat.chapters[idx].frameImage ? `<img src="${chapterFormat.chapters[idx].frameImage}" style="height:18px;width:26px;object-fit:cover;border-radius:3px;vertical-align:middle;margin-right:6px;">` : '';
+            html += `<div class="fmt-list-item"><span>فصل ${idx}: ${title} ${imgTag}</span><button onclick="removeChapterCustomFormat('${idx}')">✖</button></div>`;
         }
         el.innerHTML = html || "<div style='text-align:center;color:var(--text-muted);padding:8px;font-size:10pt;'>لا توجد فصول بتنسيق خاص</div>";
     }
