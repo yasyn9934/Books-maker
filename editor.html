@@ -2541,10 +2541,11 @@
         currentBookId  = bookData.id;
         const btn = document.getElementById('saveCloudBtn');
         if (btn) { btn.innerText = "جاري الحفظ...⏳"; btn.disabled = true; }
-        // [FIX] هذه لحظة حفظ حقيقية (نادرة، ليست مع كل حرف) — نكتب المفتاحين معاً هنا
+        // [FIX] هذه لحظة حفظ حقيقية (نادرة، ليست مع كل حرف) — نكتب المفاتيح الثلاثة هنا
         // لضمان تطابق كامل قبل الرفع لدرايف، بغضّ النظر عن أي تفاصيل تزامن أخرى.
         _writeLightBookData(bookData);
         _writeCoverIfChanged(bookData.cover);
+        _writeHeavyImagesIfChanged(bookData);
         updateGlobalBooksList(bookData);
         localStorage.setItem('pending_sync_book', JSON.stringify(bookData));
         try {
@@ -2590,8 +2591,60 @@
     // يبنيان bookData الكامل عبر getCurrentBookObject() الحيّة (تقرأ من الحقول مباشرة، لا من
     // localStorage)، ويكتبان المفتاحين معاً عند لحظة الحفظ الفعلي فقط، فيبقى ما يُرفع لدرايف
     // كاملاً وصحيحاً دائماً كما كان تماماً.
-    function _writeLightBookData(bookData) {
+    // [FIX-حرج جداً] نفس مشكلة صورة الغلاف السابقة تماماً، لكن الآن لصور الإطارات
+    // وصور الفصول: كانت تُخزَّن base64 مباشرة داخل frames/chapterFmt ضمن bookData، وكان
+    // _writeLightBookData يستثني الغلاف فقط بلا هذه الصور — فتُعاد كتابتها بالكامل مع كل
+    // حرف يُكتب، معيدةً بالضبط مشكلة بطء الكتابة التي أصلحناها سابقاً (وربما بصورة أسوأ:
+    // عدة صور مجتمعة). الحل: نجرّد كل بيانات الصور من frames/chapterFmt قبل الكتابة
+    // الخفيفة، ونخزّنها في مفتاح منفصل لا يُكتب إلا عند تغيّر صورة فعلياً.
+    function _stripHeavyImages(bookData) {
         const light = Object.assign({}, bookData);
+        if (light.frames) {
+            const f = JSON.parse(JSON.stringify(light.frames));
+            if (f.general && f.general.imageData) { f.general = Object.assign({}, f.general, { imageData: null, hasImage: true }); }
+            for (const p in f.pages || {}) { if (f.pages[p].imageData) f.pages[p] = Object.assign({}, f.pages[p], { imageData: null, hasImage: true }); }
+            light.frames = f;
+        }
+        if (light.chapterFmt) {
+            const c = JSON.parse(JSON.stringify(light.chapterFmt));
+            if (c.general && c.general.frameImage) { c.general = Object.assign({}, c.general, { frameImage: null, hasImage: true }); }
+            for (const k in c.chapters || {}) { if (c.chapters[k].frameImage) c.chapters[k] = Object.assign({}, c.chapters[k], { frameImage: null, hasImage: true }); }
+            light.chapterFmt = c;
+        }
+        return light;
+    }
+    /** يستخرج كل صور الإطارات/الفصول الفعلية من bookData الكامل إلى كائن منفصل مسطّح */
+    function _extractHeavyImages(bookData) {
+        const media = { frameGeneral: null, framePages: {}, chapterGeneral: null, chapterCustom: {} };
+        if (bookData.frames) {
+            if (bookData.frames.general && bookData.frames.general.imageData) media.frameGeneral = bookData.frames.general.imageData;
+            for (const p in bookData.frames.pages || {}) { if (bookData.frames.pages[p].imageData) media.framePages[p] = bookData.frames.pages[p].imageData; }
+        }
+        if (bookData.chapterFmt) {
+            if (bookData.chapterFmt.general && bookData.chapterFmt.general.frameImage) media.chapterGeneral = bookData.chapterFmt.general.frameImage;
+            for (const k in bookData.chapterFmt.chapters || {}) { if (bookData.chapterFmt.chapters[k].frameImage) media.chapterCustom[k] = bookData.chapterFmt.chapters[k].frameImage; }
+        }
+        return media;
+    }
+    /** يدمج الصور المخزَّنة منفصلة مجدداً داخل frames/chapterFmt بعد القراءة */
+    function _mergeHeavyImages(bookData, media) {
+        if (!media) return bookData;
+        if (bookData.frames) {
+            if (media.frameGeneral && bookData.frames.general) bookData.frames.general.imageData = media.frameGeneral;
+            for (const p in media.framePages || {}) { if (bookData.frames.pages && bookData.frames.pages[p]) bookData.frames.pages[p].imageData = media.framePages[p]; }
+        }
+        if (bookData.chapterFmt) {
+            if (media.chapterGeneral && bookData.chapterFmt.general) bookData.chapterFmt.general.frameImage = media.chapterGeneral;
+            for (const k in media.chapterCustom || {}) { if (bookData.chapterFmt.chapters && bookData.chapterFmt.chapters[k]) bookData.chapterFmt.chapters[k].frameImage = media.chapterCustom[k]; }
+        }
+        return bookData;
+    }
+    function _writeHeavyImagesIfChanged(bookData) {
+        localStorage.setItem('bookData_frameMedia', JSON.stringify(_extractHeavyImages(bookData)));
+    }
+
+    function _writeLightBookData(bookData) {
+        const light = _stripHeavyImages(Object.assign({}, bookData));
         delete light.cover;
         localStorage.setItem('bookData', JSON.stringify(light));
     }
@@ -2604,6 +2657,10 @@
         try {
             const c = JSON.parse(localStorage.getItem('bookData_cover') || '{}');
             if (c.cover !== undefined) s.cover = c.cover;
+        } catch(e) {}
+        try {
+            const media = JSON.parse(localStorage.getItem('bookData_frameMedia') || 'null');
+            if (media) s = _mergeHeavyImages(s, media);
         } catch(e) {}
         return s;
     }
@@ -2690,6 +2747,7 @@
         if (confirm("تنبيه: سيتم مسح العمل الحالي بالكامل. تأكد من الحفظ.")) {
             localStorage.removeItem('bookData');
             localStorage.removeItem('bookData_cover');
+            localStorage.removeItem('bookData_frameMedia');
             mediaVault = {}; saveVaultToDB(); currentBookId = null;
             document.getElementById('mainText').value   = "";
             document.getElementById('focusText').value  = "";
@@ -2762,6 +2820,7 @@
         customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat }); // [FIX] صور مستوردة — تُحفظ فوراً
         _syncFormatUIFromState();
         mediaVault = uploadedBookData.vault || s.vault || {};
         saveVaultToDB(); updateGlobalColor(document.getElementById('globalBgPicker').value);
@@ -3496,6 +3555,7 @@
                 color: document.getElementById('frameGeneralColor').value,
                 width: parseFloat(document.getElementById('frameGeneralWidth').value) || 2,
               };
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat });
         autoSaveAndBuild();
     }
 
@@ -3513,10 +3573,15 @@
                 width: parseFloat(document.getElementById('framePageWidth').value) || 2,
               };
         renderFramesList();
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat });
         autoSaveAndBuild();
     }
 
-    function removePageFrame(pageNum) { delete frameSettings.pages[pageNum]; renderFramesList(); autoSaveAndBuild(); }
+    function removePageFrame(pageNum) {
+        delete frameSettings.pages[pageNum]; renderFramesList();
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat });
+        autoSaveAndBuild();
+    }
 
     function renderFramesList() {
         const el = document.getElementById('framePagesList');
@@ -3612,6 +3677,7 @@
             frameImage: _chapterGeneralImageData,
             hideTitle: document.getElementById('chapterGeneralHideTitle').checked,
         };
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat });
         autoSaveAndBuild();
     }
 
@@ -3643,6 +3709,7 @@
             hideTitle: document.getElementById('chapterCustomHideTitle').checked,
         };
         renderChapterFormatList();
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat });
         autoSaveAndBuild();
         // تصفير حقل الصورة المؤقت استعداداً لتخصيص فصل آخر
         _chapterCustomImageData = null;
@@ -3650,7 +3717,11 @@
         document.getElementById('chapterCustomImageRemove').style.display = 'none';
     }
 
-    function removeChapterCustomFormat(idx) { delete chapterFormat.chapters[idx]; renderChapterFormatList(); autoSaveAndBuild(); }
+    function removeChapterCustomFormat(idx) {
+        delete chapterFormat.chapters[idx]; renderChapterFormatList();
+        _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat });
+        autoSaveAndBuild();
+    }
 
     function renderChapterFormatList() {
         const el = document.getElementById('chapterCustomList');
@@ -3814,9 +3885,11 @@
         _syncFormatUIFromState();
         // [FIX] السمة اللونية للمحرر تفضيل عام للمستخدم، لا يجب أن يغيّرها محتوى
         // كتاب قادم من درايف بصمت. تُترك كما هي (مُحمَّلة مسبقاً من EDITOR_PREFS_KEY).
-        // [FIX] بيانات قادمة من درايف قد تحمل غلافاً مختلفاً — تُكتب في المفتاحين معاً هنا
+        // [FIX] بيانات قادمة من درايف قد تحمل غلافاً أو صور إطارات/فصول مختلفة — تُكتب
+        // في المفاتيح الثلاثة هنا
         _writeLightBookData(s);
         _writeCoverIfChanged(s.cover);
+        _writeHeavyImagesIfChanged(s);
         buildBook();
         lastSavedData = JSON.stringify(getCurrentBookObject());
     }
