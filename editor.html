@@ -634,7 +634,7 @@
         /* [ميزة ترقيم الصفحات] يظهر دائماً بطبقة أعلى من الإطار (z-index أكبر)، وبخلفية
            شفافة خفيفة تضمن وضوحه فوق أي إطار مصوَّر أو خلفية صفحة داكنة. */
         .page-number {
-            position:absolute; z-index:7; font-family:'Amiri',serif; font-size:11pt;
+            position:absolute; z-index:7; font-family:'Amiri',serif;
             color:var(--global-page-text,#2b2013); background:rgba(255,255,255,.55);
             padding:2px 9px; border-radius:20px; pointer-events:none;
         }
@@ -1341,6 +1341,10 @@
                             <option value="arabic">عربية (١٢٣)</option>
                             <option value="western">إنجليزية (123)</option>
                         </select>
+                    </div>
+                    <div class="fmt-field">
+                        <label>حجم الرقم (pt)</label>
+                        <input type="number" id="pageNumSize" value="14" min="8" max="40" step="1" onchange="updatePageNumbering()">
                     </div>
                 </div>
                 <p class="fmt-hint">يظهر الرقم دائماً خارج حدود الإطار (إن وُجد) لتفادي أي تداخل معه.</p>
@@ -2536,7 +2540,7 @@
     // عام يُطبَّق على الكل، وقاموس اختياري بمفاتيح رقم الصفحة/الفصل للتخصيص.
     let frameSettings  = { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
     let chapterFormat  = { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
-    let pageNumbering  = { enabled: false, position: 'bottom-center', style: 'arabic' };
+    let pageNumbering  = { enabled: false, position: 'bottom-center', style: 'arabic', size: 14 };
     let currentBookId = null;
     // [أداء] تصنيف الكتاب الحالي مُخزَّن هنا مرة واحدة عند التحميل، بدل قراءة قائمة كل
     // الكتب من التخزين المحلي في كل ضغطة حرف — هذا كان السبب الرئيسي لثقل الكتابة.
@@ -2812,7 +2816,7 @@
             customPageBackgrounds = {};
             frameSettings = { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
             chapterFormat = { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
-            pageNumbering = { enabled: false, position: 'bottom-center', style: 'arabic' };
+            pageNumbering = { enabled: false, position: 'bottom-center', style: 'arabic', size: 14 };
             _syncFormatUIFromState();
             updateGlobalColor("#FFFDD0"); renderVaultList(); autoSaveAndBuild();
             document.getElementById('mainText').focus();
@@ -2869,7 +2873,7 @@
         customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
-        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic' };
+        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic', size: 14 };
         _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat }); // [FIX] صور مستوردة — تُحفظ فوراً
         _syncFormatUIFromState();
         mediaVault = uploadedBookData.vault || s.vault || {};
@@ -3547,6 +3551,7 @@
             document.getElementById('pageNumEnabled').checked = !!pageNumbering.enabled;
             document.getElementById('pageNumPosition').value  = pageNumbering.position || 'bottom-center';
             document.getElementById('pageNumStyle').value     = pageNumbering.style || 'arabic';
+            document.getElementById('pageNumSize').value      = pageNumbering.size || 14;
         } catch(e) {}
     }
 
@@ -3666,6 +3671,7 @@
             enabled:  document.getElementById('pageNumEnabled').checked,
             position: document.getElementById('pageNumPosition').value,
             style:    document.getElementById('pageNumStyle').value,
+            size:     parseInt(document.getElementById('pageNumSize').value) || 14,
         };
         autoSaveAndBuild();
     }
@@ -3685,6 +3691,7 @@
             const numText = pageNumbering.style === 'arabic' ? toArabicNumeral(counter) : String(counter);
             const el = document.createElement('div');
             el.className = 'page-number pn-' + (pageNumbering.position || 'bottom-center');
+            el.style.fontSize = (pageNumbering.size || 14) + 'pt';
             el.textContent = numText;
             pageEl.appendChild(el);
         });
@@ -3889,7 +3896,7 @@
                 customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
-        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic' };
+        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic', size: 14 };
         _syncFormatUIFromState();
 
                 // [FIX] لم نعد نستبدل تفضيل السمة العام بما هو محفوظ داخل هذا الكتاب تحديداً؛
@@ -3975,7 +3982,7 @@
         customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
-        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic' };
+        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic', size: 14 };
         _syncFormatUIFromState();
         // [FIX] السمة اللونية للمحرر تفضيل عام للمستخدم، لا يجب أن يغيّرها محتوى
         // كتاب قادم من درايف بصمت. تُترك كما هي (مُحمَّلة مسبقاً من EDITOR_PREFS_KEY).
