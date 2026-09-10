@@ -631,6 +631,19 @@
             width:92%; max-height:88%; overflow:hidden; word-wrap:break-word;
             text-shadow:0 1px 4px rgba(0,0,0,.65), 0 0 14px rgba(0,0,0,.45);
         }
+        /* [ميزة ترقيم الصفحات] يظهر دائماً بطبقة أعلى من الإطار (z-index أكبر)، وبخلفية
+           شفافة خفيفة تضمن وضوحه فوق أي إطار مصوَّر أو خلفية صفحة داكنة. */
+        .page-number {
+            position:absolute; z-index:7; font-family:'Amiri',serif; font-size:11pt;
+            color:var(--global-page-text,#2b2013); background:rgba(255,255,255,.55);
+            padding:2px 9px; border-radius:20px; pointer-events:none;
+        }
+        .page-number.pn-bottom-center { bottom:5mm; left:50%; transform:translateX(-50%); }
+        .page-number.pn-bottom-right  { bottom:5mm; right:10mm; }
+        .page-number.pn-bottom-left   { bottom:5mm; left:10mm; }
+        .page-number.pn-top-center    { top:5mm; left:50%; transform:translateX(-50%); }
+        .page-number.pn-top-right     { top:5mm; right:10mm; }
+        .page-number.pn-top-left      { top:5mm; left:10mm; }
         .other-btn {
             background:var(--surf3); border:1px solid rgba(255,255,255,.07);
             border-radius:9px; color:var(--text);
@@ -1136,6 +1149,7 @@
         <div class="fp-sub-tabs">
             <button class="fp-sub-tab active" onclick="switchFormatTab('frames',this)">🖼️ الإطارات</button>
             <button class="fp-sub-tab"        onclick="switchFormatTab('chapters',this)">🔠 الفصول</button>
+            <button class="fp-sub-tab"        onclick="switchFormatTab('numbering',this)"># الترقيم</button>
         </div>
 
         <!-- ─── الإطارات ─── -->
@@ -1298,6 +1312,38 @@
                 <label class="fmt-checkbox"><input type="checkbox" id="chapterCustomHideTitle"> إخفاء عنوان الفصل (إن كانت الصورة تتضمّن العنوان جاهزاً)</label>
                 <button class="fmt-apply-btn" onclick="applyChapterCustomFormat()">✚ تطبيق على هذا الفصل</button>
                 <div id="chapterCustomList" class="fmt-list"></div>
+            </div>
+        </div>
+
+        <!-- ─── ترقيم الصفحات ─── -->
+        <div id="format-numbering" class="format-sub-panel">
+            <div class="fmt-section">
+                <label class="fmt-checkbox" style="font-size:12pt;">
+                    <input type="checkbox" id="pageNumEnabled" onchange="updatePageNumbering()"> تفعيل ترقيم الصفحات التلقائي
+                </label>
+                <p class="fmt-hint">لا تُحتسب صفحة الغلاف ضمن الترقيم — أول صفحة محتوى تحمل رقم "١".</p>
+
+                <div class="fmt-row" style="margin-top:8px;">
+                    <div class="fmt-field">
+                        <label>موقع الرقم</label>
+                        <select id="pageNumPosition" onchange="updatePageNumbering()">
+                            <option value="bottom-center">أسفل الوسط</option>
+                            <option value="bottom-right">أسفل اليمين</option>
+                            <option value="bottom-left">أسفل اليسار</option>
+                            <option value="top-center">أعلى الوسط</option>
+                            <option value="top-right">أعلى اليمين</option>
+                            <option value="top-left">أعلى اليسار</option>
+                        </select>
+                    </div>
+                    <div class="fmt-field">
+                        <label>نمط الأرقام</label>
+                        <select id="pageNumStyle" onchange="updatePageNumbering()">
+                            <option value="arabic">عربية (١٢٣)</option>
+                            <option value="western">إنجليزية (123)</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="fmt-hint">يظهر الرقم دائماً خارج حدود الإطار (إن وُجد) لتفادي أي تداخل معه.</p>
             </div>
         </div>
 
@@ -2490,6 +2536,7 @@
     // عام يُطبَّق على الكل، وقاموس اختياري بمفاتيح رقم الصفحة/الفصل للتخصيص.
     let frameSettings  = { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
     let chapterFormat  = { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
+    let pageNumbering  = { enabled: false, position: 'bottom-center', style: 'arabic' };
     let currentBookId = null;
     // [أداء] تصنيف الكتاب الحالي مُخزَّن هنا مرة واحدة عند التحميل، بدل قراءة قائمة كل
     // الكتب من التخزين المحلي في كل ضغطة حرف — هذا كان السبب الرئيسي لثقل الكتابة.
@@ -2519,6 +2566,7 @@
             customBgs:     customPageBackgrounds,
             frames:        frameSettings,
             chapterFmt:    chapterFormat,
+            pageNumbering: pageNumbering,
             selectedTheme: activeTheme,   // [FIX] كان مفقوداً
             category:      _cachedBookCategory,
             updatedAt:     Date.now()
@@ -2764,6 +2812,7 @@
             customPageBackgrounds = {};
             frameSettings = { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
             chapterFormat = { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
+            pageNumbering = { enabled: false, position: 'bottom-center', style: 'arabic' };
             _syncFormatUIFromState();
             updateGlobalColor("#FFFDD0"); renderVaultList(); autoSaveAndBuild();
             document.getElementById('mainText').focus();
@@ -2820,6 +2869,7 @@
         customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
+        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic' };
         _writeHeavyImagesIfChanged({ frames: frameSettings, chapterFmt: chapterFormat }); // [FIX] صور مستوردة — تُحفظ فوراً
         _syncFormatUIFromState();
         mediaVault = uploadedBookData.vault || s.vault || {};
@@ -3262,6 +3312,7 @@
             }
         }
         applyAllFrames(); // [ميزة الإطارات] تُطبَّق بعد اكتمال كل الصفحات (تحتاج ترقيمها النهائي)
+        applyPageNumbers(); // [ميزة الترقيم] بعد الإطارات كي يظهر الرقم فوقها دائماً
     }
 
     function createPage(c, hasHeader) {
@@ -3492,6 +3543,10 @@
             if (_chapterGeneralImageData) { cgPrev.src = _chapterGeneralImageData; cgPrev.style.display = 'inline-block'; cgRem.style.display = 'inline-block'; }
             else { cgPrev.style.display = 'none'; cgRem.style.display = 'none'; }
             renderChapterFormatList();
+
+            document.getElementById('pageNumEnabled').checked = !!pageNumbering.enabled;
+            document.getElementById('pageNumPosition').value  = pageNumbering.position || 'bottom-center';
+            document.getElementById('pageNumStyle').value     = pageNumbering.style || 'arabic';
         } catch(e) {}
     }
 
@@ -3598,6 +3653,43 @@
     }
 
     /** تُستدعى بعد اكتمال بناء كل الصفحات — تطبّق الإطار العام أو المخصَّص على كل صفحة فعلياً */
+    /* ══════════════════════════════════════════════════
+       [ميزة] ترقيم الصفحات التلقائي
+       الغلاف غير مُرقَّم (نفس تقويم TOC: أول صفحة محتوى = "١")، حتى يطابق الرقم المطبوع
+       فعلياً على الصفحة ما تشير إليه روابط الفهرس بالضبط.
+    ══════════════════════════════════════════════════ */
+    const ARABIC_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    function toArabicNumeral(n) { return String(n).split('').map(d => ARABIC_DIGITS[d] ?? d).join(''); }
+
+    function updatePageNumbering() {
+        pageNumbering = {
+            enabled:  document.getElementById('pageNumEnabled').checked,
+            position: document.getElementById('pageNumPosition').value,
+            style:    document.getElementById('pageNumStyle').value,
+        };
+        autoSaveAndBuild();
+    }
+
+    /** تُستدعى بعد اكتمال بناء كل الصفحات وتطبيق الإطارات — ترقّم كل صفحة محتوى فعلياً */
+    function applyPageNumbers() {
+        const allPages = document.querySelectorAll('.page-wrapper');
+        allPages.forEach(pageEl => {
+            let old = pageEl.querySelector(':scope > .page-number');
+            if (old) old.remove();
+        });
+        if (!pageNumbering.enabled) return;
+        let counter = 0;
+        allPages.forEach(pageEl => {
+            if (pageEl.classList.contains('cover-page')) return; // الغلاف غير مُرقَّم
+            counter++;
+            const numText = pageNumbering.style === 'arabic' ? toArabicNumeral(counter) : String(counter);
+            const el = document.createElement('div');
+            el.className = 'page-number pn-' + (pageNumbering.position || 'bottom-center');
+            el.textContent = numText;
+            pageEl.appendChild(el);
+        });
+    }
+
     function applyAllFrames() {
         const allPages = document.querySelectorAll('.page-wrapper');
         allPages.forEach((pageEl, idx) => {
@@ -3797,6 +3889,7 @@
                 customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
+        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic' };
         _syncFormatUIFromState();
 
                 // [FIX] لم نعد نستبدل تفضيل السمة العام بما هو محفوظ داخل هذا الكتاب تحديداً؛
@@ -3882,6 +3975,7 @@
         customPageBackgrounds = s.customBgs || {};
         frameSettings   = s.frames     || { general: { style: 'none', color: '#8a6d1f', width: 2 }, pages: {} };
         chapterFormat   = s.chapterFmt || { general: { font: "'Aref Ruqaa'", size: 28, align: 'center', color: '#2b2013', decor: true }, chapters: {} };
+        pageNumbering   = s.pageNumbering || { enabled: false, position: 'bottom-center', style: 'arabic' };
         _syncFormatUIFromState();
         // [FIX] السمة اللونية للمحرر تفضيل عام للمستخدم، لا يجب أن يغيّرها محتوى
         // كتاب قادم من درايف بصمت. تُترك كما هي (مُحمَّلة مسبقاً من EDITOR_PREFS_KEY).
