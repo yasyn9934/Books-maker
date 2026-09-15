@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>معاينة ملفات HTML</title>
+<style>
+  :root{
+    --bg: #eef2f3;
+    --bg-soft: #ffffff;
+    --text: #1f2a33;
+    --text-dim: #5c6b74;
+    --border: #d7e0e3;
+    --accent: #3d7a76;
+    --accent-soft: #e3efee;
+    --green: #3fa672;
+    --green-hover: #359163;
+    --shadow: 0 1px 3px rgba(31,42,51,0.08);
+    --bar-h: 64px;
+  }
+  html[data-theme="dark"]{
+    --bg: #131c22;
+    --bg-soft: #1b262d;
+    --text: #e7edf0;
+    --text-dim: #93a3ac;
+    --border: #2b3941;
+    --accent: #7fc6bf;
+    --accent-soft: #223834;
+    --green: #4fbb84;
+    --green-hover: #45a674;
+    --shadow: 0 1px 3px rgba(0,0,0,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:"Tahoma","Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    transition:background .25s ease, color .25s ease;
+  }
+
+  /* الشريط العلوي */
+  header{
+    height:var(--bar-h);
+    flex:0 0 auto;
+    background:var(--bg-soft);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    box-shadow:var(--shadow);
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:var(--accent);
+  }
+  header h1{
+    font-size:18px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:.2px;
+    color:var(--text);
+  }
+  .header-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  button, select{
+    font-family:inherit;
+  }
+
+  .theme-toggle{
+    width:38px;height:38px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background .2s ease, transform .15s ease;
+  }
+  .theme-toggle:hover{ background:var(--accent-soft); }
+  .theme-toggle:active{ transform:scale(0.94); }
+  .theme-toggle svg{ width:18px; height:18px; }
+
+  .btn-home{
+    display:none;
+    align-items:center;
+    gap:6px;
+    height:38px;
+    padding:0 16px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    font-size:14px;
+    cursor:pointer;
+    transition:background .2s ease;
+  }
+  .btn-home:hover{ background:var(--accent-soft); }
+  .btn-home.show{ display:flex; }
+
+  /* جسم الصفحة */
+  main{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* شاشة الاختيار */
+  #selectScreen{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+  }
+  .picker-card{
+    width:100%;
+    max-width:480px;
+    background:var(--bg-soft);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:32px 28px;
+    box-shadow:var(--shadow);
+    text-align:center;
+  }
+  .picker-card h2{
+    margin:0 0 6px;
+    font-size:20px;
+    font-weight:600;
+  }
+  .picker-card p{
+    margin:0 0 24px;
+    color:var(--text-dim);
+    font-size:13.5px;
+    line-height:1.7;
+  }
+  .picker-row{
+    display:flex;
+    gap:10px;
+    align-items:stretch;
+  }
+  select#siteSelect{
+    flex:1;
+    height:44px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    padding:0 14px;
+    font-size:14px;
+    outline:none;
+    cursor:pointer;
+  }
+  select#siteSelect:focus{ border-color:var(--accent); }
+
+  #activateBtn{
+    flex:0 0 auto;
+    height:44px;
+    padding:0 18px;
+    border-radius:10px;
+    border:none;
+    background:var(--green);
+    color:#ffffff;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background .2s ease, transform .15s ease, opacity .2s ease;
+  }
+  #activateBtn:hover:not(:disabled){ background:var(--green-hover); }
+  #activateBtn:active:not(:disabled){ transform:scale(0.97); }
+  #activateBtn:disabled{ opacity:.45; cursor:not-allowed; }
+
+  .status-line{
+    margin-top:18px;
+    font-size:12.5px;
+    color:var(--text-dim);
+    min-height:16px;
+  }
+  .status-line.err{ color:#c65656; }
+
+  /* إعداد رابط JSON عند الحاجة */
+  .source-box{
+    margin-top:22px;
+    padding-top:18px;
+    border-top:1px dashed var(--border);
+    text-align:right;
+  }
+  .source-box label{
+    display:block;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  .source-row{
+    display:flex;
+    gap:8px;
+  }
+  .source-row input{
+    flex:1;
+    height:38px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    padding:0 10px;
+    font-size:13px;
+    direction:ltr;
+    text-align:left;
+    outline:none;
+  }
+  .source-row input:focus{ border-color:var(--accent); }
+  .source-row button{
+    height:38px;
+    padding:0 14px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .source-row button:hover{ filter:brightness(0.96); }
+
+  /* شاشة المعاينة */
+  #previewScreen{
+    flex:1;
+    display:none;
+    flex-direction:column;
+  }
+  #previewScreen.show{ display:flex; }
+  #previewFrame{
+    flex:1;
+    width:100%;
+    border:none;
+    background:#ffffff;
+  }
+  .preview-bar{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:8px 20px;
+    background:var(--bg-soft);
+    border-bottom:1px solid var(--border);
+    font-size:12.5px;
+    color:var(--text-dim);
+  }
+  .preview-bar span.name{
+    color:var(--text);
+    font-weight:600;
+  }
+
+  @media (max-width:520px){
+    .picker-card{ padding:24px 18px; }
+    .picker-row{ flex-direction:column; }
+    #activateBtn{ width:100%; }
+    header h1{ font-size:16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="dot"></span>
+    <h1>معاينة ملفات HTML</h1>
+  </div>
+  <div class="header-actions">
+    <button id="homeBtn" class="btn-home" title="رجوع للرئيسية">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      رجوع للرئيسية
+    </button>
+    <button id="themeToggle" class="theme-toggle" title="تبديل الوضع الليلي/النهاري">
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- شاشة اختيار الموقع -->
+  <div id="selectScreen">
+    <div class="picker-card">
+      <h2>اختر موقعًا للمعاينة</h2>
+      <p>حدد أحد المواقع من القائمة، ثم اضغط زر التفعيل لعرض معاينته كاملة.</p>
+
+      <div class="picker-row">
+        <select id="siteSelect" disabled>
+          <option>جارِ التحميل...</option>
+        </select>
+        <button id="activateBtn" disabled>تفعيل معاينة الموقع</button>
+      </div>
+
+      <div class="status-line" id="statusLine"></div>
+
+      <div class="source-box">
+        <label for="jsonUrlInput">رابط ملف JSON (Google Drive) — يُستخدم فقط إذا لم يتم العثور على sites.json تلقائيًا</label>
+        <div class="source-row">
+          <input id="jsonUrlInput" type="text" placeholder="https://drive.google.com/uc?export=download&id=FILE_ID">
+          <button id="loadJsonBtn">تحميل</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- شاشة المعاينة -->
+  <div id="previewScreen">
+    <div class="preview-bar">
+      <span>معاينة: <span class="name" id="previewName">—</span></span>
+      <span id="previewUrlLabel" style="direction:ltr"></span>
+    </div>
+    <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+  </div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ إعداد مصدر ملف JSON ============
+     ضع هنا رابط ملف sites.json الموجود على Google Drive.
+     أسهل طريقة صحيحة:
+     1) شارك الملف في Drive بصلاحية "أي شخص لديه الرابط".
+     2) خذ معرّف الملف (FILE_ID) من رابط المشاركة.
+     3) استخدم الصيغة: https://drive.google.com/uc?export=download&id=FILE_ID
+     يمكن أيضًا ترك القيمة فارغة والاعتماد على ملف sites.json
+     الموجود بجانب هذا الملف HTML، أو إدخال الرابط يدويًا من الواجهة.
+  ============================================= */
+  var DEFAULT_JSON_URL = ""; // ضع رابط Google Drive هنا إن رغبت بتثبيته
+
+  var siteSelect   = document.getElementById('siteSelect');
+  var activateBtn  = document.getElementById('activateBtn');
+  var statusLine   = document.getElementById('statusLine');
+  var jsonUrlInput = document.getElementById('jsonUrlInput');
+  var loadJsonBtn  = document.getElementById('loadJsonBtn');
+
+  var selectScreen  = document.getElementById('selectScreen');
+  var previewScreen = document.getElementById('previewScreen');
+  var previewFrame  = document.getElementById('previewFrame');
+  var previewName   = document.getElementById('previewName');
+  var previewUrlLabel = document.getElementById('previewUrlLabel');
+  var homeBtn = document.getElementById('homeBtn');
+
+  var themeToggle = document.getElementById('themeToggle');
+  var iconSun = document.getElementById('iconSun');
+  var iconMoon = document.getElementById('iconMoon');
+
+  var sitesData = [];
+
+  /* ---------- الوضع الليلي / النهاري ---------- */
+  function applyTheme(theme){
+    document.documentElement.setAttribute('data-theme', theme);
+    if(theme === 'dark'){
+      iconSun.style.display = 'none';
+      iconMoon.style.display = 'block';
+    } else {
+      iconSun.style.display = 'block';
+      iconMoon.style.display = 'none';
+    }
+  }
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(prefersDark ? 'dark' : 'light');
+
+  themeToggle.addEventListener('click', function(){
+    var current = document.documentElement.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  });
+
+  /* ---------- تحميل قائمة المواقع من JSON ---------- */
+  function setStatus(msg, isError){
+    statusLine.textContent = msg || '';
+    statusLine.classList.toggle('err', !!isError);
+  }
+
+  function populateSelect(list){
+    sitesData = Array.isArray(list) ? list : [];
+    siteSelect.innerHTML = '';
+
+    if(sitesData.length === 0){
+      var opt = document.createElement('option');
+      opt.textContent = 'لا توجد مواقع متاحة';
+      siteSelect.appendChild(opt);
+      siteSelect.disabled = true;
+      activateBtn.disabled = true;
+      return;
+    }
+
+    var placeholder = document.createElement('option');
+    placeholder.textContent = 'اختر موقعًا...';
+    placeholder.value = '';
+    siteSelect.appendChild(placeholder);
+
+    sitesData.forEach(function(site, idx){
+      var opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = site.name || ('موقع ' + (idx + 1));
+      siteSelect.appendChild(opt);
+    });
+
+    siteSelect.disabled = false;
+    activateBtn.disabled = true;
+  }
+
+  siteSelect.addEventListener('change', function(){
+    activateBtn.disabled = (siteSelect.value === '' || siteSelect.disabled);
+  });
+
+  function tryFetchJson(url){
+    return fetch(url, { cache: 'no-store' }).then(function(res){
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    });
+  }
+
+  function loadSites(url){
+    setStatus('جارِ تحميل قائمة المواقع...');
+    siteSelect.disabled = true;
+    activateBtn.disabled = true;
+
+    tryFetchJson(url).then(function(data){
+      var list = data && data.sites ? data.sites : data;
+      populateSelect(list);
+      setStatus('تم تحميل ' + sitesData.length + ' موقعًا بنجاح.');
+    }).catch(function(err){
+      populateSelect([]);
+      setStatus('تعذّر تحميل ملف JSON من: ' + url + ' — تحقق من الرابط أو إعدادات المشاركة.', true);
+    });
+  }
+
+  // محاولة التحميل الأولى: الرابط الثابت المحدد بالأعلى إن وجد،
+  // وإلا ملف sites.json المجاور لهذا الملف HTML.
+  function initialLoad(){
+    var url = DEFAULT_JSON_URL || 'sites.json';
+    setStatus('جارِ تحميل قائمة المواقع...');
+    tryFetchJson(url).then(function(data){
+      var list = data && data.sites ? data.sites : data;
+      populateSelect(list);
+      setStatus('تم تحميل ' + sitesData.length + ' موقعًا بنجاح.');
+    }).catch(function(){
+      populateSelect([]);
+      setStatus('لم يتم العثور على قائمة مواقع تلقائيًا. أدخل رابط ملف JSON من Google Drive أدناه.', true);
+    });
+  }
+  initialLoad();
+
+  loadJsonBtn.addEventListener('click', function(){
+    var url = jsonUrlInput.value.trim();
+    if(!url){
+      setStatus('الرجاء إدخال رابط ملف JSON أولًا.', true);
+      return;
+    }
+    loadSites(url);
+  });
+
+  /* ---------- تفعيل المعاينة ---------- */
+  activateBtn.addEventListener('click', function(){
+    var idx = siteSelect.value;
+    if(idx === '' || !sitesData[idx]) return;
+
+    var site = sitesData[idx];
+    previewFrame.src = site.url;
+    previewName.textContent = site.name || '';
+    previewUrlLabel.textContent = site.url || '';
+
+    selectScreen.style.display = 'none';
+    previewScreen.classList.add('show');
+    homeBtn.classList.add('show');
+  });
+
+  /* ---------- الرجوع للرئيسية ---------- */
+  homeBtn.addEventListener('click', function(){
+    previewFrame.src = 'about:blank';
+    previewScreen.classList.remove('show');
+    selectScreen.style.display = 'flex';
+    homeBtn.classList.remove('show');
+    siteSelect.value = '';
+    activateBtn.disabled = true;
+  });
+
+})();
+</script>
+
+</body>
+</html>
