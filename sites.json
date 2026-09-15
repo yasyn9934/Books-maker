@@ -1,0 +1,16 @@
+{
+  "sites": [
+    {
+      "name": "الشريط الزمني – فيديوهات",
+      "url": "https://drive.google.com/uc?export=download&id=1Zh3CVHKWRYba6PNLr1RmpJ3eMthI_4I2"
+    },
+    {
+      "name": "موقع تجريبي 2",
+      "url": "https://example.com/site2/index.html"
+    },
+    {
+      "name": "موقع تجريبي 3",
+      "url": "https://example.com/site3/index.html"
+    }
+  ]
+}
