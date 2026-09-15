@@ -305,6 +305,7 @@
     <div class="picker-card">
       <h2>اختر موقعًا للمعاينة</h2>
       <p>حدد أحد المواقع من القائمة، ثم اضغط زر التفعيل لعرض معاينته كاملة.</p>
+      <p style="font-size:12px;margin-top:-12px">يمكنك استخدام رابط HTML مباشر أو رابط Google Drive بصيغة <b>uc?export=download&id=FILE_ID</b>.</p>
 
       <div class="picker-row">
         <select id="siteSelect" disabled>
@@ -318,7 +319,7 @@
       <div class="source-box">
         <label for="jsonUrlInput">رابط ملف JSON (Google Drive) — يُستخدم فقط إذا لم يتم العثور على sites.json تلقائيًا</label>
         <div class="source-row">
-          <input id="jsonUrlInput" type="text" placeholder="https://drive.google.com/uc?export=download&id=FILE_ID">
+          <input id="jsonUrlInput" type="text" placeholder="https://drive.google.com/file/d/FILE_ID/view أو https://drive.google.com/uc?export=download&id=FILE_ID">
           <button id="loadJsonBtn">تحميل</button>
         </div>
       </div>
@@ -331,7 +332,7 @@
       <span>معاينة: <span class="name" id="previewName">—</span></span>
       <span id="previewUrlLabel" style="direction:ltr"></span>
     </div>
-    <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+    <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
   </div>
 </main>
 
@@ -474,15 +475,67 @@
     loadSites(url);
   });
 
+  /* ---------- تحويل روابط Google Drive إلى رابط تحميل/معاينة مباشر ---------- */
+
+  function extractDriveFileId(url){
+    try {
+      var u = new URL(url);
+
+      // /file/d/FILE_ID/view
+      var match = u.pathname.match(/\/file\/d\/([^/]+)/);
+      if(match && match[1]) return match[1];
+
+      // ?id=FILE_ID
+      var id = u.searchParams.get('id');
+      if(id) return id;
+
+      // /open?id=FILE_ID أو /uc?id=FILE_ID
+      if(u.hostname === 'drive.google.com'){
+        var parts = u.pathname.split('/');
+        var idx = parts.indexOf('d');
+        if(idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+      }
+    } catch(e) {}
+
+    return null;
+  }
+
+  function normalizeHtmlUrl(url){
+    var id = extractDriveFileId(url);
+
+    if(id){
+      /*
+       * Google Drive لا يقدم استضافة HTML حقيقية، لكن هذا الرابط يطلب
+       * محتوى الملف نفسه بدل صفحة Drive. إذا كان الملف متاحًا للعامة،
+       * يستطيع المتصفح محاولة تحميله داخل iframe.
+       */
+      return 'https://drive.google.com/uc?export=download&id=' +
+             encodeURIComponent(id);
+    }
+
+    return url;
+  }
+
   /* ---------- تفعيل المعاينة ---------- */
   activateBtn.addEventListener('click', function(){
     var idx = siteSelect.value;
     if(idx === '' || !sitesData[idx]) return;
 
     var site = sitesData[idx];
-    previewFrame.src = site.url;
+    var originalUrl = (site.url || '').trim();
+
+    if(!originalUrl){
+      setStatus('رابط الموقع فارغ.', true);
+      return;
+    }
+
+    var previewUrl = normalizeHtmlUrl(originalUrl);
+
     previewName.textContent = site.name || '';
-    previewUrlLabel.textContent = site.url || '';
+    previewUrlLabel.textContent = previewUrl;
+
+    // مهم: وضع الرابط النهائي فقط في iframe.
+    previewFrame.src = previewUrl;
 
     selectScreen.style.display = 'none';
     previewScreen.classList.add('show');
