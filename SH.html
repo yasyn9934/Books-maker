@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أداة الشريط الزمني للمقاطع المقتطعة</title>
+<style>
+  :root{
+    --parchment:#f4ecd8;
+    --parchment-deep:#ece0c4;
+    --ink:#2b1d12;
+    --ink-soft:#5a4632;
+    --gold:#b8934a;
+    --gold-light:#d9bd82;
+    --deep:#3b2a1a;
+    --crimson:#8c3b3b;
+    --line: rgba(59,42,26,.18);
+    --shadow: 0 10px 30px rgba(43,29,18,.18);
+    --font-display: Amiri, "Traditional Arabic", "Scheherazade New", Georgia, "Times New Roman", serif;
+    --font-body: Tajawal, "Segoe UI", Tahoma, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(184,147,74,.12), transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, rgba(140,59,59,.08), transparent 55%),
+      var(--parchment);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    padding:32px 18px 60px;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+
+  header.page{ text-align:center; margin-bottom:30px; }
+  header.page .kicker{
+    font-family:var(--font-body);
+    letter-spacing:.15em; font-size:12.5px; color:var(--gold); font-weight:700;
+    text-transform:uppercase; display:inline-flex; align-items:center; gap:10px; margin-bottom:10px;
+  }
+  header.page .kicker::before, header.page .kicker::after{ content:""; width:26px;height:1px; background:var(--gold); display:inline-block; }
+  header.page h1{ font-family:var(--font-display); font-size:clamp(26px,4vw,36px); margin:0 0 8px; color:var(--deep); }
+  header.page p{ color:var(--ink-soft); font-size:14.5px; max-width:560px; margin:0 auto; line-height:1.9; }
+
+  .card{
+    background:linear-gradient(180deg, #fbf7ec, var(--parchment-deep));
+    border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow);
+    padding:26px; margin-bottom:24px; position:relative; overflow:hidden;
+  }
+  .card::before{ content:""; position:absolute; inset:0; border:1px solid rgba(184,147,74,.25); border-radius:18px; margin:6px; pointer-events:none; }
+  .card h2{ font-family:var(--font-display); font-size:19px; color:var(--deep); margin:0 0 18px; display:flex; align-items:center; gap:10px; }
+  .card h2 .dot{ width:8px;height:8px;border-radius:50%; background:var(--gold); display:inline-block; }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .grid{grid-template-columns:1fr;} }
+
+  .field{margin-bottom:14px;}
+  .field label{ display:block; font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; }
+  .field .hint{ font-size:11.5px; color:var(--ink-soft); opacity:.75; margin-top:5px; line-height:1.7; }
+  input[type=text], input[type=url], input[type=number]{
+    width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid var(--line);
+    background:#fffdf6; font-family:var(--font-body); font-size:14.5px; color:var(--ink); outline:none; transition:border-color .15s;
+  }
+  input:focus{ border-color:var(--gold); }
+
+  .time-row{ display:flex; gap:8px; align-items:center; }
+  .time-row input{ text-align:center; }
+  .time-row span{ color:var(--gold); font-weight:700; }
+
+  .file-drop{
+    border:1.5px dashed var(--gold); border-radius:12px; padding:18px; text-align:center;
+    background:rgba(184,147,74,.06); cursor:pointer; font-size:13.5px; color:var(--ink-soft);
+  }
+  .file-drop.has-file{ border-style:solid; background:rgba(184,147,74,.12); color:var(--deep); font-weight:700; }
+  .file-drop input{ display:none; }
+
+  button.primary{
+    width:100%; padding:14px; border:none; border-radius:12px;
+    background:linear-gradient(180deg, var(--gold-light), var(--gold)); color:var(--deep);
+    font-family:var(--font-body); font-weight:900; font-size:15.5px; cursor:pointer;
+    box-shadow:0 6px 16px rgba(184,147,74,.35); transition:transform .12s, box-shadow .12s;
+  }
+  button.primary:hover{ transform:translateY(-1px); box-shadow:0 9px 20px rgba(184,147,74,.45); }
+  button.primary:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+
+  .error-msg{
+    display:none; background:rgba(140,59,59,.1); border:1px solid rgba(140,59,59,.3); color:var(--crimson);
+    padding:10px 14px; border-radius:10px; font-size:13px; margin-top:12px;
+  }
+
+  #playerSection{ display:none; }
+
+  .stage{ position:relative; background:#000; border-radius:16px; overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); }
+  .stage video{ display:none; }
+  #previewCanvas{ display:block; width:100%; max-height:70vh; background:#000; object-fit:contain; }
+
+  .video-error{
+    display:none; position:absolute; inset:0; background:rgba(20,13,7,.94); color:var(--parchment);
+    text-align:center; padding:24px 20px; font-size:13.5px; line-height:1.9;
+    overflow-y:auto;
+  }
+  .video-error > div{ max-width:520px; margin:0 auto; }
+  .video-error strong{ color:var(--gold-light); font-family:var(--font-display); font-size:17px; display:block; margin-bottom:8px; }
+  @media (max-width:480px){ .video-error{ font-size:12.5px; padding:16px 12px; line-height:1.8; } .video-error strong{ font-size:15px; } }
+
+  .custom-controls{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    background:linear-gradient(180deg, var(--parchment-deep), var(--parchment));
+    border-top:1px solid var(--line);
+  }
+  .custom-controls button{
+    background:none; border:1.5px solid var(--gold); color:var(--deep); width:34px; height:34px; border-radius:50%;
+    font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  }
+  .custom-controls button:hover{ background:rgba(184,147,74,.15); }
+  .custom-controls input[type=range]{ flex:1; accent-color:var(--gold); cursor:pointer; }
+  .custom-controls .clock{ font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums; direction:ltr; flex-shrink:0; }
+
+  .stage-tools{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:10px; }
+  .stage-tools .info{ font-size:12.5px; color:var(--ink-soft); }
+  .stage-tools .btn-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .stage-tools button{
+    background:none; border:1.5px solid var(--gold); color:var(--deep); padding:8px 16px; border-radius:9px;
+    font-family:var(--font-body); font-weight:700; font-size:13px; cursor:pointer;
+  }
+  .stage-tools button:hover{ background:rgba(184,147,74,.12); }
+  .stage-tools button.solid{ background:linear-gradient(180deg, var(--gold-light), var(--gold)); }
+  .stage-tools button:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .rec-progress{
+    display:none; margin-top:12px; background:#fffdf6; border:1px solid var(--line); border-radius:10px; padding:10px 14px;
+  }
+  .rec-progress .bar-bg{ height:8px; border-radius:5px; background:var(--parchment-deep); overflow:hidden; margin-top:6px; }
+  .rec-progress .bar-fg{ height:100%; width:0%; background:linear-gradient(90deg, var(--gold-light), var(--gold)); transition:width .15s linear; }
+  .rec-progress .label{ font-size:12.5px; color:var(--ink-soft); display:flex; justify-content:space-between; }
+
+  .warn-msg{
+    display:none; background:rgba(197,146,38,.12); border:1px solid rgba(197,146,38,.4); color:#8a6a1f;
+    padding:10px 14px; border-radius:10px; font-size:12.5px; margin-top:12px; line-height:1.8;
+  }
+
+  /* ===== تخصيص الشريط ===== */
+  .style-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+  @media (max-width:640px){ .style-grid{ grid-template-columns:1fr; } }
+  select.styled{
+    width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line);
+    background:#fffdf6; font-family:var(--font-body); font-size:14px; color:var(--ink); outline:none; cursor:pointer;
+  }
+  select.styled:focus{ border-color:var(--gold); }
+  .checkbox-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); margin-top:8px; }
+  .checkbox-row input{ width:16px; height:16px; accent-color:var(--gold); cursor:pointer; }
+  .checkbox-row label{ cursor:pointer; }
+
+  /* ===== لوحة القص ===== */
+  .trim-panel{
+    display:none; background:#fffdf6; border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; margin:0 0 14px;
+  }
+  .trim-panel h3{ margin:0 0 12px; font-size:14.5px; color:var(--deep); font-family:var(--font-display); }
+  .trim-group{ margin-bottom:16px; }
+  .trim-group:last-of-type{ margin-bottom:0; }
+  .trim-label-row{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;
+    font-size:12.5px; color:var(--ink-soft); font-weight:700;
+  }
+  .trim-readout{ font-size:11.5px; color:var(--ink-soft); direction:ltr; }
+  .trim-fields{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .trim-fields input[type=number]{
+    width:58px; padding:8px 4px; text-align:center; border-radius:8px; border:1.5px solid var(--line);
+    background:#fff; font-size:13.5px; color:var(--ink);
+  }
+  .trim-fields span.sep{ color:var(--gold); font-weight:700; }
+  button.mini{
+    background:none; border:1.5px solid var(--gold); color:var(--deep); padding:6px 12px; border-radius:8px;
+    font-size:11.5px; cursor:pointer; font-weight:700; font-family:var(--font-body); white-space:nowrap;
+  }
+  button.mini:hover{ background:rgba(184,147,74,.12); }
+  input[type=range].trim-slider{ width:100%; margin-top:8px; accent-color:var(--gold); cursor:pointer; }
+  .trim-footer{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px; }
+
+  /* ===== نافذة المعاينة السريعة ===== */
+  .preview-modal-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(20,13,7,.75); z-index:50;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .preview-modal{
+    background:var(--parchment); border-radius:16px; padding:20px; max-width:520px; width:100%; box-shadow:var(--shadow);
+  }
+  .preview-modal h3{ font-family:var(--font-display); margin:0 0 12px; color:var(--deep); font-size:17px; }
+  .preview-modal video{ width:100%; border-radius:10px; background:#000; max-height:60vh; display:block; }
+  .preview-modal .modal-actions{ margin-top:14px; display:flex; justify-content:flex-end; gap:8px; }
+
+  footer{ text-align:center; font-size:11.5px; color:var(--ink-soft); opacity:.7; margin-top:40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="kicker">سند زمني</div>
+    <h1>الشريط الزمني للمقاطع المقتطعة</h1>
+    <p>أضف مقطعك، وحدد موضعه من الفيديو الأصلي، ليظهر عداد زمني حي فوق المقطع كأنه امتداد لأصله — مع رمز QR يعيد المشاهد إلى المصدر. تعمل الأداة بالكامل دون اتصال بالإنترنت.</p>
+  </header>
+
+  <!-- ===== FORM ===== -->
+  <section class="card" id="formCard">
+    <h2><span class="dot"></span> بيانات المقطع</h2>
+
+    <div class="field">
+      <label>ملف الفيديو</label>
+      <label class="file-drop" id="dropLabel">
+        <span id="dropText">اضغط هنا لاختيار الفيديو من جهازك</span>
+        <input type="file" id="videoFile" accept="video/*">
+      </label>
+      <div class="warn-msg" id="sizeWarn"></div>
+    </div>
+
+    <div class="field">
+      <label>نقطة البداية داخل الفيديو الأصلي</label>
+      <div class="time-row">
+        <input type="number" id="offH" min="0" placeholder="س" value="0">
+        <span>:</span>
+        <input type="number" id="offM" min="0" max="59" placeholder="د" value="0">
+        <span>:</span>
+        <input type="number" id="offS" min="0" max="59" placeholder="ث" value="0">
+      </div>
+      <div class="hint">أدخل المدة من بداية الفيديو الأصلي إلى بداية هذا المقطع. سيُضاف إليها تلقائيًا زمن التشغيل الحالي، فيعمل الشريط كعدّاد مستمر من الفيديو الأصلي.</div>
+    </div>
+
+    <div class="grid">
+      <div class="field">
+        <label>اسم الفيديو / الحلقة <span style="color:var(--crimson)">*</span></label>
+        <input type="text" id="videoName" placeholder="مثال: الدرس الرابع — كتاب الطهارة">
+      </div>
+      <div class="field">
+        <label>اسم السلسلة (اختياري)</label>
+        <input type="text" id="seriesName" placeholder="مثال: شرح متن أبي شجاع">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>رابط الفيديو الأصلي (اختياري)</label>
+      <input type="url" id="originalUrl" placeholder="https://...">
+      <div class="hint">إن أُدخل، يُنشأ رمز QR تلقائيًا (محليًا بالكامل) ويظهر على الشريط ليصل المشاهد بالمصدر الكامل.</div>
+    </div>
+
+    <div class="field">
+      <label>تخصيص الشريط (اختياري)</label>
+      <div class="style-grid">
+        <div>
+          <div class="hint" style="margin:0 0 4px;">موضع الشريط</div>
+          <select class="styled" id="tickerPosition">
+            <option value="bottom" selected>أسفل الفيديو</option>
+            <option value="top">أعلى الفيديو</option>
+          </select>
+        </div>
+        <div>
+          <div class="hint" style="margin:0 0 4px;">النمط اللوني</div>
+          <select class="styled" id="tickerColor">
+            <option value="gold" selected>ذهبي عتيق (الافتراضي)</option>
+            <option value="blue">أزرق داكن</option>
+            <option value="red">أحمر إخباري</option>
+            <option value="green">أخضر</option>
+          </select>
+        </div>
+        <div>
+          <div class="hint" style="margin:0 0 4px;">حجم الشريط</div>
+          <select class="styled" id="tickerSize">
+            <option value="sm">صغير</option>
+            <option value="md" selected>متوسط (الافتراضي)</option>
+            <option value="lg">كبير</option>
+          </select>
+        </div>
+        <div>
+          <div class="hint" style="margin:0 0 4px;">عناصر إضافية</div>
+          <div class="checkbox-row"><input type="checkbox" id="tickerShowQR" checked><label for="tickerShowQR">إظهار رمز QR (إن وُجد رابط)</label></div>
+          <div class="checkbox-row"><input type="checkbox" id="tickerShowSeries" checked><label for="tickerShowSeries">إظهار اسم السلسلة</label></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="primary" id="loadBtn">إنشاء الشريط وتشغيل الفيديو</button>
+    <div class="error-msg" id="errMsg"></div>
+  </section>
+
+  <!-- ===== PLAYER ===== -->
+  <section id="playerSection">
+    <div class="stage" id="stage">
+      <video id="video" playsinline preload="auto"></video>
+      <canvas id="previewCanvas" width="1280" height="720"></canvas>
+      <div class="video-error" id="videoErrorBox">
+        <div>
+          <strong>تعذّر تشغيل هذا الملف</strong>
+          <span id="videoErrorDetail">قد تكون صيغة الترميز غير مدعومة في هذا المتصفح.</span>
+        </div>
+      </div>
+    </div>
+    <div class="custom-controls" id="customControls">
+      <button id="playPauseBtn" title="تشغيل / إيقاف" aria-label="تشغيل أو إيقاف الفيديو">▶</button>
+      <input type="range" id="seekRange" min="0" max="1000" value="0" step="1" aria-label="موضع التشغيل">
+      <span class="clock" id="clockLabel">00:00 / 00:00</span>
+      <button id="muteBtn" title="كتم الصوت" aria-label="كتم أو تشغيل الصوت">🔊</button>
+    </div>
+
+    <!-- ===== لوحة القص (تظهر بعد تحميل الفيديو) ===== -->
+    <div class="trim-panel" id="trimPanel">
+      <h3>نطاق القص (اختياري) — افتراضيًا يُصدَّر المقطع كاملاً</h3>
+
+      <div class="trim-group">
+        <div class="trim-label-row"><span>بداية القص</span><span class="trim-readout" id="trimStartReadout">00:00:00.0</span></div>
+        <div class="trim-fields">
+          <input type="number" id="trimStartH" min="0" value="0" title="ساعة">
+          <span class="sep">:</span>
+          <input type="number" id="trimStartM" min="0" max="59" value="0" title="دقيقة">
+          <span class="sep">:</span>
+          <input type="number" id="trimStartS" min="0" max="59.9" step="0.1" value="0" title="ثانية">
+          <button type="button" class="mini" id="trimStartUseCurrent">استخدام موضع التشغيل الحالي</button>
+        </div>
+        <input type="range" id="trimStartRange" class="trim-slider" min="0" max="0" step="0.1" value="0" aria-label="بداية القص">
+      </div>
+
+      <div class="trim-group">
+        <div class="trim-label-row"><span>نهاية القص</span><span class="trim-readout" id="trimEndReadout">00:00:00.0</span></div>
+        <div class="trim-fields">
+          <input type="number" id="trimEndH" min="0" value="0" title="ساعة">
+          <span class="sep">:</span>
+          <input type="number" id="trimEndM" min="0" max="59" value="0" title="دقيقة">
+          <span class="sep">:</span>
+          <input type="number" id="trimEndS" min="0" max="59.9" step="0.1" value="0" title="ثانية">
+          <button type="button" class="mini" id="trimEndUseCurrent">استخدام موضع التشغيل الحالي</button>
+        </div>
+        <input type="range" id="trimEndRange" class="trim-slider" min="0" max="0" step="0.1" value="0" aria-label="نهاية القص">
+      </div>
+
+      <div class="trim-footer">
+        <button type="button" class="mini" id="trimReset">تصفير (تصدير المقطع كاملاً)</button>
+        <span class="trim-readout" id="trimDurationReadout"></span>
+      </div>
+      <div class="hint" style="margin-top:10px;">حرّك المؤشرات أو أدخل الوقت يدويًا — ستنتقل المعاينة أعلاه فورًا إلى تلك اللحظة بالضبط لتتأكد من دقة القص قبل التصدير. أو شغّل الفيديو وشاهده، ثم اضغط "استخدام موضع التشغيل الحالي" عند اللحظة المطلوبة بالضبط.</div>
+    </div>
+
+    <div class="stage-tools">
+      <div class="info" id="stageInfo"></div>
+      <div class="btn-row">
+        <button id="downloadBtn" class="solid">تحميل الفيديو الجديد</button>
+        <button id="quickPreviewBtn">معاينة سريعة (٥ ثوانٍ)</button>
+        <button id="fsBtn">ملء الشاشة</button>
+        <button id="editBtn">تعديل البيانات</button>
+      </div>
+    </div>
+    <div class="rec-progress" id="recProgress">
+      <div class="label"><span id="recLabel">جارٍ إعداد الفيديو للتحميل…</span><span id="recPercent">0%</span></div>
+      <div class="bar-bg"><div class="bar-fg" id="recBarFg"></div></div>
+    </div>
+  </section>
+
+  <footer>كل المعالجة — تشغيل الفيديو، توليد رمز QR، وتسجيل النسخة الجديدة — تتم محليًا داخل متصفحك دون رفع أي ملف لأي خادم. خطوة إعادة الملف إلى صيغته الأصلية (إن اختلفت عن WebM) تحتاج اتصالًا بالإنترنت لمرة واحدة فقط لتحميل أداة التحويل، ثم تعمل من ذاكرة المتصفح المؤقتة لاحقًا.</footer>
+</div>
+
+<!-- ===== نافذة المعاينة السريعة ===== -->
+<div class="preview-modal-backdrop" id="previewModalBackdrop">
+  <div class="preview-modal">
+    <h3>معاينة سريعة</h3>
+    <video id="quickPreviewVideo" controls autoplay playsinline></video>
+    <div class="hint" style="margin-top:10px;">هذه معاينة بصيغة WebM للتأكد من شكل الشريط وموضعه وتوقيت القص فقط — وليست الملف النهائي (الذي سيُحفظ بصيغة الملف الأصلي عند الضغط على "تحميل الفيديو الجديد").</div>
+    <div class="modal-actions">
+      <button type="button" class="mini" id="previewModalClose">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="workCanvas" style="display:none;"></canvas>
+
+
+<script>
+/* ============================================================
+   مولّد QR مضمّن بالكامل (بلا اتصال بالإنترنت)
+   مبني على مكتبة QRCode for JavaScript — Kazuhiko Arase (رخصة MIT)
+   ============================================================ */
+(function(global){
+'use strict';
+var QRMode = { MODE_NUMBER:1<<0, MODE_ALPHA_NUM:1<<1, MODE_8BIT_BYTE:1<<2, MODE_KANJI:1<<3 };
+var QRErrorCorrectLevel = { L:1, M:0, Q:3, H:2 };
+var QRMaskPattern = { PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7 };
+var QRMath = {
+  glog:function(n){ if(n<1) throw new Error("glog("+n+")"); return QRMath.LOG_TABLE[n]; },
+  gexp:function(n){ while(n<0)n+=255; while(n>=256)n-=255; return QRMath.EXP_TABLE[n]; },
+  EXP_TABLE:new Array(256), LOG_TABLE:new Array(256)
+};
+for(var _i=0;_i<8;_i++){ QRMath.EXP_TABLE[_i]=1<<_i; }
+for(var _i2=8;_i2<256;_i2++){ QRMath.EXP_TABLE[_i2]=QRMath.EXP_TABLE[_i2-4]^QRMath.EXP_TABLE[_i2-5]^QRMath.EXP_TABLE[_i2-6]^QRMath.EXP_TABLE[_i2-8]; }
+for(var _i3=0;_i3<255;_i3++){ QRMath.LOG_TABLE[QRMath.EXP_TABLE[_i3]]=_i3; }
+function QRPolynomial(num, shift){
+  if(num.length===undefined) throw new Error(num.length+"/"+shift);
+  var offset=0;
+  while(offset<num.length && num[offset]===0) offset++;
+  this.num=new Array(num.length-offset+shift);
+  for(var i=0;i<num.length-offset;i++) this.num[i]=num[i+offset];
+}
+QRPolynomial.prototype={
+  get:function(index){ return this.num[index]; },
+  getLength:function(){ return this.num.length; },
+  multiply:function(e){
+    var num=new Array(this.getLength()+e.getLength()-1);
+    for(var i=0;i<this.getLength();i++) for(var j=0;j<e.getLength();j++) num[i+j]^=QRMath.gexp(QRMath.glog(this.get(i))+QRMath.glog(e.get(j)));
+    return new QRPolynomial(num,0);
+  },
+  mod:function(e){
+    if(this.getLength()-e.getLength()<0) return this;
+    var ratio=QRMath.glog(this.get(0))-QRMath.glog(e.get(0));
+    var num=new Array(this.getLength());
+    for(var i=0;i<this.getLength();i++) num[i]=this.get(i);
+    for(var x=0;x<e.getLength();x++) num[x]^=QRMath.gexp(QRMath.glog(e.get(x))+ratio);
+    return new QRPolynomial(num,0).mod(e);
+  }
+};
+var QRUtil = {
+  PATTERN_POSITION_TABLE:[
+    [],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],
+    [6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],
+    [6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],
+    [6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],
+    [6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],
+    [6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],
+    [6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]
+  ],
+  G15:(1<<10)|(1<<8)|(1<<5)|(1<<4)|(1<<2)|(1<<1)|(1<<0),
+  G18:(1<<12)|(1<<11)|(1<<10)|(1<<9)|(1<<8)|(1<<5)|(1<<2)|(1<<0),
+  G15_MASK:(1<<14)|(1<<12)|(1<<10)|(1<<4)|(1<<1),
+  getBCHTypeInfo:function(data){
+    var d=data<<10;
+    while(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G15)>=0) d^=(QRUtil.G15<<(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G15)));
+    return ((data<<10)|d)^QRUtil.G15_MASK;
+  },
+  getBCHTypeNumber:function(data){
+    var d=data<<12;
+    while(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G18)>=0) d^=(QRUtil.G18<<(QRUtil.getBCHDigit(d)-QRUtil.getBCHDigit(QRUtil.G18)));
+    return (data<<12)|d;
+  },
+  getBCHDigit:function(data){ var digit=0; while(data!==0){digit++; data>>>=1;} return digit; },
+  getPatternPosition:function(typeNumber){ return QRUtil.PATTERN_POSITION_TABLE[typeNumber-1]; },
+  getMask:function(maskPattern,i,j){
+    switch(maskPattern){
+      case QRMaskPattern.PATTERN000: return (i+j)%2===0;
+      case QRMaskPattern.PATTERN001: return i%2===0;
+      case QRMaskPattern.PATTERN010: return j%3===0;
+      case QRMaskPattern.PATTERN011: return (i+j)%3===0;
+      case QRMaskPattern.PATTERN100: return (Math.floor(i/2)+Math.floor(j/3))%2===0;
+      case QRMaskPattern.PATTERN101: return (i*j)%2+(i*j)%3===0;
+      case QRMaskPattern.PATTERN110: return ((i*j)%2+(i*j)%3)%2===0;
+      case QRMaskPattern.PATTERN111: return ((i*j)%3+(i+j)%2)%2===0;
+      default: throw new Error("bad maskPattern:"+maskPattern);
+    }
+  },
+  getErrorCorrectPolynomial:function(errorCorrectLength){
+    var a=new QRPolynomial([1],0);
+    for(var i=0;i<errorCorrectLength;i++) a=a.multiply(new QRPolynomial([1,QRMath.gexp(i)],0));
+    return a;
+  },
+  getLengthInBits:function(mode,type){
+    if(1<=type && type<10){
+      switch(mode){ case QRMode.MODE_NUMBER: return 10; case QRMode.MODE_ALPHA_NUM: return 9; case QRMode.MODE_8BIT_BYTE: return 8; case QRMode.MODE_KANJI: return 8; default: throw new Error("mode:"+mode); }
+    } else if(type<27){
+      switch(mode){ case QRMode.MODE_NUMBER: return 12; case QRMode.MODE_ALPHA_NUM: return 11; case QRMode.MODE_8BIT_BYTE: return 16; case QRMode.MODE_KANJI: return 10; default: throw new Error("mode:"+mode); }
+    } else if(type<41){
+      switch(mode){ case QRMode.MODE_NUMBER: return 14; case QRMode.MODE_ALPHA_NUM: return 13; case QRMode.MODE_8BIT_BYTE: return 16; case QRMode.MODE_KANJI: return 12; default: throw new Error("mode:"+mode); }
+    } else throw new Error("type:"+type);
+  },
+  getLostPoint:function(qrCode){
+    var moduleCount=qrCode.getModuleCount(); var lostPoint=0, row=0, col=0;
+    for(row=0;row<moduleCount;row++){ for(col=0;col<moduleCount;col++){
+      var sameCount=0; var dark=qrCode.isDark(row,col);
+      for(var r=-1;r<=1;r++){ if(row+r<0||moduleCount<=row+r) continue;
+        for(var c=-1;c<=1;c++){ if(col+c<0||moduleCount<=col+c) continue; if(r===0&&c===0) continue;
+          if(dark===qrCode.isDark(row+r,col+c)) sameCount++; } }
+      if(sameCount>5) lostPoint+=(3+sameCount-5);
+    } }
+    for(row=0;row<moduleCount-1;row++){ for(col=0;col<moduleCount-1;col++){
+      var count=0;
+      if(qrCode.isDark(row,col))count++; if(qrCode.isDark(row+1,col))count++; if(qrCode.isDark(row,col+1))count++; if(qrCode.isDark(row+1,col+1))count++;
+      if(count===0||count===4) lostPoint+=3;
+    } }
+    for(row=0;row<moduleCount;row++){ for(col=0;col<moduleCount-6;col++){
+      if(qrCode.isDark(row,col)&&!qrCode.isDark(row,col+1)&&qrCode.isDark(row,col+2)&&qrCode.isDark(row,col+3)&&qrCode.isDark(row,col+4)&&!qrCode.isDark(row,col+5)&&qrCode.isDark(row,col+6)) lostPoint+=40;
+    } }
+    for(col=0;col<moduleCount;col++){ for(row=0;row<moduleCount-6;row++){
+      if(qrCode.isDark(row,col)&&!qrCode.isDark(row+1,col)&&qrCode.isDark(row+2,col)&&qrCode.isDark(row+3,col)&&qrCode.isDark(row+4,col)&&!qrCode.isDark(row+5,col)&&qrCode.isDark(row+6,col)) lostPoint+=40;
+    } }
+    var darkCount=0;
+    for(col=0;col<moduleCount;col++) for(row=0;row<moduleCount;row++) if(qrCode.isDark(row,col)) darkCount++;
+    var ratio=Math.abs(100*darkCount/moduleCount/moduleCount-50)/5;
+    lostPoint+=ratio*10;
+    return lostPoint;
+  }
+};
+function QR8bitByte(data){ this.mode=QRMode.MODE_8BIT_BYTE; this.bytes=QR8bitByte.toUtf8Bytes(data); }
+QR8bitByte.toUtf8Bytes=function(str){
+  var bytes=[];
+  for(var i=0;i<str.length;i++){
+    var code=str.codePointAt(i);
+    if(code>0xFFFF) i++;
+    if(code<0x80){ bytes.push(code); }
+    else if(code<0x800){ bytes.push(0xC0|(code>>6), 0x80|(code&0x3F)); }
+    else if(code<0x10000){ bytes.push(0xE0|(code>>12), 0x80|((code>>6)&0x3F), 0x80|(code&0x3F)); }
+    else { bytes.push(0xF0|(code>>18), 0x80|((code>>12)&0x3F), 0x80|((code>>6)&0x3F), 0x80|(code&0x3F)); }
+  }
+  return bytes;
+};
+QR8bitByte.prototype={ getLength:function(){ return this.bytes.length; }, write:function(buffer){ for(var i=0;i<this.bytes.length;i++) buffer.put(this.bytes[i],8); } };
+function QRBitBuffer(){ this.buffer=[]; this.length=0; }
+QRBitBuffer.prototype={
+  get:function(index){ var bufIndex=Math.floor(index/8); return ((this.buffer[bufIndex]>>>(7-index%8))&1)===1; },
+  put:function(num,length){ for(var i=0;i<length;i++) this.putBit(((num>>>(length-i-1))&1)===1); },
+  getLengthInBits:function(){ return this.length; },
+  putBit:function(bit){ var bufIndex=Math.floor(this.length/8); if(this.buffer.length<=bufIndex) this.buffer.push(0); if(bit) this.buffer[bufIndex]|=(0x80>>>(this.length%8)); this.length++; }
+};
+function QRRSBlock(totalCount,dataCount){ this.totalCount=totalCount; this.dataCount=dataCount; }
+QRRSBlock.RS_BLOCK_TABLE=[
+[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],
+[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],
+[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],
+[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],
+[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],
+[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],
+[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],
+[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],
+[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],
+[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],
+[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],
+[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],
+[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],
+[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],
+[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],
+[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],
+[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],
+[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],
+[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],
+[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]
+];
+QRRSBlock.getRSBlocks=function(typeNumber,errorCorrectLevel){
+  var rsBlock=QRRSBlock.getRsBlockTable(typeNumber,errorCorrectLevel);
+  if(rsBlock===undefined) throw new Error("bad rs block");
+  var length=rsBlock.length/3; var list=[];
+  for(var i=0;i<length;i++){ var count=rsBlock[i*3+0], totalCount=rsBlock[i*3+1], dataCount=rsBlock[i*3+2]; for(var j=0;j<count;j++) list.push(new QRRSBlock(totalCount,dataCount)); }
+  return list;
+};
+QRRSBlock.getRsBlockTable=function(typeNumber,errorCorrectLevel){
+  switch(errorCorrectLevel){
+    case QRErrorCorrectLevel.L: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber-1)*4+0];
+    case QRErrorCorrectLevel.M: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber-1)*4+1];
+    case QRErrorCorrectLevel.Q: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber-1)*4+2];
+    case QRErrorCorrectLevel.H: return QRRSBlock.RS_BLOCK_TABLE[(typeNumber-1)*4+3];
+    default: return undefined;
+  }
+};
+function QRCodeModel(typeNumber,errorCorrectLevel){ this.typeNumber=typeNumber; this.errorCorrectLevel=errorCorrectLevel; this.modules=null; this.moduleCount=0; this.dataCache=null; this.dataList=[]; }
+QRCodeModel.prototype={
+  addData:function(data){ var newData=new QR8bitByte(data); this.dataList.push(newData); this.dataCache=null; },
+  isDark:function(row,col){ if(row<0||this.moduleCount<=row||col<0||this.moduleCount<=col) throw new Error(row+","+col); return this.modules[row][col]; },
+  getModuleCount:function(){ return this.moduleCount; },
+  make:function(){
+    if(this.typeNumber<1){
+      var typeNumber=1;
+      for(typeNumber=1;typeNumber<40;typeNumber++){
+        var rsBlocks=QRRSBlock.getRSBlocks(typeNumber,this.errorCorrectLevel);
+        var buffer=new QRBitBuffer(); var totalDataCount=0;
+        for(var i=0;i<rsBlocks.length;i++) totalDataCount+=rsBlocks[i].dataCount;
+        for(var x=0;x<this.dataList.length;x++){ var data=this.dataList[x]; buffer.put(data.mode,4); buffer.put(data.getLength(),QRUtil.getLengthInBits(data.mode,typeNumber)); data.write(buffer); }
+        if(buffer.getLengthInBits()<=totalDataCount*8) break;
+      }
+      this.typeNumber=typeNumber;
+    }
+    this.makeImpl(false,this.getBestMaskPattern());
+  },
+  makeImpl:function(test,maskPattern){
+    this.moduleCount=this.typeNumber*4+17;
+    this.modules=new Array(this.moduleCount);
+    for(var row=0;row<this.moduleCount;row++){ this.modules[row]=new Array(this.moduleCount); for(var col=0;col<this.moduleCount;col++) this.modules[row][col]=null; }
+    this.setupPositionProbePattern(0,0);
+    this.setupPositionProbePattern(this.moduleCount-7,0);
+    this.setupPositionProbePattern(0,this.moduleCount-7);
+    this.setupPositionAdjustPattern();
+    this.setupTimingPattern();
+    this.setupTypeInfo(test,maskPattern);
+    if(this.typeNumber>=7) this.setupTypeNumber(test);
+    if(this.dataCache===null) this.dataCache=QRCodeModel.createData(this.typeNumber,this.errorCorrectLevel,this.dataList);
+    this.mapData(this.dataCache,maskPattern);
+  },
+  setupPositionProbePattern:function(row,col){
+    for(var r=-1;r<=7;r++){ if(row+r<=-1||this.moduleCount<=row+r) continue;
+      for(var c=-1;c<=7;c++){ if(col+c<=-1||this.moduleCount<=col+c) continue;
+        if((0<=r&&r<=6&&(c===0||c===6))||(0<=c&&c<=6&&(r===0||r===6))||(2<=r&&r<=4&&2<=c&&c<=4)) this.modules[row+r][col+c]=true;
+        else this.modules[row+r][col+c]=false; } }
+  },
+  getBestMaskPattern:function(){
+    var minLostPoint=0,pattern=0;
+    for(var i=0;i<8;i++){ this.makeImpl(true,i); var lostPoint=QRUtil.getLostPoint(this); if(i===0||minLostPoint>lostPoint){ minLostPoint=lostPoint; pattern=i; } }
+    return pattern;
+  },
+  setupTimingPattern:function(){
+    for(var r=8;r<this.moduleCount-8;r++){ if(this.modules[r][6]!==null) continue; this.modules[r][6]=(r%2===0); }
+    for(var c=8;c<this.moduleCount-8;c++){ if(this.modules[6][c]!==null) continue; this.modules[6][c]=(c%2===0); }
+  },
+  setupPositionAdjustPattern:function(){
+    var pos=QRUtil.getPatternPosition(this.typeNumber);
+    for(var i=0;i<pos.length;i++){ for(var j=0;j<pos.length;j++){
+      var row=pos[i],col=pos[j]; if(this.modules[row][col]!==null) continue;
+      for(var r=-2;r<=2;r++){ for(var c=-2;c<=2;c++){
+        if(Math.abs(r)===2||Math.abs(c)===2||(r===0&&c===0)) this.modules[row+r][col+c]=true; else this.modules[row+r][col+c]=false; } }
+    } }
+  },
+  setupTypeNumber:function(test){
+    var bits=QRUtil.getBCHTypeNumber(this.typeNumber), mod;
+    for(var i=0;i<18;i++){ mod=(!test&&((bits>>i)&1)===1); this.modules[Math.floor(i/3)][i%3+this.moduleCount-8-3]=mod; }
+    for(var x=0;x<18;x++){ mod=(!test&&((bits>>x)&1)===1); this.modules[x%3+this.moduleCount-8-3][Math.floor(x/3)]=mod; }
+  },
+  setupTypeInfo:function(test,maskPattern){
+    var data=(this.errorCorrectLevel<<3)|maskPattern; var bits=QRUtil.getBCHTypeInfo(data), mod;
+    for(var v=0;v<15;v++){ mod=(!test&&((bits>>v)&1)===1);
+      if(v<6) this.modules[v][8]=mod; else if(v<8) this.modules[v+1][8]=mod; else this.modules[this.moduleCount-15+v][8]=mod; }
+    for(var h=0;h<15;h++){ mod=(!test&&((bits>>h)&1)===1);
+      if(h<8) this.modules[8][this.moduleCount-h-1]=mod; else if(h<9) this.modules[8][15-h-1+1]=mod; else this.modules[8][15-h-1]=mod; }
+    this.modules[this.moduleCount-8][8]=(!test);
+  },
+  mapData:function(data,maskPattern){
+    var inc=-1, row=this.moduleCount-1, bitIndex=7, byteIndex=0;
+    for(var col=this.moduleCount-1; col>0; col-=2){
+      if(col===6) col--;
+      while(true){
+        for(var c=0;c<2;c++){
+          if(this.modules[row][col-c]===null){
+            var dark=false;
+            if(byteIndex<data.length) dark=(((data[byteIndex]>>>bitIndex)&1)===1);
+            var mask=QRUtil.getMask(maskPattern,row,col-c);
+            if(mask) dark=!dark;
+            this.modules[row][col-c]=dark; bitIndex--;
+            if(bitIndex===-1){ byteIndex++; bitIndex=7; }
+          }
+        }
+        row+=inc;
+        if(row<0||this.moduleCount<=row){ row-=inc; inc=-inc; break; }
+      }
+    }
+  }
+};
+QRCodeModel.PAD0=0xEC; QRCodeModel.PAD1=0x11;
+QRCodeModel.createData=function(typeNumber,errorCorrectLevel,dataList){
+  var rsBlocks=QRRSBlock.getRSBlocks(typeNumber,errorCorrectLevel);
+  var buffer=new QRBitBuffer();
+  for(var i=0;i<dataList.length;i++){ var data=dataList[i]; buffer.put(data.mode,4); buffer.put(data.getLength(),QRUtil.getLengthInBits(data.mode,typeNumber)); data.write(buffer); }
+  var totalDataCount=0; for(var x=0;x<rsBlocks.length;x++) totalDataCount+=rsBlocks[x].dataCount;
+  if(buffer.getLengthInBits()>totalDataCount*8) throw new Error("code length overflow");
+  if(buffer.getLengthInBits()+4<=totalDataCount*8) buffer.put(0,4);
+  while(buffer.getLengthInBits()%8!==0) buffer.putBit(false);
+  while(true){
+    if(buffer.getLengthInBits()>=totalDataCount*8) break;
+    buffer.put(QRCodeModel.PAD0,8);
+    if(buffer.getLengthInBits()>=totalDataCount*8) break;
+    buffer.put(QRCodeModel.PAD1,8);
+  }
+  return QRCodeModel.createBytes(buffer,rsBlocks);
+};
+QRCodeModel.createBytes=function(buffer,rsBlocks){
+  var offset=0, maxDcCount=0, maxEcCount=0;
+  var dcdata=new Array(rsBlocks.length), ecdata=new Array(rsBlocks.length);
+  for(var r=0;r<rsBlocks.length;r++){
+    var dcCount=rsBlocks[r].dataCount, ecCount=rsBlocks[r].totalCount-dcCount;
+    maxDcCount=Math.max(maxDcCount,dcCount); maxEcCount=Math.max(maxEcCount,ecCount);
+    dcdata[r]=new Array(dcCount);
+    for(var i=0;i<dcdata[r].length;i++) dcdata[r][i]=0xff&buffer.buffer[i+offset];
+    offset+=dcCount;
+    var rsPoly=QRUtil.getErrorCorrectPolynomial(ecCount);
+    var rawPoly=new QRPolynomial(dcdata[r],rsPoly.getLength()-1);
+    var modPoly=rawPoly.mod(rsPoly);
+    ecdata[r]=new Array(rsPoly.getLength()-1);
+    for(var x=0;x<ecdata[r].length;x++){ var modIndex=x+modPoly.getLength()-ecdata[r].length; ecdata[r][x]=(modIndex>=0)?modPoly.get(modIndex):0; }
+  }
+  var totalCodeCount=0; for(var y=0;y<rsBlocks.length;y++) totalCodeCount+=rsBlocks[y].totalCount;
+  var data=new Array(totalCodeCount); var index=0;
+  for(var z=0;z<maxDcCount;z++) for(var s=0;s<rsBlocks.length;s++) if(z<dcdata[s].length) data[index++]=dcdata[s][z];
+  for(var xx=0;xx<maxEcCount;xx++) for(var t=0;t<rsBlocks.length;t++) if(xx<ecdata[t].length) data[index++]=ecdata[t][xx];
+  return data;
+};
+function generateQRMatrix(text){
+  var qr = new QRCodeModel(-1, QRErrorCorrectLevel.M);
+  qr.addData(text);
+  qr.make();
+  var n = qr.getModuleCount();
+  var mat = [];
+  for(var r=0;r<n;r++){ var row=[]; for(var c=0;c<n;c++) row.push(qr.isDark(r,c)); mat.push(row); }
+  return mat;
+}
+global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
+})(window);
+
+/* ============================================================
+   منطق التطبيق
+   ============================================================ */
+(function(){
+  const $ = id => document.getElementById(id);
+
+  const videoFileInput = $('videoFile');
+  const dropLabel = $('dropLabel');
+  const dropText = $('dropText');
+  const loadBtn = $('loadBtn');
+  const errMsg = $('errMsg');
+
+  const formCard = $('formCard');
+  const playerSection = $('playerSection');
+  const video = $('video');
+  const stage = $('stage');
+  const previewCanvas = $('previewCanvas');
+  const videoErrorBox = $('videoErrorBox');
+  const videoErrorDetail = $('videoErrorDetail');
+  const stageInfo = $('stageInfo');
+  const fsBtn = $('fsBtn');
+  const editBtn = $('editBtn');
+  const downloadBtn = $('downloadBtn');
+  const recProgress = $('recProgress');
+  const recLabel = $('recLabel');
+  const recPercent = $('recPercent');
+  const recBarFg = $('recBarFg');
+  const workCanvas = $('workCanvas');
+
+  const playPauseBtn = $('playPauseBtn');
+  const seekRange = $('seekRange');
+  const clockLabel = $('clockLabel');
+  const muteBtn = $('muteBtn');
+
+  const sizeWarnEl = $('sizeWarn');
+  const trimPanel = $('trimPanel');
+  const quickPreviewBtn = $('quickPreviewBtn');
+  const previewModalBackdrop = $('previewModalBackdrop');
+  const quickPreviewVideo = $('quickPreviewVideo');
+  const previewModalClose = $('previewModalClose');
+
+  let objectUrl = null;
+  let offsetSeconds = 0;
+  let currentMeta = { name:'', series:'', url:'' };
+  let qrMatrixCache = null;
+  let tickerMetrics = null;
+  let previewCtx = previewCanvas.getContext('2d');
+  let previewRAF = null;
+  let seeking = false;
+  let originalFileExt = 'webm';   // امتداد الملف الأصلي — الصيغة التي سيُحفظ بها الملف الناتج
+  let originalFileSize = 0;
+  let trimStart = 0;              // بداية نطاق القص بالثواني (داخل الملف المرفوع)
+  let trimEnd = 0;                // نهاية نطاق القص بالثواني
+  let tickerStyle = { position:'bottom', color:'gold', size:'md', showQR:true, showSeries:true };
+
+  const COLOR_SCHEMES = {
+    gold:  { base:'20,13,7',  accent:'#d9bd82', title:'#fbf3e0', boxFill:'rgba(184,147,74,0.28)', boxStroke:'#d9bd82', qrDark:'#2b1d12' },
+    blue:  { base:'6,14,26',  accent:'#8ec9f0', title:'#eef6ff', boxFill:'rgba(60,120,180,0.30)', boxStroke:'#8ec9f0', qrDark:'#0b1a26' },
+    red:   { base:'26,6,6',   accent:'#f0a5a5', title:'#fff0f0', boxFill:'rgba(180,50,50,0.30)',  boxStroke:'#f0a5a5', qrDark:'#260808' },
+    green: { base:'6,20,12',  accent:'#9fd9ab', title:'#effbf1', boxFill:'rgba(46,130,70,0.30)',  boxStroke:'#9fd9ab', qrDark:'#0a1f10' }
+  };
+
+  function getExtension(filename){
+    const m = /\.([a-z0-9]+)$/i.exec(filename || '');
+    return m ? m[1].toLowerCase() : 'webm';
+  }
+
+  function formatBytes(bytes){
+    if(bytes >= 1024*1024*1024) return (bytes/1024/1024/1024).toFixed(2) + ' جيجابايت';
+    return Math.round(bytes/1024/1024) + ' ميجابايت';
+  }
+
+  function tickerBarHeightPx(h){
+    const factor = tickerStyle.size === 'sm' ? 0.09 : (tickerStyle.size === 'lg' ? 0.16 : 0.12);
+    return Math.max(40, h * factor);
+  }
+
+  videoFileInput.addEventListener('change', () => {
+    const f = videoFileInput.files[0];
+    if(f){
+      dropText.textContent = '✓ ' + f.name;
+      dropLabel.classList.add('has-file');
+      originalFileExt = getExtension(f.name);
+      originalFileSize = f.size;
+
+      if(f.size > 500*1024*1024){
+        sizeWarnEl.textContent = 'هذا الملف كبير جدًا (' + formatBytes(f.size) + '). المعالجة داخل المتصفح تستهلك ذاكرة مضاعفة (أثناء التسجيل، ثم عند تحويل الصيغة)، وقد يتوقف المتصفح عن الاستجابة — خصوصًا على الجوال. يُفضَّل تقصير المقطع لاحقًا عبر "نطاق القص"، أو استخدام ملف أصغر.';
+        sizeWarnEl.style.display = 'block';
+      } else if(f.size > 150*1024*1024){
+        sizeWarnEl.textContent = 'حجم الملف (' + formatBytes(f.size) + ') متوسط إلى كبير؛ قد تستغرق المعالجة عدة دقائق. يمكنك استخدام "نطاق القص" بعد التحميل لتصدير جزء أقصر فقط.';
+        sizeWarnEl.style.display = 'block';
+      } else {
+        sizeWarnEl.style.display = 'none';
+      }
+    } else {
+      dropText.textContent = 'اضغط هنا لاختيار الفيديو من جهازك';
+      dropLabel.classList.remove('has-file');
+      originalFileExt = 'webm';
+      originalFileSize = 0;
+      sizeWarnEl.style.display = 'none';
+    }
+  });
+
+  function showError(msg){ errMsg.textContent = msg; errMsg.style.display = 'block'; }
+  function clearError(){ errMsg.style.display = 'none'; }
+
+  function fmtTime(totalSeconds){
+    totalSeconds = Math.max(0, Math.floor(totalSeconds));
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    const pad = n => String(n).padStart(2,'0');
+    return pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
+  function fmtClock(totalSeconds){
+    if(!isFinite(totalSeconds)) return '00:00';
+    totalSeconds = Math.max(0, Math.floor(totalSeconds));
+    const m = Math.floor(totalSeconds/60);
+    const s = totalSeconds%60;
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  /* -------- ترميز عربي وأرقام: القراءة من اليمين قد تعكس ترتيب الأرقام
+     في سياق نص RTL عند رسمه بـ canvas بدون ضبط الاتجاه بعناية. لتفادي
+     أي التباس، نرسم عناصر الشريط دائمًا بترتيب ثابت من اليسار لليمين
+     ونستخدم direction='rtl' فقط أثناء رسم النص العربي نفسه لضمان تشكيل
+     الحروف الصحيح، مع تثبيت نقطة الإرساء يدويًا. -------- */
+
+  function measureTicker(ctx, barH){
+    const fontSeries = `700 ${Math.round(barH*0.20)}px ${bodyFontStack()}`;
+    const fontTitle   = `700 ${Math.round(barH*0.40)}px ${displayFontStack()}`;
+    const fontTime    = `900 ${Math.round(barH*0.34)}px "Courier New", monospace`;
+
+    const wantSeries = !!(currentMeta.series && tickerStyle.showSeries);
+    const wantQR = !!(currentMeta.url && tickerStyle.showQR && qrMatrixCache);
+
+    ctx.direction = 'rtl';
+    ctx.font = fontTitle;
+    const titleW = ctx.measureText(currentMeta.name || '').width;
+
+    let seriesW = 0;
+    if(wantSeries){
+      ctx.font = fontSeries;
+      seriesW = ctx.measureText(currentMeta.series).width;
+    }
+
+    ctx.direction = 'ltr';
+    ctx.font = fontTime;
+    const timeW = ctx.measureText('00:00:00').width;
+
+    const gap = barH*0.42;
+    const smallGap = barH*0.18;
+    const qrSize = wantQR ? barH*0.98 : 0;
+    const timeBoxPadX = barH*0.26;
+    const timeBoxW = timeW + timeBoxPadX*2;
+    const timeBoxH = barH*0.58;
+
+    let blockWidth = gap;
+    if(qrSize){ blockWidth += qrSize + gap; }
+    if(seriesW){ blockWidth += seriesW + smallGap; }
+    blockWidth += titleW + gap;
+    blockWidth += timeBoxW + gap*1.6;
+
+    tickerMetrics = {
+      barH, fontSeries, fontTitle, fontTime,
+      titleW, seriesW, qrSize, timeBoxW, timeBoxH, timeBoxPadX,
+      gap, smallGap, blockWidth
+    };
+  }
+
+  function bodyFontStack(){ return "'Tajawal','Segoe UI',Tahoma,Arial,sans-serif"; }
+  function displayFontStack(){ return "Amiri,'Traditional Arabic','Scheherazade New',Georgia,serif"; }
+
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function drawQRAt(ctx, x, y, size, scheme){
+    if(!qrMatrixCache) return;
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, x, y, size, size, size*0.05);
+    ctx.fill();
+    const n = qrMatrixCache.length;
+    const inset = size*0.09;
+    const cell = (size - inset*2)/n;
+    ctx.fillStyle = scheme.qrDark;
+    for(let r=0;r<n;r++){
+      for(let c=0;c<n;c++){
+        if(qrMatrixCache[r][c]) ctx.fillRect(x+inset+c*cell, y+inset+r*cell, Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+  }
+
+  function drawBlock(ctx, startX, barY, timeText, scheme){
+    const m = tickerMetrics;
+    let x = startX + m.gap;
+    const midY = barY + m.barH/2;
+
+    if(m.qrSize){
+      drawQRAt(ctx, x, midY - m.qrSize/2, m.qrSize, scheme);
+      x += m.qrSize + m.gap;
+    }
+
+    ctx.textBaseline = 'alphabetic';
+    if(m.seriesW){
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'left';
+      ctx.font = m.fontSeries;
+      ctx.fillStyle = scheme.accent;
+      ctx.fillText(currentMeta.series, x, midY + m.barH*0.30);
+      x += m.seriesW + m.smallGap;
+    }
+
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'left';
+    ctx.font = m.fontTitle;
+    ctx.fillStyle = scheme.title;
+    ctx.fillText(currentMeta.name || '', x, midY + m.barH*0.32);
+    x += m.titleW + m.gap;
+
+    const boxY = midY - m.timeBoxH/2;
+    ctx.fillStyle = scheme.boxFill;
+    roundRect(ctx, x, boxY, m.timeBoxW, m.timeBoxH, m.timeBoxH*0.22);
+    ctx.fill();
+    ctx.strokeStyle = scheme.boxStroke;
+    ctx.lineWidth = Math.max(1, m.barH*0.02);
+    roundRect(ctx, x, boxY, m.timeBoxW, m.timeBoxH, m.timeBoxH*0.22);
+    ctx.stroke();
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'left';
+    ctx.font = m.fontTime;
+    ctx.fillStyle = scheme.title;
+    ctx.fillText(timeText, x + m.timeBoxPadX, midY + m.barH*0.13);
+
+    return startX + m.blockWidth;
+  }
+
+  function drawTickerBar(ctx, w, h, scrollSeconds, timeText){
+    if(!tickerMetrics) return;
+    const m = tickerMetrics;
+    const scheme = COLOR_SCHEMES[tickerStyle.color] || COLOR_SCHEMES.gold;
+    const top = tickerStyle.position === 'top';
+    const barY = top ? 0 : h - m.barH;
+
+    const grad = ctx.createLinearGradient(0, barY, 0, barY + m.barH);
+    if(top){
+      grad.addColorStop(0, `rgba(${scheme.base},0.95)`);
+      grad.addColorStop(0.55, `rgba(${scheme.base},0.82)`);
+      grad.addColorStop(1, `rgba(${scheme.base},0)`);
+    } else {
+      grad.addColorStop(0, `rgba(${scheme.base},0)`);
+      grad.addColorStop(0.45, `rgba(${scheme.base},0.82)`);
+      grad.addColorStop(1, `rgba(${scheme.base},0.95)`);
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, barY, w, m.barH);
+
+    const speed = Math.max(50, w*0.10); // px/sec — يتحرك من اليسار إلى اليمين
+    const bw = m.blockWidth;
+    let scrollX = (scrollSeconds*speed) % bw;
+    if(scrollX < 0) scrollX += bw;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, barY, w, m.barH);
+    ctx.clip();
+    let x = scrollX - bw;
+    while(x < w){
+      drawBlock(ctx, x, barY, timeText, scheme);
+      x += bw;
+    }
+    ctx.restore();
+  }
+
+  function drawQRToCanvas(canvas, matrix, sizePx){
+    canvas.width = sizePx; canvas.height = sizePx;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,sizePx,sizePx);
+    const n = matrix.length;
+    const cell = sizePx / n;
+    ctx.fillStyle = '#2b1d12';
+    for(let r=0;r<n;r++){
+      for(let c=0;c<n;c++){
+        if(matrix[r][c]) ctx.fillRect(Math.floor(c*cell), Math.floor(r*cell), Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+  }
+
+  function renderPreviewFrame(){
+    if(!previewCanvas.width) return;
+    previewCtx.drawImage(video, 0, 0, previewCanvas.width, previewCanvas.height);
+    const timeText = fmtTime(offsetSeconds + video.currentTime);
+    drawTickerBar(previewCtx, previewCanvas.width, previewCanvas.height, video.currentTime, timeText);
+  }
+
+  function previewLoop(){
+    renderPreviewFrame();
+    updateControlsUI();
+    if(!video.paused && !video.ended){
+      previewRAF = requestAnimationFrame(previewLoop);
+    } else {
+      previewRAF = null;
+    }
+  }
+
+  function startPreviewLoop(){
+    if(previewRAF) cancelAnimationFrame(previewRAF);
+    previewRAF = requestAnimationFrame(previewLoop);
+  }
+
+  function updateControlsUI(){
+    playPauseBtn.textContent = video.paused ? '▶' : '⏸';
+    if(!seeking && video.duration){
+      seekRange.value = String(Math.round((video.currentTime/video.duration)*1000));
+    }
+    clockLabel.textContent = fmtClock(video.currentTime) + ' / ' + fmtClock(video.duration);
+    muteBtn.textContent = video.muted ? '🔇' : '🔊';
+  }
+
+  playPauseBtn.addEventListener('click', () => {
+    if(video.paused){ video.play(); } else { video.pause(); }
+  });
+  video.addEventListener('play', startPreviewLoop);
+  video.addEventListener('pause', () => { renderPreviewFrame(); updateControlsUI(); });
+  video.addEventListener('ended', () => { updateControlsUI(); });
+
+  seekRange.addEventListener('input', () => {
+    seeking = true;
+    if(video.duration){
+      video.currentTime = (parseFloat(seekRange.value)/1000) * video.duration;
+      renderPreviewFrame();
+      updateControlsUI();
+    }
+  });
+  seekRange.addEventListener('change', () => { seeking = false; });
+
+  muteBtn.addEventListener('click', () => { video.muted = !video.muted; updateControlsUI(); });
+
+  function bufContainsAscii(u8, needle){
+    const n = needle.length, len = u8.length - n;
+    outer: for(let i=0;i<=len;i++){
+      for(let j=0;j<n;j++){ if(u8[i+j]!==needle.charCodeAt(j)) continue outer; }
+      return true;
+    }
+    return false;
+  }
+
+  async function sniffCodecHint(file){
+    try{
+      const chunkSize = 4*1024*1024;
+      const head = new Uint8Array(await file.slice(0, Math.min(chunkSize, file.size)).arrayBuffer());
+      let tail = new Uint8Array(0);
+      if(file.size > chunkSize){
+        tail = new Uint8Array(await file.slice(Math.max(0, file.size-chunkSize)).arrayBuffer());
+      }
+      const hasHEVC = bufContainsAscii(head,'hvc1')||bufContainsAscii(head,'hev1')||bufContainsAscii(head,'dvhe')||bufContainsAscii(head,'dvh1')
+                    ||bufContainsAscii(tail,'hvc1')||bufContainsAscii(tail,'hev1')||bufContainsAscii(tail,'dvhe')||bufContainsAscii(tail,'dvh1');
+      if(hasHEVC) return 'hevc';
+      const hasAVC = bufContainsAscii(head,'avc1')||bufContainsAscii(tail,'avc1');
+      if(hasAVC) return 'avc';
+      const hasVP9 = bufContainsAscii(head,'vp09')||bufContainsAscii(tail,'vp09')||bufContainsAscii(head,'VP90')||bufContainsAscii(tail,'VP90');
+      if(hasVP9) return 'vp9';
+      const hasAV1 = bufContainsAscii(head,'av01')||bufContainsAscii(tail,'av01');
+      if(hasAV1) return 'av1';
+      return 'unknown';
+    }catch(e){ return 'unknown'; }
+  }
+
+  video.addEventListener('error', async () => {
+    const err = video.error;
+    let baseDetail = '';
+    if(err){
+      const map = {1:'تم إلغاء تحميل الملف.',2:'حدث خطأ في الشبكة أثناء القراءة.',3:'تعذّر فك ترميز الفيديو (Decode error) — قد يكون الملف تالفًا.'};
+      baseDetail = map[err.code] || '';
+    }
+    videoErrorDetail.textContent = 'جارٍ فحص نوع ترميز الملف…';
+    videoErrorBox.style.display = 'block';
+    downloadBtn.disabled = true;
+    stageInfo.textContent = '';
+
+    if(err && err.code === 4){
+      const file = videoFileInput.files[0];
+      const hint = file ? await sniffCodecHint(file) : 'unknown';
+      if(hint === 'hevc'){
+        videoErrorDetail.innerHTML = 'هذا الملف مرمَّز بصيغة <b>HEVC / H.265</b> — وهي الصيغة التي تسجّل بها كثير من هواتف أندرويد (خاصية "الفيديو عالي الكفاءة"). متصفح Chrome على أندرويد لا يدعم تشغيل HEVC إطلاقًا (يدعمها Safari على آيفون فقط).<br><br>' +
+          '<b>الحل:</b> من إعدادات كاميرا الهاتف، ابحث عن خيار صيغة الفيديو (غالبًا داخل "إعدادات متقدّمة" أو "الفيديو عالي الكفاءة") وبدّله إلى <b>H.264 / "الأكثر توافقًا"</b>، ثم أعد تصوير أو تصدير المقطع. أو استخدم تطبيق تحويل فيديو من المتجر لتحويل هذا الملف إلى H.264 أو WebM.';
+      } else if(hint === 'avc'){
+        videoErrorDetail.textContent = 'الملف مرمَّز بصيغة H.264 القياسية، لكن هذا المتصفح تحديدًا لا يملك مُفكِّك الترميز اللازم (شائع في متصفحات Chromium مفتوحة المصدر على لينكس، أو نسخة متصفح محدودة الترخيص). جرّب متصفح Chrome أو Edge الرسميّين، أو حوّل الملف إلى WebM (VP9).';
+      } else if(hint === 'vp9' || hint === 'av1'){
+        videoErrorDetail.textContent = (baseDetail || 'تعذّر تشغيل الملف رغم أن ترميزه (VP9/AV1) يُفترض أنه مدعوم على نطاق واسع.') + ' قد يكون الملف تالفًا أو غير مكتمل — جرّب إعادة تصديره.';
+      } else {
+        videoErrorDetail.textContent = 'تعذّر التعرف على ترميز الملف تلقائيًا. جرّب تحويله إلى MP4 (H.264) أو WebM (VP9) عبر أي محوّل فيديو، أو افتح الصفحة في متصفح آخر.';
+      }
+    } else {
+      videoErrorDetail.textContent = baseDetail || 'قد تكون صيغة الملف غير مدعومة في هذا المتصفح.';
+    }
+  });
+
+  video.addEventListener('loadedmetadata', () => {
+    videoErrorBox.style.display = 'none';
+    downloadBtn.disabled = false;
+    previewCanvas.width = video.videoWidth || 640;
+    previewCanvas.height = video.videoHeight || 360;
+    measureTicker(previewCtx, tickerBarHeightPx(previewCanvas.height));
+    renderPreviewFrame();
+    updateControlsUI();
+    initTrimUI(video.duration || 0);
+  });
+  video.addEventListener('loadeddata', () => { renderPreviewFrame(); });
+  video.addEventListener('seeked', () => { renderPreviewFrame(); updateControlsUI(); });
+
+  /* ============================================================
+     نطاق القص — طريقتان: مؤشرات سحب، أو إدخال يدوي دقيق (س:د:ث)
+     مع معاينة فورية لكل تعديل على اللقطة نفسها في الكانفاس أعلاه.
+     ============================================================ */
+  function secondsToHMS(sec){
+    sec = Math.max(0, sec);
+    const h = Math.floor(sec/3600);
+    const m = Math.floor((sec%3600)/60);
+    const s = sec%60;
+    return { h, m, s };
+  }
+  function hmsToSeconds(h, m, s){ return (h*3600) + (m*60) + s; }
+
+  function fmtTimeDecimal(sec){
+    sec = Math.max(0, sec);
+    const h = Math.floor(sec/3600);
+    const m = Math.floor((sec%3600)/60);
+    const s = sec%60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + (s<10?'0':'') + s.toFixed(1);
+  }
+
+  function setTrimFieldsFromSeconds(which, sec){
+    const { h, m, s } = secondsToHMS(sec);
+    $('trim'+which+'H').value = h;
+    $('trim'+which+'M').value = m;
+    $('trim'+which+'S').value = Math.round(s*10)/10;
+    $('trim'+which+'Range').value = sec;
+  }
+
+  function readTrimFieldsToSeconds(which){
+    const h = parseFloat($('trim'+which+'H').value) || 0;
+    const m = parseFloat($('trim'+which+'M').value) || 0;
+    const s = parseFloat($('trim'+which+'S').value) || 0;
+    return hmsToSeconds(h, m, s);
+  }
+
+  function clampTrim(){
+    const dur = video.duration || 0;
+    trimStart = Math.min(Math.max(0, trimStart), dur);
+    trimEnd = Math.min(Math.max(0, trimEnd), dur);
+    if(trimEnd <= trimStart){ trimEnd = Math.min(dur, trimStart + 0.5); }
+  }
+
+  function updateTrimReadouts(){
+    $('trimStartReadout').textContent = fmtTimeDecimal(trimStart);
+    $('trimEndReadout').textContent = fmtTimeDecimal(trimEnd);
+    $('trimDurationReadout').textContent = 'مدة المقطع المحدد: ' + fmtTimeDecimal(Math.max(0, trimEnd-trimStart));
+  }
+
+  function seekPreviewTo(sec){
+    try{ video.currentTime = Math.max(0, Math.min(video.duration||sec, sec)); }catch(e){}
+  }
+
+  function initTrimUI(duration){
+    trimStart = 0;
+    trimEnd = duration;
+    $('trimStartRange').max = duration;
+    $('trimEndRange').max = duration;
+    setTrimFieldsFromSeconds('Start', 0);
+    setTrimFieldsFromSeconds('End', duration);
+    updateTrimReadouts();
+    trimPanel.style.display = duration > 0 ? 'block' : 'none';
+  }
+
+  ['H','M','S'].forEach(suffix => {
+    $('trimStart'+suffix).addEventListener('input', () => {
+      trimStart = readTrimFieldsToSeconds('Start');
+      clampTrim();
+      $('trimStartRange').value = trimStart;
+      updateTrimReadouts();
+      seekPreviewTo(trimStart);
+    });
+    $('trimEnd'+suffix).addEventListener('input', () => {
+      trimEnd = readTrimFieldsToSeconds('End');
+      clampTrim();
+      $('trimEndRange').value = trimEnd;
+      updateTrimReadouts();
+      seekPreviewTo(trimEnd);
+    });
+  });
+
+  $('trimStartRange').addEventListener('input', () => {
+    trimStart = parseFloat($('trimStartRange').value) || 0;
+    clampTrim();
+    setTrimFieldsFromSeconds('Start', trimStart);
+    updateTrimReadouts();
+    seekPreviewTo(trimStart);
+  });
+  $('trimEndRange').addEventListener('input', () => {
+    trimEnd = parseFloat($('trimEndRange').value) || 0;
+    clampTrim();
+    setTrimFieldsFromSeconds('End', trimEnd);
+    updateTrimReadouts();
+    seekPreviewTo(trimEnd);
+  });
+
+  $('trimStartUseCurrent').addEventListener('click', () => {
+    trimStart = video.currentTime;
+    clampTrim();
+    setTrimFieldsFromSeconds('Start', trimStart);
+    updateTrimReadouts();
+  });
+  $('trimEndUseCurrent').addEventListener('click', () => {
+    trimEnd = video.currentTime;
+    clampTrim();
+    setTrimFieldsFromSeconds('End', trimEnd);
+    updateTrimReadouts();
+  });
+
+  $('trimReset').addEventListener('click', () => {
+    initTrimUI(video.duration || 0);
+    seekPreviewTo(0);
+  });
+
+  loadBtn.addEventListener('click', () => {
+    clearError();
+    const file = videoFileInput.files[0];
+    const name = $('videoName').value.trim();
+    const series = $('seriesName').value.trim();
+    const url = $('originalUrl').value.trim();
+
+    if(!file){ showError('الرجاء اختيار ملف فيديو أولًا.'); return; }
+    if(!name){ showError('الرجاء إدخال اسم الفيديو / الحلقة.'); return; }
+
+    const h = parseInt($('offH').value || 0, 10) || 0;
+    const m = parseInt($('offM').value || 0, 10) || 0;
+    const s = parseInt($('offS').value || 0, 10) || 0;
+    offsetSeconds = h*3600 + m*60 + s;
+    currentMeta = { name, series, url };
+
+    tickerStyle = {
+      position: $('tickerPosition').value,
+      color: $('tickerColor').value,
+      size: $('tickerSize').value,
+      showQR: $('tickerShowQR').checked,
+      showSeries: $('tickerShowSeries').checked
+    };
+
+    qrMatrixCache = null;
+    if(url){
+      try{ qrMatrixCache = QRCodeGenerator.generateQRMatrix(url); }
+      catch(e){
+        qrMatrixCache = null;
+        showError('تعذّر إنشاء رمز QR لهذا الرابط (قد يكون طويلًا جدًا). سيُعرض الشريط بدونه.');
+      }
+    }
+
+    videoErrorBox.style.display = 'none';
+    if(objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = URL.createObjectURL(file);
+    video.src = objectUrl;
+    video.load();
+
+    stageInfo.textContent = 'يبدأ العداد من ' + fmtTime(offsetSeconds) + ' من الفيديو الأصلي — سيُحفظ الملف الناتج بصيغة ' + originalFileExt.toUpperCase() + ' (نفس صيغة الملف الأصلي).';
+
+    formCard.style.display = 'none';
+    playerSection.style.display = 'block';
+    video.play().catch(()=>{ /* قد يحتاج المستخدم للضغط على تشغيل يدويًا */ });
+  });
+
+  fsBtn.addEventListener('click', () => {
+    if(!document.fullscreenElement){ stage.requestFullscreen?.() || stage.webkitRequestFullscreen?.(); }
+    else { document.exitFullscreen?.() || document.webkitExitFullscreen?.(); }
+  });
+
+  editBtn.addEventListener('click', () => {
+    video.pause();
+    if(previewRAF) cancelAnimationFrame(previewRAF);
+    playerSection.style.display = 'none';
+    formCard.style.display = 'block';
+  });
+
+  /* ============================================================
+     تحميل الفيديو الجديد — نفس دالة الرسم بالضبط المستخدمة في
+     المعاينة الحية، بلا أي فرق بينها وبين الملف المُصدَّر.
+     ============================================================ */
+  let isRecording = false;
+  let isConverting = false;
+
+  function pickMimeType(){
+    const candidates = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+    for(const c of candidates){
+      if(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) return c;
+    }
+    return '';
+  }
+
+  function sanitizeFilename(name){
+    return (name || 'فيديو').replace(/[\\/:*?"<>|]+/g,'-').trim().slice(0,120) || 'فيديو';
+  }
+
+  /* ============================================================
+     تحويل الصيغة النهائية لتطابق صيغة الملف الأصلي
+     ------------------------------------------------------------
+     المسجّل (MediaRecorder) لا ينتج إلا WebM أو MP4/H.264 حسب دعم
+     المتصفح، بصرف النظر عن صيغة الملف الذي رفعه المستخدم. لإعادة
+     الملف بنفس صيغته الأصلية نستخدم FFmpeg مترجمًا إلى WebAssembly
+     (يعمل بالكامل داخل المتصفح، دون رفع أي ملف لأي خادم)، فقط
+     لإجراء خطوة "إعادة التغليف/الترميز" من WebM إلى الصيغة الأصلية.
+     هذه المكتبة (~25 ميجا) تُحمَّل من الإنترنت عند أول استخدام لهذه
+     الخطوة فقط ثم تبقى محفوظة في ذاكرة التخزين المؤقت للمتصفح؛ كل
+     خطوات التسجيل والمعاينة وتوليد QR تبقى تعمل دون اتصال كما كانت.
+     ============================================================ */
+  let ffmpegInstance = null;
+
+  function loadScriptOnce(src){
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-ffmpeg-loader="1"]');
+      if(existing){ existing.addEventListener('load', resolve); existing.addEventListener('error', () => reject(new Error('تعذّر تحميل مكتبة التحويل'))); if(window.FFmpeg) resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src; s.setAttribute('data-ffmpeg-loader','1');
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('تعذّر تحميل مكتبة التحويل — تحقّق من اتصالك بالإنترنت.'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function getFFmpeg(onProgress){
+    if(!ffmpegInstance){
+      if(!window.FFmpeg){
+        await loadScriptOnce('https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
+      }
+      const { createFFmpeg } = window.FFmpeg;
+      ffmpegInstance = createFFmpeg({
+        log:false,
+        corePath:'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+      });
+      await ffmpegInstance.load();
+    }
+    if(onProgress) ffmpegInstance.setProgress(onProgress);
+    return ffmpegInstance;
+  }
+
+  // خطط الترميز لكل صيغة حاوية مستهدفة (تُقرأ من امتداد الملف الأصلي)
+  function ffmpegPlanFor(ext){
+    switch(ext){
+      case 'mp4': case 'm4v':
+        return { args:['-c:v','libx264','-preset','veryfast','-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart'], mime:'video/mp4' };
+      case 'mov':
+        return { args:['-c:v','libx264','-preset','veryfast','-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k'], mime:'video/quicktime' };
+      case 'mkv':
+        return { args:['-c:v','libx264','-preset','veryfast','-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k'], mime:'video/x-matroska' };
+      case 'avi':
+        return { args:['-c:v','mpeg4','-qscale:v','4','-c:a','libmp3lame','-b:a','192k'], mime:'video/x-msvideo' };
+      case 'ogv': case 'ogg':
+        return { args:['-c:v','libtheora','-q:v','7','-c:a','libvorbis','-q:a','5'], mime:'video/ogg' };
+      case 'flv':
+        return { args:['-c:v','flv','-c:a','libmp3lame','-b:a','160k'], mime:'video/x-flv' };
+      case '3gp':
+        return { args:['-c:v','mpeg4','-s','640x480','-c:a','aac','-b:a','96k'], mime:'video/3gpp' };
+      case 'wmv':
+        return { args:['-c:v','wmv2','-c:a','wmav2'], mime:'video/x-ms-wmv' };
+      case 'webm':
+        return { args:[], mime:'video/webm', skip:true };
+      default:
+        return null; // صيغة غير مدعومة للتحويل — سيُستخدم بديل MP4
+    }
+  }
+
+  function triggerDownload(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  async function convertToOriginalFormat(webmBlob, recordedExt, baseName){
+    const plan = ffmpegPlanFor(originalFileExt);
+
+    // إن كانت صيغة الملف الأصلي هي نفسها الناتجة من التسجيل، أو غير معروفة، لا حاجة لتحويل
+    if(!plan || plan.skip || originalFileExt === recordedExt){
+      const finalExt = recordedExt;
+      triggerDownload(webmBlob, baseName + '.' + finalExt);
+      return { converted:false };
+    }
+
+    isConverting = true;
+    recProgress.style.display = 'block';
+    recLabel.textContent = 'جارٍ تحضير أداة تحويل الصيغة (أول مرة فقط)…';
+    recBarFg.style.width = '0%';
+    recPercent.textContent = '0%';
+
+    try{
+      const ffmpeg = await getFFmpeg(({ ratio }) => {
+        const pct = Math.max(0, Math.min(100, Math.round((ratio || 0) * 100)));
+        recBarFg.style.width = pct + '%';
+        recPercent.textContent = pct + '%';
+      });
+      recLabel.textContent = 'جارٍ تحويل الصيغة إلى ' + originalFileExt.toUpperCase() + '…';
+
+      const { fetchFile } = window.FFmpeg;
+      const inputName = 'input.' + recordedExt;
+      const outputName = 'output.' + originalFileExt;
+
+      ffmpeg.FS('writeFile', inputName, await fetchFile(webmBlob));
+      await ffmpeg.run('-i', inputName, ...plan.args, outputName);
+      const data = ffmpeg.FS('readFile', outputName);
+
+      try{ ffmpeg.FS('unlink', inputName); }catch(e){}
+      try{ ffmpeg.FS('unlink', outputName); }catch(e){}
+
+      if(!data || !data.length) throw new Error('ناتج التحويل فارغ');
+
+      const outBlob = new Blob([data.buffer], { type: plan.mime });
+      triggerDownload(outBlob, baseName + '.' + originalFileExt);
+      recLabel.textContent = 'تم التحويل والتحميل بصيغة ' + originalFileExt.toUpperCase() + ' ✓';
+      recBarFg.style.width = '100%';
+      recPercent.textContent = '100%';
+      return { converted:true };
+    }catch(err){
+      // تعذّر التحويل: نوفّر النسخة الوسيطة بدل فقدان النتيجة كليًا
+      triggerDownload(webmBlob, baseName + '.' + recordedExt);
+      showError('تعذّر تحويل الملف إلى صيغة ' + originalFileExt.toUpperCase() + ' (' + (err.message || 'خطأ غير معروف') + '). تم تنزيل نسخة بصيغة ' + recordedExt.toUpperCase() + ' بدلًا من ذلك، ويمكنك تحويلها لاحقًا بأي محوّل فيديو.');
+      return { converted:false, error:err };
+    }finally{
+      isConverting = false;
+    }
+  }
+
+  window.addEventListener('beforeunload', (e) => {
+    if(isRecording || isConverting){
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  function setControlsDisabled(disabled){
+    downloadBtn.disabled = disabled;
+    quickPreviewBtn.disabled = disabled;
+    editBtn.disabled = disabled;
+    fsBtn.disabled = disabled;
+    playPauseBtn.disabled = disabled;
+    seekRange.disabled = disabled;
+  }
+
+  /* ============================================================
+     recordSegment: يسجّل مقطعًا من [segStart, segEnd] من الفيديو
+     الحالي (بنفس شاشة الرسم المستخدمة في المعاينة الحية تمامًا)
+     ويُعيد Promise<{blob, recordedExt}>. تُستخدم هذه الدالة نفسها
+     في كل من "تحميل الفيديو الجديد" (النطاق الكامل أو المقصوص)
+     و"المعاينة السريعة" (٥ ثوانٍ فقط)، لضمان تطابق النتيجتين.
+     ============================================================ */
+  function recordSegment({ segStart, segEnd, bitsPerSecond, labelPrefix }){
+    return new Promise((resolve, reject) => {
+      if(!video.videoWidth){ reject(new Error('لم يتم تحميل الفيديو بعد.')); return; }
+      if(!(workCanvas.captureStream && window.MediaRecorder)){
+        reject(new Error('متصفحك لا يدعم تسجيل الفيديو محليًا (captureStream/MediaRecorder). جرّب متصفح Chrome أو Edge حديثًا.'));
+        return;
+      }
+      const mimeType = pickMimeType();
+      if(!mimeType){ reject(new Error('متصفحك لا يدعم أي صيغة فيديو مناسبة للتسجيل.')); return; }
+
+      workCanvas.width = video.videoWidth;
+      workCanvas.height = video.videoHeight;
+      const ctx = workCanvas.getContext('2d');
+      measureTicker(ctx, tickerBarHeightPx(workCanvas.height));
+
+      let audioTrack = null;
+      try{
+        const vs = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+        const atracks = vs.getAudioTracks();
+        if(atracks.length) audioTrack = atracks[0];
+      }catch(e){ /* بدون صوت إن تعذّر */ }
+
+      const canvasStream = workCanvas.captureStream(30);
+      const tracks = [...canvasStream.getVideoTracks()];
+      if(audioTrack) tracks.push(audioTrack);
+      const combined = new MediaStream(tracks);
+
+      const chunks = [];
+      let recorder;
+      try{
+        recorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: bitsPerSecond });
+      }catch(e){ reject(e); return; }
+      recorder.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+      recorder.onerror = e => reject(e.error || new Error('خطأ أثناء التسجيل'));
+
+      let rafId = null;
+      let stopped = false;
+      const totalSpan = Math.max(0.05, segEnd - segStart);
+
+      function drawLoop(){
+        ctx.drawImage(video, 0, 0, workCanvas.width, workCanvas.height);
+        const timeText = fmtTime(offsetSeconds + video.currentTime);
+        drawTickerBar(ctx, workCanvas.width, workCanvas.height, video.currentTime, timeText);
+        const pct = Math.min(100, Math.max(0, Math.round(((video.currentTime - segStart)/totalSpan)*100)));
+        recBarFg.style.width = pct + '%';
+        recPercent.textContent = pct + '%';
+        if(!stopped && video.currentTime >= segEnd - 0.03){
+          finish();
+        } else {
+          rafId = requestAnimationFrame(drawLoop);
+        }
+      }
+
+      function finish(){
+        if(stopped) return;
+        stopped = true;
+        if(rafId) cancelAnimationFrame(rafId);
+        video.onended = null;
+        video.pause();
+        if(recorder.state !== 'inactive') recorder.stop();
+      }
+
+      recorder.onstop = () => {
+        const recordedExt = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
+        resolve({ blob, recordedExt });
+      };
+
+      recLabel.textContent = labelPrefix + '…';
+      recBarFg.style.width = '0%';
+      recPercent.textContent = '0%';
+      recProgress.style.display = 'block';
+
+      video.onended = finish;
+      video.currentTime = segStart;
+
+      const startPlayback = () => {
+        video.play().catch(()=>{}).then(() => {
+          recorder.start(250);
+          drawLoop();
+        });
+      };
+      // ننتظر اكتمال الانتقال (seek) للحظة البداية قبل بدء التسجيل، لضمان الدقة
+      let seekHandled = false;
+      const onSeeked = () => {
+        if(seekHandled) return;
+        seekHandled = true;
+        video.removeEventListener('seeked', onSeeked);
+        startPlayback();
+      };
+      video.addEventListener('seeked', onSeeked);
+      // احتياط: بعض المتصفحات لا تُطلق 'seeked' إذا كان الفيديو أصلًا عند نفس اللحظة تقريبًا
+      setTimeout(() => { if(!seekHandled){ seekHandled = true; video.removeEventListener('seeked', onSeeked); startPlayback(); } }, 600);
+    });
+  }
+
+  downloadBtn.addEventListener('click', async () => {
+    if(isRecording || isConverting) return;
+    if(!video.videoWidth){ showError('لم يتم تحميل الفيديو بعد.'); return; }
+    if(!(workCanvas.captureStream && window.MediaRecorder)){
+      showError('متصفحك لا يدعم تسجيل الفيديو محليًا (captureStream/MediaRecorder). جرّب متصفح Chrome أو Edge حديثًا.');
+      return;
+    }
+    if(originalFileSize > 500*1024*1024){
+      const proceed = confirm('هذا الملف كبير (' + formatBytes(originalFileSize) + '). قد تستغرق المعالجة وقتًا طويلاً أو يتوقف المتصفح عن الاستجابة. هل تريد المتابعة؟ (يمكنك بدلًا من ذلك إلغاء المحاولة واستخدام "نطاق القص" لتقصير المقطع أولًا)');
+      if(!proceed) return;
+    }
+
+    clearError();
+    isRecording = true;
+    setControlsDisabled(true);
+
+    const segStart = Math.max(0, trimStart || 0);
+    const segEnd = (trimEnd && trimEnd > segStart) ? trimEnd : (video.duration || segStart + 0.001);
+
+    try{
+      const { blob, recordedExt } = await recordSegment({
+        segStart, segEnd, bitsPerSecond: 12000000,
+        labelPrefix: 'جارٍ تسجيل النسخة الجديدة'
+      });
+      isRecording = false; // انتهى التسجيل، قد تبدأ مرحلة التحويل الآن
+      const baseName = sanitizeFilename(currentMeta.name) + '-بالشريط';
+      await convertToOriginalFormat(blob, recordedExt, baseName);
+    }catch(err){
+      showError('تعذّر إنشاء الفيديو: ' + (err.message || 'خطأ غير متوقع'));
+    }finally{
+      measureTicker(previewCtx, tickerBarHeightPx(previewCanvas.height));
+      resetRecordingUI();
+    }
+  });
+
+  quickPreviewBtn.addEventListener('click', async () => {
+    if(isRecording || isConverting) return;
+    if(!video.videoWidth){ showError('لم يتم تحميل الفيديو بعد.'); return; }
+
+    clearError();
+    isRecording = true;
+    setControlsDisabled(true);
+
+    const rangeStart = Math.max(0, trimStart || 0);
+    const rangeEnd = (trimEnd && trimEnd > rangeStart) ? trimEnd : (video.duration || rangeStart + 5);
+    let segStart = Math.min(Math.max(video.currentTime, rangeStart), Math.max(rangeStart, rangeEnd-0.5));
+    let segEnd = Math.min(rangeEnd, segStart + 5);
+
+    try{
+      const { blob } = await recordSegment({
+        segStart, segEnd, bitsPerSecond: 6000000,
+        labelPrefix: 'جارٍ تجهيز معاينة سريعة'
+      });
+      if(quickPreviewVideo.src) URL.revokeObjectURL(quickPreviewVideo.src);
+      quickPreviewVideo.src = URL.createObjectURL(blob);
+      previewModalBackdrop.style.display = 'flex';
+      recLabel.textContent = 'تم إنشاء المعاينة السريعة ✓';
+    }catch(err){
+      showError('تعذّرت المعاينة السريعة: ' + (err.message || 'خطأ غير متوقع'));
+    }finally{
+      measureTicker(previewCtx, tickerBarHeightPx(previewCanvas.height));
+      resetRecordingUI();
+    }
+  });
+
+  previewModalClose.addEventListener('click', () => {
+    previewModalBackdrop.style.display = 'none';
+    quickPreviewVideo.pause();
+    if(quickPreviewVideo.src){
+      URL.revokeObjectURL(quickPreviewVideo.src);
+      quickPreviewVideo.removeAttribute('src');
+      quickPreviewVideo.load();
+    }
+  });
+
+  function resetRecordingUI(){
+    isRecording = false;
+    isConverting = false;
+    setControlsDisabled(false);
+    video.onended = null;
+    setTimeout(()=>{ recProgress.style.display = 'none'; }, 1500);
+  }
+})();
+</script>
+</body>
+</html>
