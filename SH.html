@@ -103,6 +103,13 @@
   .video-error > div{ max-width:520px; margin:0 auto; }
   .video-error strong{ color:var(--gold-light); font-family:var(--font-display); font-size:17px; display:block; margin-bottom:8px; }
   @media (max-width:480px){ .video-error{ font-size:12.5px; padding:16px 12px; line-height:1.8; } .video-error strong{ font-size:15px; } }
+  .video-error small.tech{ display:block; margin-top:10px; font-size:11px; opacity:.6; direction:ltr; word-break:break-all; }
+  .fb-box{ display:none; margin-top:14px; }
+  .fb-box .bar-bg{ height:8px; border-radius:5px; background:rgba(255,255,255,.15); overflow:hidden; }
+  .fb-box .bar-fg{ height:100%; width:0%; background:linear-gradient(90deg, var(--gold-light), var(--gold)); transition:width .2s linear; }
+  .fb-box .fb-status{ font-size:12.5px; margin:8px 0 10px; opacity:.9; }
+  .video-error button.mini{ color:var(--gold-light); margin:4px 4px 0; }
+  .video-error button.mini:hover{ background:rgba(255,255,255,.08); }
 
   .custom-controls{
     display:flex; align-items:center; gap:10px; padding:10px 12px;
@@ -421,8 +428,15 @@
       <video id="logoOverlayVideo" class="logo-overlay" muted loop playsinline></video>
       <div class="video-error" id="videoErrorBox">
         <div>
-          <strong>تعذّر تشغيل هذا الملف</strong>
+          <strong id="videoErrorTitle">تعذّر تشغيل هذا الملف</strong>
           <span id="videoErrorDetail">قد تكون صيغة الترميز غير مدعومة في هذا المتصفح.</span>
+          <div class="fb-box" id="fbBox">
+            <div class="bar-bg"><div class="bar-fg" id="fbBarFg"></div></div>
+            <div class="fb-status" id="fbStatus"></div>
+            <button type="button" class="mini" id="fbCancelBtn">إلغاء التحويل</button>
+          </div>
+          <button type="button" class="mini" id="fbRetryBtn" style="display:none;">إعادة المحاولة</button>
+          <small class="tech" id="videoErrorTech"></small>
         </div>
       </div>
     </div>
@@ -1198,6 +1212,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
   });
 
   videoFileInput.addEventListener('change', () => {
+    resetPlaybackFallback();
     const f = videoFileInput.files[0];
     if(f){
       dropText.textContent = '✓ ' + f.name;
@@ -1465,64 +1480,278 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
 
   muteBtn.addEventListener('click', () => { video.muted = !video.muted; updateControlsUI(); });
 
-  function bufContainsAscii(u8, needle){
-    const n = needle.length, len = u8.length - n;
-    outer: for(let i=0;i<=len;i++){
-      for(let j=0;j<n;j++){ if(u8[i+j]!==needle.charCodeAt(j)) continue outer; }
-      return true;
-    }
-    return false;
-  }
+  /* ============================================================
+     فحص بنية الملف + مسار احتياطي تلقائي للتشغيل
 
-  async function sniffCodecHint(file){
+     السبب الجذري للمشكلة: بعض المتصفحات (Chromium/Chrome المبني بلا
+     ترخيص H.264، وبعض متصفحات لينكس والأجهزة المحدودة) لا تملك مُفكِّك
+     H.264/HEVC، فيرفض عنصر <video> الملف برمز الخطأ 4. والكود السابق:
+       1) كان يبحث عن اسم الترميز في أول/آخر 4MB فقط عبر مطابقة نصية،
+          فيفشل تشخيصه في حالات كثيرة ويعرض رسالة «تعذّر التعرف على
+          الترميز» مع أن الملف سليم تمامًا؛
+       2) وفي كل الأحوال كان ينتهي بنصيحة «حوّل الملف بنفسك» دون أن
+          يحاول أي شيء.
+     الحل: قراءة صناديق MP4/‏Matroska فعليًا لمعرفة الترميز بدقة، وعند
+     عجز المتصفح يُحوَّل الملف تلقائيًا داخل المتصفح (ffmpeg.wasm الموجود
+     أصلًا في الصفحة) إلى نسخة WebM (VP8 + Vorbis) تعمل في كل المتصفحات،
+     وتُستخدم للمعاينة والتسجيل، بينما يبقى الناتج النهائي بصيغة الملف
+     الأصلي كما هو.
+     ============================================================ */
+  async function readBlobBytes(blob){
     try{
-      const chunkSize = 4*1024*1024;
-      const head = new Uint8Array(await file.slice(0, Math.min(chunkSize, file.size)).arrayBuffer());
-      let tail = new Uint8Array(0);
-      if(file.size > chunkSize){
-        tail = new Uint8Array(await file.slice(Math.max(0, file.size-chunkSize)).arrayBuffer());
+      if(blob.arrayBuffer) return new Uint8Array(await blob.arrayBuffer());
+    }catch(e){ /* نجرّب FileReader */ }
+    return await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(new Uint8Array(r.result));
+      r.onerror = () => reject(r.error || new Error('تعذّرت قراءة الملف'));
+      r.readAsArrayBuffer(blob);
+    });
+  }
+  const fourcc = (u, i) => String.fromCharCode(u[i], u[i+1], u[i+2], u[i+3]);
+  const be32 = (u, i) => ((u[i]<<24) | (u[i+1]<<16) | (u[i+2]<<8) | u[i+3]) >>> 0;
+
+  const MP4_VIDEO_ENTRIES = { avc1:'avc', avc3:'avc', hvc1:'hevc', hev1:'hevc', dvh1:'hevc', dvhe:'hevc',
+                              vp09:'vp9', vp08:'vp8', av01:'av1', mp4v:'mpeg4', s263:'h263', jpeg:'mjpeg' };
+  const MP4_AUDIO_ENTRIES = { mp4a:'aac', 'ac-3':'ac3', 'ec-3':'eac3', Opus:'opus', fLaC:'flac', alac:'alac', '.mp3':'mp3' };
+
+  function parseMoov(moov, info){
+    for(let i=0; i+20 <= moov.length; i++){
+      const t = fourcc(moov, i);
+      if(t === 'stsd'){
+        const fmt = fourcc(moov, i+16);          // نوع أول Sample Entry في الجدول
+        if(MP4_VIDEO_ENTRIES[fmt]) info.video.push(MP4_VIDEO_ENTRIES[fmt]);
+        else if(MP4_AUDIO_ENTRIES[fmt]) info.audio.push(MP4_AUDIO_ENTRIES[fmt]);
+      } else if(t === 'mvhd' && !info.duration){
+        const ver = moov[i+4];
+        if(ver === 1){ const ts = be32(moov, i+24); const d = be32(moov, i+28)*4294967296 + be32(moov, i+32); if(ts) info.duration = d/ts; }
+        else         { const ts = be32(moov, i+16); const d = be32(moov, i+20); if(ts) info.duration = d/ts; }
       }
-      const hasHEVC = bufContainsAscii(head,'hvc1')||bufContainsAscii(head,'hev1')||bufContainsAscii(head,'dvhe')||bufContainsAscii(head,'dvh1')
-                    ||bufContainsAscii(tail,'hvc1')||bufContainsAscii(tail,'hev1')||bufContainsAscii(tail,'dvhe')||bufContainsAscii(tail,'dvh1');
-      if(hasHEVC) return 'hevc';
-      const hasAVC = bufContainsAscii(head,'avc1')||bufContainsAscii(tail,'avc1');
-      if(hasAVC) return 'avc';
-      const hasVP9 = bufContainsAscii(head,'vp09')||bufContainsAscii(tail,'vp09')||bufContainsAscii(head,'VP90')||bufContainsAscii(tail,'VP90');
-      if(hasVP9) return 'vp9';
-      const hasAV1 = bufContainsAscii(head,'av01')||bufContainsAscii(tail,'av01');
-      if(hasAV1) return 'av1';
-      return 'unknown';
-    }catch(e){ return 'unknown'; }
+    }
   }
 
-  video.addEventListener('error', async () => {
-    const err = video.error;
-    let baseDetail = '';
-    if(err){
-      const map = {1:'تم إلغاء تحميل الملف.',2:'حدث خطأ في الشبكة أثناء القراءة.',3:'تعذّر فك ترميز الفيديو (Decode error) — قد يكون الملف تالفًا.'};
-      baseDetail = map[err.code] || '';
-    }
-    videoErrorDetail.textContent = 'جارٍ فحص نوع ترميز الملف…';
+  async function inspectFile(file){
+    const info = { container:'unknown', video:[], audio:[], duration:0 };
+    try{
+      const head = await readBlobBytes(file.slice(0, Math.min(65536, file.size)));
+      if(head.length >= 12 && fourcc(head, 4) === 'ftyp'){
+        info.container = 'mp4';
+        // نمرّ على الصناديق العليا (ftyp/free/mdat/moov…) دون قراءة الملف كله؛
+        // صندوق moov قد يكون في آخر الملف (Progressive بلا faststart).
+        let pos = 0, guard = 0;
+        while(pos + 8 <= file.size && guard++ < 5000){
+          const hb = await readBlobBytes(file.slice(pos, pos+16));
+          if(hb.length < 8) break;
+          let size = be32(hb, 0), hdr = 8;
+          const type = fourcc(hb, 4);
+          if(size === 1 && hb.length >= 16){ size = be32(hb, 8)*4294967296 + be32(hb, 12); hdr = 16; }
+          else if(size === 0){ size = file.size - pos; }
+          if(size < 8) break;
+          if(type === 'moov'){
+            if(size <= 256*1024*1024){
+              parseMoov(await readBlobBytes(file.slice(pos+hdr, pos+size)), info);
+            }
+            break;
+          }
+          pos += size;
+        }
+      } else if(head.length >= 4 && head[0]===0x1A && head[1]===0x45 && head[2]===0xDF && head[3]===0xA3){
+        info.container = 'webm/mkv';
+        let txt = '';
+        for(let i=0;i<head.length;i++) txt += String.fromCharCode(head[i]);
+        if(txt.indexOf('V_VP9') >= 0) info.video.push('vp9');
+        else if(txt.indexOf('V_VP8') >= 0) info.video.push('vp8');
+        else if(txt.indexOf('V_AV1') >= 0) info.video.push('av1');
+        else if(txt.indexOf('V_MPEGH/ISO/HEVC') >= 0) info.video.push('hevc');
+        else if(txt.indexOf('V_MPEG4/ISO/AVC') >= 0) info.video.push('avc');
+      }
+    }catch(e){ /* نُبقي info كما هي — المسار الاحتياطي لا يعتمد على نجاح الفحص */ }
+    return info;
+  }
+
+  const CODEC_LABELS = { avc:'H.264', hevc:'H.265 / HEVC', vp9:'VP9', vp8:'VP8', av1:'AV1', mpeg4:'MPEG-4', h263:'H.263', mjpeg:'Motion-JPEG' };
+  function codecLabelOf(info){
+    return info && info.video.length ? (CODEC_LABELS[info.video[0]] || info.video[0]) : '';
+  }
+
+  const videoErrorTitle = $('videoErrorTitle');
+  const videoErrorTech  = $('videoErrorTech');
+  const fbBox      = $('fbBox');
+  const fbBarFg    = $('fbBarFg');
+  const fbStatus   = $('fbStatus');
+  const fbCancelBtn = $('fbCancelBtn');
+  const fbRetryBtn  = $('fbRetryBtn');
+  const DEFAULT_ERR_TITLE = 'تعذّر تشغيل هذا الملف';
+
+  // حالة المسار الاحتياطي
+  const fb = { running:false, cancelled:false, usedProxy:false, proxyUrl:null, file:null, info:null };
+
+  function fmtDur(sec){
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec/60), s = sec%60;
+    return m + ':' + String(s).padStart(2,'0');
+  }
+
+  function cancelPlaybackFallback(){
+    if(!fb.running) return;
+    fb.cancelled = true;
+    fb.running = false;
+    try{ if(ffmpegInstance && ffmpegInstance.exit) ffmpegInstance.exit(); }catch(e){}
+    ffmpegInstance = null;
+    ffmpegLoadPromise = null;
+  }
+
+  function resetPlaybackFallback(){
+    cancelPlaybackFallback();
+    fb.usedProxy = false;
+    fb.file = null; fb.info = null;
+    if(fb.proxyUrl){ URL.revokeObjectURL(fb.proxyUrl); fb.proxyUrl = null; }
+    fbBox.style.display = 'none';
+    fbRetryBtn.style.display = 'none';
+    videoErrorTitle.textContent = DEFAULT_ERR_TITLE;
+    videoErrorTech.textContent = '';
+  }
+
+  function showFallbackFailure(title, html){
+    fb.running = false;
+    fbBox.style.display = 'none';
+    fbRetryBtn.style.display = 'inline-block';
+    videoErrorTitle.textContent = title;
+    videoErrorDetail.innerHTML = html;
+    videoErrorBox.style.display = 'block';
+  }
+
+  async function startPlaybackFallback(){
+    const file = fb.file, info = fb.info;
+    if(!file || fb.running) return;
+    fb.running = true; fb.cancelled = false;
+    const label = codecLabelOf(info);
+
     videoErrorBox.style.display = 'block';
     downloadBtn.disabled = true;
-    stageInfo.textContent = '';
+    fbRetryBtn.style.display = 'none';
+    fbBox.style.display = 'block';
+    fbBarFg.style.width = '0%';
+    videoErrorTitle.textContent = 'جارٍ تجهيز نسخة متوافقة مع متصفحك…';
+    videoErrorDetail.textContent = (label
+        ? 'الملف سليم ومرمَّز بصيغة ' + label + '، لكن هذا المتصفح لا يملك مُفكِّك هذه الصيغة. '
+        : 'هذا المتصفح لا يستطيع فك ترميز هذا الملف مباشرةً. ')
+      + 'سنحوّله الآن تلقائيًا داخل المتصفح إلى WebM للمعاينة والتسجيل (لا يُرفع أي شيء لأي خادم)، وسيبقى الملف الناتج النهائي بصيغة ' + originalFileExt.toUpperCase() + ' كما هو. لا تُغلق الصفحة أثناء التحويل.';
+    fbStatus.textContent = 'جارٍ تحميل أداة التحويل (أول مرة فقط، نحو 25 ميجا)…';
 
-    if(err && err.code === 4){
-      const file = videoFileInput.files[0];
-      const hint = file ? await sniffCodecHint(file) : 'unknown';
-      if(hint === 'hevc'){
-        videoErrorDetail.innerHTML = 'هذا الملف مرمَّز بصيغة <b>HEVC / H.265</b> — وهي الصيغة التي تسجّل بها كثير من هواتف أندرويد (خاصية "الفيديو عالي الكفاءة"). متصفح Chrome على أندرويد لا يدعم تشغيل HEVC إطلاقًا (يدعمها Safari على آيفون فقط).<br><br>' +
-          '<b>الحل:</b> من إعدادات كاميرا الهاتف، ابحث عن خيار صيغة الفيديو (غالبًا داخل "إعدادات متقدّمة" أو "الفيديو عالي الكفاءة") وبدّله إلى <b>H.264 / "الأكثر توافقًا"</b>، ثم أعد تصوير أو تصدير المقطع. أو استخدم تطبيق تحويل فيديو من المتجر لتحويل هذا الملف إلى H.264 أو WebM.';
-      } else if(hint === 'avc'){
-        videoErrorDetail.textContent = 'الملف مرمَّز بصيغة H.264 القياسية، لكن هذا المتصفح تحديدًا لا يملك مُفكِّك الترميز اللازم (شائع في متصفحات Chromium مفتوحة المصدر على لينكس، أو نسخة متصفح محدودة الترخيص). جرّب متصفح Chrome أو Edge الرسميّين، أو حوّل الملف إلى WebM (VP9).';
-      } else if(hint === 'vp9' || hint === 'av1'){
-        videoErrorDetail.textContent = (baseDetail || 'تعذّر تشغيل الملف رغم أن ترميزه (VP9/AV1) يُفترض أنه مدعوم على نطاق واسع.') + ' قد يكون الملف تالفًا أو غير مكتمل — جرّب إعادة تصديره.';
-      } else {
-        videoErrorDetail.textContent = 'تعذّر التعرف على ترميز الملف تلقائيًا. جرّب تحويله إلى MP4 (H.264) أو WebM (VP9) عبر أي محوّل فيديو، أو افتح الصفحة في متصفح آخر.';
+    const t0 = Date.now();
+    let bestRatio = 0;
+    const paint = (ratio) => {
+      if(fb.cancelled) return;
+      if(isFinite(ratio) && ratio > bestRatio) bestRatio = Math.min(1, ratio);
+      fbBarFg.style.width = Math.round(bestRatio*100) + '%';
+      const el = (Date.now()-t0)/1000;
+      let txt = 'جارٍ التحويل… ' + Math.round(bestRatio*100) + '%';
+      if(bestRatio > 0.03) txt += ' — المتبقي تقريبًا ' + fmtDur(el*(1-bestRatio)/bestRatio);
+      fbStatus.textContent = txt;
+    };
+
+    try{
+      const ffmpeg = await getFFmpeg(({ ratio }) => paint(ratio));
+      if(fb.cancelled) return;
+
+      // احتياط: إن لم تصل نسبة التقدّم من المكتبة نحسبها من سطر time= في سجلّها
+      if(ffmpeg.setLogger && info && info.duration > 0){
+        ffmpeg.setLogger(({ message }) => {
+          const m = /time=\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(message || '');
+          if(m) paint((parseInt(m[1],10)*3600 + parseInt(m[2],10)*60 + parseFloat(m[3])) / info.duration);
+        });
       }
-    } else {
-      videoErrorDetail.textContent = baseDetail || 'قد تكون صيغة الملف غير مدعومة في هذا المتصفح.';
+
+      const { fetchFile } = window.FFmpeg;
+      const rawExt = (getExtension(file.name) || '').toLowerCase();
+      const inName = 'fb_in.' + (/^[a-z0-9]{1,5}$/.test(rawExt) ? rawExt : 'bin');
+      const outName = 'fb_out.webm';
+
+      fbStatus.textContent = 'جارٍ تجهيز الملف داخل أداة التحويل…';
+      ffmpeg.FS('writeFile', inName, await fetchFile(file));
+      if(fb.cancelled) return;
+
+      paint(0);
+      await ffmpeg.run(
+        '-i', inName,
+        '-map', '0:v:0', '-map', '0:a:0?',                 // أول مسار فيديو/صوت فقط (يتجاهل صورة الغلاف)
+        '-vf', "scale='min(1280,iw)':-2",                  // لا نكبّر أبدًا؛ نصغّر فقط ما يزيد عن 720p
+        '-c:v', 'libvpx', '-deadline', 'realtime', '-cpu-used', '8',
+        '-crf', '14', '-b:v', '2M', '-pix_fmt', 'yuv420p', '-g', '60',
+        '-c:a', 'libvorbis', '-q:a', '4', '-ac', '2',
+        outName
+      );
+      if(fb.cancelled) return;
+
+      const data = ffmpeg.FS('readFile', outName);
+      try{ ffmpeg.FS('unlink', inName); }catch(e){}
+      try{ ffmpeg.FS('unlink', outName); }catch(e){}
+      if(!data || !data.length) throw new Error('ناتج التحويل فارغ');
+
+      if(fb.proxyUrl) URL.revokeObjectURL(fb.proxyUrl);
+      fb.proxyUrl = URL.createObjectURL(new Blob([data], { type:'video/webm' }));
+      fb.usedProxy = true;
+      fb.running = false;
+      fbBarFg.style.width = '100%';
+
+      stageInfo.textContent = 'يبدأ العداد من ' + fmtTime(offsetSeconds) + ' من الفيديو الأصلي — سيُحفظ الناتج النهائي بصيغة ' + originalFileExt.toUpperCase()
+        + ' (نفس صيغة الملف الأصلي). ملاحظة: تعمل الصفحة الآن على نسخة WebM مؤقتة لأن هذا المتصفح لا يفك ترميز ' + (label || 'هذا الملف') + '.';
+      video.src = fb.proxyUrl;
+      video.load();
+      video.play().catch(() => {});
+    }catch(e){
+      if(fb.cancelled) return;
+      const msg = String((e && e.message) || e || '');
+      const netIssue = /تحميل|network|fetch|Failed to load|load\(\)|NetworkError|CDN/i.test(msg);
+      showFallbackFailure('تعذّر تجهيز نسخة متوافقة',
+        netIssue
+          ? 'تعذّر تحميل أداة التحويل من الإنترنت (تحتاج اتصالًا في أول استخدام فقط). تحقّق من الاتصال ثم اضغط «إعادة المحاولة».'
+          : 'فشل التحويل التلقائي: ' + msg.replace(/[<>&]/g, '') + '<br>جرّب متصفح Chrome أو Edge الرسميّين (يحتويان مُفكِّك H.264)، أو حوّل الملف إلى WebM ثم أعد اختياره.');
     }
+  }
+
+  fbCancelBtn.addEventListener('click', () => {
+    cancelPlaybackFallback();
+    fbBox.style.display = 'none';
+    fbRetryBtn.style.display = 'inline-block';
+    videoErrorTitle.textContent = 'أُلغي التحويل';
+    videoErrorDetail.textContent = 'لن يُشغَّل الفيديو دون نسخة متوافقة مع هذا المتصفح. اضغط «إعادة المحاولة» لتحويله، أو استخدم Chrome/Edge الرسميّين.';
+  });
+  fbRetryBtn.addEventListener('click', () => { startPlaybackFallback(); });
+
+  video.addEventListener('error', async () => {
+    if(fb.running) return;                       // نحن في منتصف التحويل؛ تجاهل أي أخطاء عابرة
+    const err = video.error;
+    const techMsg = err ? ('code ' + err.code + (err.message ? ' — ' + err.message : '')) : '';
+    videoErrorTech.textContent = techMsg;
+    downloadBtn.disabled = true;
+    stageInfo.textContent = '';
+    videoErrorBox.style.display = 'block';
+
+    // فشل حتى مع النسخة المتوافقة: لا نكرّر التحويل في حلقة
+    if(fb.usedProxy){
+      videoErrorTitle.textContent = 'تعذّر تشغيل النسخة المتوافقة';
+      videoErrorDetail.textContent = 'فشل هذا المتصفح في تشغيل حتى نسخة WebM المؤقتة. جرّب متصفح Chrome أو Firefox أو Edge الرسميّين.';
+      fbBox.style.display = 'none';
+      return;
+    }
+
+    const file = videoFileInput.files[0];
+    // 4 = صيغة/ترميز غير مدعوم، 3 = فشل فك الترميز: كلاهما يُعالَج بنسخة متوافقة
+    if(err && (err.code === 4 || err.code === 3) && file){
+      videoErrorTitle.textContent = DEFAULT_ERR_TITLE;
+      videoErrorDetail.textContent = 'جارٍ فحص ترميز الملف…';
+      fb.file = file;
+      fb.info = await inspectFile(file);
+      if(fb.file !== file) return;               // اختار المستخدم ملفًا آخر أثناء الفحص
+      startPlaybackFallback();
+      return;
+    }
+
+    const map = {1:'تم إلغاء تحميل الملف.',2:'حدث خطأ في الشبكة أثناء القراءة.',3:'تعذّر فك ترميز الفيديو (Decode error) — قد يكون الملف تالفًا.'};
+    videoErrorTitle.textContent = DEFAULT_ERR_TITLE;
+    videoErrorDetail.textContent = (err && map[err.code]) || 'قد تكون صيغة الملف غير مدعومة في هذا المتصفح.';
   });
 
   video.addEventListener('loadedmetadata', () => {
@@ -1732,6 +1961,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       }
     }
 
+    resetPlaybackFallback();
     videoErrorBox.style.display = 'none';
     if(objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = URL.createObjectURL(file);
