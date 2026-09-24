@@ -191,6 +191,19 @@
   .preview-modal video{ width:100%; border-radius:10px; background:#000; max-height:60vh; display:block; }
   .preview-modal .modal-actions{ margin-top:14px; display:flex; justify-content:flex-end; gap:8px; }
 
+  /* ===== مقاس الفيديو ===== */
+  /* (تُستخدم فئة .grid المعرّفة أعلاه) */
+
+  /* ===== الشعار: معاينة حيّة فوق المسرح ===== */
+  .logo-overlay{
+    position:absolute; z-index:4; pointer-events:none; display:none;
+    max-width:45%; max-height:45%;
+  }
+  .logo-overlay.corner-tl{ top:10px; left:10px; }
+  .logo-overlay.corner-tr{ top:10px; right:10px; }
+  .logo-overlay.corner-bl{ bottom:64px; left:10px; }
+  .logo-overlay.corner-br{ bottom:64px; right:10px; }
+
   footer{ text-align:center; font-size:11.5px; color:var(--ink-soft); opacity:.7; margin-top:40px; }
 </style>
 </head>
@@ -280,6 +293,121 @@
       </div>
     </div>
 
+    <div class="field">
+      <label>مقاس الفيديو الناتج</label>
+      <select class="styled" id="sizePreset">
+        <option value="original" selected>نفس مقاس الفيديو الأصلي</option>
+        <option value="1920x1080">1920×1080 (Full HD أفقي)</option>
+        <option value="1280x720">1280×720 (HD أفقي)</option>
+        <option value="3840x2160">3840×2160 (4K أفقي)</option>
+        <option value="1080x1920">1080×1920 (عمودي — ستوريز/ريلز)</option>
+        <option value="1080x1080">1080×1080 (مربع)</option>
+        <option value="720x1280">720×1280 (عمودي HD)</option>
+        <option value="custom">مقاس مخصص...</option>
+      </select>
+      <div class="grid" id="customSizeFields" style="display:none; margin-top:10px;">
+        <div class="field"><label>العرض (px)</label><input type="number" id="customWidth" min="16" value="1280"></div>
+        <div class="field"><label>الارتفاع (px)</label><input type="number" id="customHeight" min="16" value="720"></div>
+      </div>
+      <div class="hint" style="margin-top:10px;">طريقة الملاءمة عند اختلاف نسبة الأبعاد عن الفيديو الأصلي:</div>
+      <select class="styled" id="fitMode" style="margin-top:4px;">
+        <option value="contain" selected>احتواء كامل الإطار (أشرطة سوداء عند الحاجة)</option>
+        <option value="cover">تعبئة الإطار وقصّ الزائد</option>
+        <option value="stretch">تمديد ليملأ الإطار (قد يُشوّه الصورة)</option>
+      </select>
+      <div class="hint" id="sizeSummary" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="field">
+      <div class="checkbox-row" style="margin:0 0 8px;">
+        <input type="checkbox" id="logoEnabled">
+        <label for="logoEnabled">إضافة شعار (صورة ثابتة / GIF / فيديو بلا صوت) على زاوية الفيديو</label>
+      </div>
+      <div id="logoFields" style="display:none;">
+        <label class="file-drop" id="logoDropLabel" style="padding:14px;">
+          <span id="logoDropText">اضغط لاختيار ملف الشعار</span>
+          <input type="file" id="logoFile" accept="image/*,video/*">
+        </label>
+        <div class="style-grid">
+          <div>
+            <div class="hint" style="margin:0 0 4px;">الزاوية</div>
+            <select class="styled" id="logoCorner">
+              <option value="tr" selected>أعلى اليمين</option>
+              <option value="tl">أعلى اليسار</option>
+              <option value="br">أسفل اليمين</option>
+              <option value="bl">أسفل اليسار</option>
+            </select>
+          </div>
+          <div>
+            <div class="hint" style="margin:0 0 4px;">حجم الشعار (% من عرض الفيديو)</div>
+            <input type="number" id="logoSizePercent" min="5" max="35" value="14" style="width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--line); background:#fffdf6;">
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">فيديو الشعار (إن اخترته) يُشغَّل دون صوت تلقائيًا، ويظهر معاينة حيّة له على المشغّل أدناه بعد التحميل.</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>خاتمة الفيديو (اختياري)</label>
+      <select class="styled" id="endScreenMode">
+        <option value="none" selected>بدون خاتمة</option>
+        <option value="logo">الشعار — يكبر تدريجيًا ليملأ الشاشة في النهاية</option>
+        <option value="ticker">الشريط — يستمر عرضه بعد نهاية الفيديو</option>
+        <option value="custom">مخصص — صورة/فيديو + نص أو رابط QR</option>
+      </select>
+
+      <div class="hint" id="endLogoHint" style="display:none; margin-top:10px;">
+        يتطلب تفعيل "إضافة شعار" أعلاه أولًا. مدة بقاء الشعار كبيرًا في النهاية (ثوانٍ):
+        <input type="number" id="logoOutroDuration" min="1" max="10" value="3" style="width:70px; margin-inline-start:6px; padding:6px; border-radius:8px; border:1.5px solid var(--line);">
+      </div>
+
+      <div class="hint" id="endTickerHint" style="display:none; margin-top:10px;">
+        مدة استمرار الشريط بعد نهاية الفيديو (ثوانٍ):
+        <input type="number" id="tickerOutroDuration" min="1" max="10" value="3" style="width:70px; margin-inline-start:6px; padding:6px; border-radius:8px; border:1.5px solid var(--line);">
+      </div>
+
+      <div id="endCustomFields" style="display:none; margin-top:10px;">
+        <label class="file-drop" id="outroMediaDropLabel" style="padding:14px;">
+          <span id="outroMediaDropText">اضغط لاختيار صورة أو فيديو الخاتمة</span>
+          <input type="file" id="outroMediaFile" accept="image/*,video/*">
+        </label>
+        <div class="field" style="margin-top:10px;">
+          <label>نص الخاتمة (اختياري)</label>
+          <input type="text" id="outroText" placeholder="مثال: تابعونا لمزيد من الدروس">
+        </div>
+        <div class="field">
+          <label>رابط الخاتمة (اختياري، سيتحول إلى رمز QR)</label>
+          <input type="url" id="outroLink" placeholder="https://...">
+        </div>
+        <div class="grid">
+          <div class="field">
+            <label>مدة ظهور الخاتمة (ثوانٍ، حتى 30)</label>
+            <input type="number" id="outroDuration" min="1" max="30" value="8">
+          </div>
+          <div class="field">
+            <label>صوت خارجي للخاتمة (اختياري)</label>
+            <input type="file" id="outroAudioFile" accept="audio/*">
+          </div>
+        </div>
+        <div id="outroAudioTimingRow" style="display:none;">
+          <div class="grid">
+            <div class="field">
+              <label>توقيت بدء الصوت</label>
+              <select class="styled" id="outroAudioTiming">
+                <option value="with" selected>يبدأ مع ظهور الخاتمة تمامًا</option>
+                <option value="before">يبدأ قبل الخاتمة بقليل</option>
+              </select>
+            </div>
+            <div class="field" id="outroAudioLeadField" style="display:none;">
+              <label>كم ثانية قبل الخاتمة؟</label>
+              <input type="number" id="outroAudioLead" min="0.5" max="5" step="0.5" value="1">
+            </div>
+          </div>
+        </div>
+        <div class="hint">ملاحظة: زر "معاينة سريعة" في المشغّل لا يختبر الخاتمة حاليًا — فقط الفيديو الأساسي والشريط والشعار. تُعاين الخاتمة عبر التصدير الكامل.</div>
+      </div>
+    </div>
+
     <button class="primary" id="loadBtn">إنشاء الشريط وتشغيل الفيديو</button>
     <div class="error-msg" id="errMsg"></div>
   </section>
@@ -289,6 +417,8 @@
     <div class="stage" id="stage">
       <video id="video" playsinline preload="auto"></video>
       <canvas id="previewCanvas" width="1280" height="720"></canvas>
+      <img id="logoOverlayImg" class="logo-overlay" alt="معاينة الشعار">
+      <video id="logoOverlayVideo" class="logo-overlay" muted loop playsinline></video>
       <div class="video-error" id="videoErrorBox">
         <div>
           <strong>تعذّر تشغيل هذا الملف</strong>
@@ -749,6 +879,23 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
   let trimEnd = 0;                // نهاية نطاق القص بالثواني
   let tickerStyle = { position:'bottom', color:'gold', size:'md', showQR:true, showSeries:true };
 
+  // ===== مقاس الفيديو الناتج =====
+  let outputSize = { mode:'original', width:0, height:0, fit:'contain' };
+
+  // ===== الشعار (علامة مائية على إحدى الزوايا) =====
+  let logoConfig = { enabled:false, objectUrl:null, type:'image', corner:'tr', sizePercent:14, el:null };
+
+  // ===== خاتمة الفيديو: 'none' | 'logo' | 'ticker' | 'custom' =====
+  let endScreenMode = 'none';
+  let logoOutroDuration = 3;
+  let tickerOutroDuration = 3;
+  let customOutro = {
+    mediaObjectUrl:null, mediaType:'image', mediaEl:null,
+    text:'', link:'', qrMatrix:null,
+    duration:8,
+    audioObjectUrl:null, audioStartMode:'with', audioLeadSeconds:1
+  };
+
   const COLOR_SCHEMES = {
     gold:  { base:'20,13,7',  accent:'#d9bd82', title:'#fbf3e0', boxFill:'rgba(184,147,74,0.28)', boxStroke:'#d9bd82', qrDark:'#2b1d12' },
     blue:  { base:'6,14,26',  accent:'#8ec9f0', title:'#eef6ff', boxFill:'rgba(60,120,180,0.30)', boxStroke:'#8ec9f0', qrDark:'#0b1a26' },
@@ -770,6 +917,285 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     const factor = tickerStyle.size === 'sm' ? 0.09 : (tickerStyle.size === 'lg' ? 0.16 : 0.12);
     return Math.max(40, h * factor);
   }
+
+  /* ============================================================
+     مقاس الفيديو الناتج + طريقة الملاءمة (احتواء / تعبئة / تمديد)
+     ============================================================ */
+  function resolveOutputSize(){
+    const nativeW = video.videoWidth || 1280, nativeH = video.videoHeight || 720;
+    if(outputSize.mode === 'custom'){
+      return { w: Math.max(16, Math.round(outputSize.width || nativeW)), h: Math.max(16, Math.round(outputSize.height || nativeH)) };
+    }
+    if(outputSize.mode === 'preset' && outputSize.width && outputSize.height){
+      return { w: outputSize.width, h: outputSize.height };
+    }
+    return { w: nativeW, h: nativeH };
+  }
+
+  function computeFitRect(srcW, srcH, dstW, dstH, fit){
+    if(!srcW || !srcH) return { sx:0, sy:0, sw:0, sh:0, dx:0, dy:0, dw:dstW, dh:dstH };
+    const srcRatio = srcW/srcH, dstRatio = dstW/dstH;
+    if(fit === 'stretch'){
+      return { sx:0, sy:0, sw:srcW, sh:srcH, dx:0, dy:0, dw:dstW, dh:dstH };
+    }
+    if(fit === 'cover'){
+      let sw, sh, sx, sy;
+      if(srcRatio > dstRatio){ sh = srcH; sw = sh*dstRatio; sx = (srcW-sw)/2; sy = 0; }
+      else { sw = srcW; sh = sw/dstRatio; sx = 0; sy = (srcH-sh)/2; }
+      return { sx, sy, sw, sh, dx:0, dy:0, dw:dstW, dh:dstH };
+    }
+    // contain (الافتراضي)
+    let dw, dh, dx, dy;
+    if(srcRatio > dstRatio){ dw = dstW; dh = dw/srcRatio; dx = 0; dy = (dstH-dh)/2; }
+    else { dh = dstH; dw = dh*srcRatio; dy = 0; dx = (dstW-dw)/2; }
+    return { sx:0, sy:0, sw:srcW, sh:srcH, dx, dy, dw, dh };
+  }
+
+  function drawMediaFit(ctx, mediaEl, srcW, srcH, dstW, dstH, fit){
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, dstW, dstH);
+    if(!mediaEl || !srcW || !srcH) return;
+    const r = computeFitRect(srcW, srcH, dstW, dstH, fit);
+    try{ ctx.drawImage(mediaEl, r.sx, r.sy, r.sw, r.sh, r.dx, r.dy, r.dw, r.dh); }catch(e){}
+  }
+
+  function updateSizeSummary(){
+    const el = $('sizeSummary');
+    if(!el) return;
+    const out = resolveOutputSize();
+    let msg = 'المقاس الناتج: ' + out.w + '×' + out.h + ' بكسل.';
+    const nativeW = video.videoWidth, nativeH = video.videoHeight;
+    if(nativeW && nativeH){
+      const srcRatio = nativeW/nativeH, dstRatio = out.w/out.h;
+      if(Math.abs(srcRatio-dstRatio) > 0.01){
+        const fitLabel = { contain:'مع إضافة أشرطة سوداء (احتواء)', cover:'مع قصّ الزوائد (تعبئة)', stretch:'مع تمديد الصورة (قد يظهر تشوّه بسيط)' }[outputSize.fit] || '';
+        msg += ' نسبة الفيديو الأصلي تختلف عن الهدف، سيُعرض ' + fitLabel + '.';
+      }
+    }
+    el.textContent = msg;
+  }
+
+  function applySizeSettingsFromForm(){
+    const preset = $('sizePreset').value;
+    outputSize.fit = $('fitMode').value;
+    if(preset === 'original'){
+      outputSize.mode = 'original';
+    } else if(preset === 'custom'){
+      outputSize.mode = 'custom';
+      outputSize.width = parseInt($('customWidth').value, 10) || 1280;
+      outputSize.height = parseInt($('customHeight').value, 10) || 720;
+    } else {
+      outputSize.mode = 'preset';
+      const parts = preset.split('x').map(Number);
+      outputSize.width = parts[0]; outputSize.height = parts[1];
+    }
+    updateSizeSummary();
+  }
+
+  /* ============================================================
+     الشعار: رسمه على الكانفاس (تصدير) + شريحة المعاينة الحيّة (CSS)
+     ============================================================ */
+  function logoNaturalW(){
+    if(!logoConfig.el) return 0;
+    return logoConfig.type === 'video' ? logoConfig.el.videoWidth : logoConfig.el.naturalWidth;
+  }
+  function logoNaturalH(){
+    if(!logoConfig.el) return 0;
+    return logoConfig.type === 'video' ? logoConfig.el.videoHeight : logoConfig.el.naturalHeight;
+  }
+
+  function computeLogoRect(dstW, dstH, naturalW, naturalH, corner, sizePercent){
+    const marginPx = dstW * 0.03;
+    const targetW = dstW * (sizePercent/100);
+    const ratio = naturalH > 0 ? (naturalW/naturalH) : 1;
+    const targetH = targetW/ratio;
+    let x, y;
+    switch(corner){
+      case 'tl': x = marginPx; y = marginPx; break;
+      case 'bl': x = marginPx; y = dstH - marginPx - targetH; break;
+      case 'br': x = dstW - marginPx - targetW; y = dstH - marginPx - targetH; break;
+      default:   x = dstW - marginPx - targetW; y = marginPx; break; // 'tr'
+    }
+    return { x, y, w: targetW, h: targetH };
+  }
+
+  function drawLogoOnCanvas(ctx, dstW, dstH){
+    if(!logoConfig.el) return;
+    const nw = logoNaturalW(), nh = logoNaturalH();
+    if(!nw || !nh) return;
+    const rect = computeLogoRect(dstW, dstH, nw, nh, logoConfig.corner, logoConfig.sizePercent);
+    try{ ctx.drawImage(logoConfig.el, rect.x, rect.y, rect.w, rect.h); }catch(e){}
+  }
+
+  function computeLogoOutroRect(dstW, dstH, naturalW, naturalH, corner, sizePercent, progress){
+    const startRect = computeLogoRect(dstW, dstH, naturalW, naturalH, corner, sizePercent);
+    const ratio = naturalH > 0 ? (naturalW/naturalH) : 1;
+    let endW, endH;
+    if(dstW/dstH > ratio){ endH = dstH*0.8; endW = endH*ratio; } else { endW = dstW*0.8; endH = endW/ratio; }
+    const endX = (dstW-endW)/2, endY = (dstH-endH)/2;
+    const ease = progress < 0.5 ? 2*progress*progress : 1 - Math.pow(-2*progress+2, 2)/2; // easeInOutQuad
+    return {
+      x: startRect.x + (endX-startRect.x)*ease,
+      y: startRect.y + (endY-startRect.y)*ease,
+      w: startRect.w + (endW-startRect.w)*ease,
+      h: startRect.h + (endH-startRect.h)*ease
+    };
+  }
+
+  function updateLogoPreviewOverlay(){
+    const img = $('logoOverlayImg'), vid = $('logoOverlayVideo');
+    if(!logoConfig.enabled || !logoConfig.objectUrl){
+      img.style.display = 'none'; vid.style.display = 'none';
+      return;
+    }
+    img.classList.remove('corner-tl','corner-tr','corner-bl','corner-br');
+    vid.classList.remove('corner-tl','corner-tr','corner-bl','corner-br');
+    img.classList.add('corner-'+logoConfig.corner);
+    vid.classList.add('corner-'+logoConfig.corner);
+    img.style.width = vid.style.width = logoConfig.sizePercent + '%';
+    if(logoConfig.type === 'video'){
+      img.style.display = 'none';
+      vid.style.display = 'block';
+      if(vid.src !== logoConfig.objectUrl){ vid.src = logoConfig.objectUrl; }
+      vid.play().catch(()=>{});
+    } else {
+      vid.style.display = 'none';
+      img.style.display = 'block';
+      if(img.src !== logoConfig.objectUrl){ img.src = logoConfig.objectUrl; }
+    }
+  }
+
+  /* ============================================================
+     خاتمة "مخصص": صورة/فيديو الخلفية + نص + رمز QR
+     ============================================================ */
+  function wrapAndDrawText(ctx, text, cx, y, maxWidth, lineHeight, maxLines){
+    const words = String(text).split(/\s+/);
+    let line = '', lines = [];
+    for(const w of words){
+      const test = line ? line + ' ' + w : w;
+      if(ctx.measureText(test).width > maxWidth && line){ lines.push(line); line = w; }
+      else line = test;
+    }
+    if(line) lines.push(line);
+    lines = lines.slice(0, maxLines || 4);
+    lines.forEach((ln, i) => ctx.fillText(ln, cx, y + i*lineHeight));
+    return lines.length;
+  }
+
+  function drawCustomOutroFrame(ctx, dstW, dstH){
+    ctx.fillStyle = '#0c0c10';
+    ctx.fillRect(0, 0, dstW, dstH);
+    if(customOutro.mediaEl){
+      const mw = customOutro.mediaType === 'video' ? customOutro.mediaEl.videoWidth : customOutro.mediaEl.naturalWidth;
+      const mh = customOutro.mediaType === 'video' ? customOutro.mediaEl.videoHeight : customOutro.mediaEl.naturalHeight;
+      drawMediaFit(ctx, customOutro.mediaEl, mw, mh, dstW, dstH, 'cover');
+    }
+
+    const hasText = !!customOutro.text;
+    const hasQR = !!customOutro.qrMatrix;
+    if(!hasText && !hasQR) return;
+
+    const grad = ctx.createLinearGradient(0, dstH*0.42, 0, dstH);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.75)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, dstH*0.42, dstW, dstH*0.58);
+
+    let cursorY = dstH*0.80;
+    if(hasQR){
+      const qrSize = Math.min(dstW, dstH) * 0.16;
+      const qrX = (dstW-qrSize)/2;
+      const qrY = dstH*0.56;
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, qrX-8, qrY-8, qrSize+16, qrSize+16, 8);
+      ctx.fill();
+      const n = customOutro.qrMatrix.length;
+      const cell = qrSize/n;
+      ctx.fillStyle = '#111111';
+      for(let r=0;r<n;r++){
+        for(let c=0;c<n;c++){
+          if(customOutro.qrMatrix[r][c]) ctx.fillRect(qrX+c*cell, qrY+r*cell, Math.ceil(cell), Math.ceil(cell));
+        }
+      }
+      cursorY = qrY + qrSize + dstH*0.06;
+    }
+    if(hasText){
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#ffffff';
+      const fontSize = Math.round(dstH*0.032);
+      ctx.font = `700 ${fontSize}px ${bodyFontStack()}`;
+      wrapAndDrawText(ctx, customOutro.text, dstW/2, Math.min(cursorY, dstH*0.94), dstW*0.84, fontSize*1.35, 4);
+    }
+  }
+
+  /* ============================================================
+     ربط عناصر النموذج: مقاس الفيديو / الشعار / خاتمة الفيديو
+     ============================================================ */
+  $('sizePreset').addEventListener('change', () => {
+    $('customSizeFields').style.display = ($('sizePreset').value === 'custom') ? 'grid' : 'none';
+    applySizeSettingsFromForm();
+  });
+  $('customWidth').addEventListener('input', applySizeSettingsFromForm);
+  $('customHeight').addEventListener('input', applySizeSettingsFromForm);
+  $('fitMode').addEventListener('change', applySizeSettingsFromForm);
+
+  $('logoEnabled').addEventListener('change', () => {
+    logoConfig.enabled = $('logoEnabled').checked;
+    $('logoFields').style.display = logoConfig.enabled ? 'block' : 'none';
+    updateLogoPreviewOverlay();
+  });
+  $('logoCorner').addEventListener('change', () => { logoConfig.corner = $('logoCorner').value; updateLogoPreviewOverlay(); });
+  $('logoSizePercent').addEventListener('input', () => { logoConfig.sizePercent = parseFloat($('logoSizePercent').value) || 14; updateLogoPreviewOverlay(); });
+
+  $('logoFile').addEventListener('change', () => {
+    const f = $('logoFile').files[0];
+    if(!f) return;
+    $('logoDropText').textContent = '✓ ' + f.name;
+    if(logoConfig.objectUrl) URL.revokeObjectURL(logoConfig.objectUrl);
+    logoConfig.objectUrl = URL.createObjectURL(f);
+    logoConfig.type = f.type.startsWith('video/') ? 'video' : 'image'; // GIF يُعامَل كصورة (image/gif)
+    logoConfig.el = logoConfig.type === 'video' ? $('logoOverlayVideo') : $('logoOverlayImg');
+    updateLogoPreviewOverlay();
+  });
+
+  $('endScreenMode').addEventListener('change', () => {
+    endScreenMode = $('endScreenMode').value;
+    $('endLogoHint').style.display = endScreenMode === 'logo' ? 'block' : 'none';
+    $('endTickerHint').style.display = endScreenMode === 'ticker' ? 'block' : 'none';
+    $('endCustomFields').style.display = endScreenMode === 'custom' ? 'block' : 'none';
+  });
+
+  $('outroMediaFile').addEventListener('change', () => {
+    const f = $('outroMediaFile').files[0];
+    if(!f) return;
+    $('outroMediaDropText').textContent = '✓ ' + f.name;
+    if(customOutro.mediaObjectUrl) URL.revokeObjectURL(customOutro.mediaObjectUrl);
+    customOutro.mediaObjectUrl = URL.createObjectURL(f);
+    customOutro.mediaType = f.type.startsWith('video/') ? 'video' : 'image';
+    if(customOutro.mediaEl && customOutro.mediaEl.remove) customOutro.mediaEl.remove();
+    if(customOutro.mediaType === 'video'){
+      const v = document.createElement('video');
+      v.src = customOutro.mediaObjectUrl; v.muted = true; v.loop = true; v.playsInline = true;
+      v.style.position = 'fixed'; v.style.left = '-9999px'; v.style.top = '0'; v.style.width = '2px'; v.style.height = '2px';
+      document.body.appendChild(v);
+      customOutro.mediaEl = v;
+    } else {
+      const img = document.createElement('img');
+      img.src = customOutro.mediaObjectUrl;
+      img.style.position = 'fixed'; img.style.left = '-9999px'; img.style.top = '0'; img.style.width = '2px'; img.style.height = '2px';
+      document.body.appendChild(img);
+      customOutro.mediaEl = img;
+    }
+  });
+
+  $('outroAudioFile').addEventListener('change', () => {
+    $('outroAudioTimingRow').style.display = $('outroAudioFile').files[0] ? 'block' : 'none';
+  });
+  $('outroAudioTiming').addEventListener('change', () => {
+    $('outroAudioLeadField').style.display = $('outroAudioTiming').value === 'before' ? 'block' : 'none';
+  });
 
   videoFileInput.addEventListener('change', () => {
     const f = videoFileInput.files[0];
@@ -1108,6 +1534,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     renderPreviewFrame();
     updateControlsUI();
     initTrimUI(video.duration || 0);
+    updateSizeSummary();
   });
   video.addEventListener('loadeddata', () => { renderPreviewFrame(); });
   video.addEventListener('seeked', () => { renderPreviewFrame(); updateControlsUI(); });
@@ -1236,6 +1663,21 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     if(!file){ showError('الرجاء اختيار ملف فيديو أولًا.'); return; }
     if(!name){ showError('الرجاء إدخال اسم الفيديو / الحلقة.'); return; }
 
+    // تحقق مبكر من تناسق إعدادات خاتمة الفيديو قبل المتابعة
+    const chosenEndMode = $('endScreenMode').value;
+    if(chosenEndMode === 'logo' && !$('logoEnabled').checked){
+      showError('اخترت "الشعار" كخاتمة للفيديو، لكن لم تُفعّل خيار "إضافة شعار" أعلاه. فعّله أو اختر خاتمة أخرى.');
+      return;
+    }
+    if(chosenEndMode === 'logo' && $('logoEnabled').checked && !$('logoFile').files[0] && !logoConfig.objectUrl){
+      showError('اخترت "الشعار" كخاتمة، لكن لم تختر ملف شعار بعد.');
+      return;
+    }
+    if(chosenEndMode === 'custom' && !$('outroMediaFile').files[0] && !customOutro.mediaObjectUrl){
+      showError('اخترت خاتمة "مخصص"، لكن لم تختر صورة أو فيديو للخاتمة.');
+      return;
+    }
+
     const h = parseInt($('offH').value || 0, 10) || 0;
     const m = parseInt($('offM').value || 0, 10) || 0;
     const s = parseInt($('offS').value || 0, 10) || 0;
@@ -1249,6 +1691,37 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       showQR: $('tickerShowQR').checked,
       showSeries: $('tickerShowSeries').checked
     };
+
+    applySizeSettingsFromForm();
+
+    logoConfig.enabled = $('logoEnabled').checked;
+    logoConfig.corner = $('logoCorner').value;
+    logoConfig.sizePercent = parseFloat($('logoSizePercent').value) || 14;
+
+    endScreenMode = chosenEndMode;
+    logoOutroDuration = Math.max(1, Math.min(10, parseFloat($('logoOutroDuration').value) || 3));
+    tickerOutroDuration = Math.max(1, Math.min(10, parseFloat($('tickerOutroDuration').value) || 3));
+
+    customOutro.text = $('outroText').value.trim();
+    customOutro.link = $('outroLink').value.trim();
+    customOutro.duration = Math.max(1, Math.min(30, parseFloat($('outroDuration').value) || 8));
+    customOutro.audioStartMode = $('outroAudioTiming').value;
+    customOutro.audioLeadSeconds = Math.max(0.5, Math.min(5, parseFloat($('outroAudioLead').value) || 1));
+
+    const outroAudioF = $('outroAudioFile').files[0];
+    if(outroAudioF){
+      if(customOutro.audioObjectUrl) URL.revokeObjectURL(customOutro.audioObjectUrl);
+      customOutro.audioObjectUrl = URL.createObjectURL(outroAudioF);
+    }
+
+    customOutro.qrMatrix = null;
+    if(customOutro.link){
+      try{ customOutro.qrMatrix = QRCodeGenerator.generateQRMatrix(customOutro.link); }
+      catch(e){
+        customOutro.qrMatrix = null;
+        showError('تعذّر إنشاء رمز QR لرابط الخاتمة (قد يكون طويلًا جدًا). ستظهر الخاتمة بدونه.');
+      }
+    }
 
     qrMatrixCache = null;
     if(url){
@@ -1264,6 +1737,8 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     objectUrl = URL.createObjectURL(file);
     video.src = objectUrl;
     video.load();
+
+    updateLogoPreviewOverlay();
 
     stageInfo.textContent = 'يبدأ العداد من ' + fmtTime(offsetSeconds) + ' من الفيديو الأصلي — سيُحفظ الملف الناتج بصيغة ' + originalFileExt.toUpperCase() + ' (نفس صيغة الملف الأصلي).';
 
@@ -1316,33 +1791,77 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
      خطوات التسجيل والمعاينة وتوليد QR تبقى تعمل دون اتصال كما كانت.
      ============================================================ */
   let ffmpegInstance = null;
+  let ffmpegLoadPromise = null;
 
-  function loadScriptOnce(src){
+  // مصادر بديلة (CDN) لكل من مكتبة التحكم ونواة الترميز، تُجرَّب بالترتيب
+  // إن فشل أحدها — لزيادة الموثوقية بدل الاعتماد على مصدر واحد فقط.
+  const FFMPEG_LIB_SOURCES = [
+    'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js',
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js'
+  ];
+  const FFMPEG_CORE_SOURCES = [
+    'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+  ];
+
+  function loadScriptFrom(src){
     return new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-ffmpeg-loader="1"]');
-      if(existing){ existing.addEventListener('load', resolve); existing.addEventListener('error', () => reject(new Error('تعذّر تحميل مكتبة التحويل'))); if(window.FFmpeg) resolve(); return; }
       const s = document.createElement('script');
-      s.src = src; s.setAttribute('data-ffmpeg-loader','1');
+      s.src = src;
+      s.setAttribute('data-ffmpeg-loader','1');
       s.onload = resolve;
-      s.onerror = () => reject(new Error('تعذّر تحميل مكتبة التحويل — تحقّق من اتصالك بالإنترنت.'));
+      s.onerror = () => reject(new Error('تعذّر تحميل الملف من: ' + src));
       document.head.appendChild(s);
     });
   }
 
-  async function getFFmpeg(onProgress){
-    if(!ffmpegInstance){
-      if(!window.FFmpeg){
-        await loadScriptOnce('https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
-      }
-      const { createFFmpeg } = window.FFmpeg;
-      ffmpegInstance = createFFmpeg({
-        log:false,
-        corePath:'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
-      });
-      await ffmpegInstance.load();
+  async function loadFFmpegLibWithFallback(){
+    if(window.FFmpeg) return;
+    let lastErr = null;
+    for(const src of FFMPEG_LIB_SOURCES){
+      try{ await loadScriptFrom(src); if(window.FFmpeg) return; }
+      catch(e){ lastErr = e; }
     }
-    if(onProgress) ffmpegInstance.setProgress(onProgress);
-    return ffmpegInstance;
+    throw lastErr || new Error('تعذّر تحميل مكتبة التحويل من أي مصدر — تحقّق من اتصالك بالإنترنت.');
+  }
+
+  async function initFFmpegInstance(){
+    await loadFFmpegLibWithFallback();
+    const { createFFmpeg } = window.FFmpeg;
+    let lastErr = null;
+    for(const corePath of FFMPEG_CORE_SOURCES){
+      try{
+        const inst = createFFmpeg({ log:false, corePath });
+        await inst.load();
+        if(!inst.isLoaded || !inst.isLoaded()){
+          throw new Error('اكتمل load() لكن الأداة ما زالت غير جاهزة (isLoaded=false).');
+        }
+        return inst;
+      }catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error('تعذّر تهيئة أداة التحويل من أي مصدر.');
+  }
+
+  /* getFFmpeg: يضمن وجود نسخة واحدة محمَّلة بالكامل وجاهزة فعليًا (isLoaded).
+     يشارك نفس وعد التحميل بين أي استدعاءات متزامنة (لا يبدأ تحميلاً مزدوجًا)،
+     ويصفّر الحالة تلقائيًا عند أي فشل بدل الاحتفاظ بنسخة معطوبة تسبب
+     الخطأ الشهير "ffmpeg.wasm is not ready" في أي محاولة لاحقة. */
+  async function getFFmpeg(onProgress){
+    if(ffmpegInstance && ffmpegInstance.isLoaded && ffmpegInstance.isLoaded()){
+      if(onProgress) ffmpegInstance.setProgress(onProgress);
+      return ffmpegInstance;
+    }
+    if(!ffmpegLoadPromise){
+      ffmpegLoadPromise = initFFmpegInstance().catch(err => {
+        ffmpegLoadPromise = null; // يسمح بإعادة المحاولة من الصفر لاحقًا
+        ffmpegInstance = null;
+        throw err;
+      });
+    }
+    const inst = await ffmpegLoadPromise;
+    ffmpegInstance = inst;
+    if(onProgress) inst.setProgress(onProgress);
+    return inst;
   }
 
   // خطط الترميز لكل صيغة حاوية مستهدفة (تُقرأ من امتداد الملف الأصلي)
@@ -1381,6 +1900,25 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
+  async function runConversionOnce(webmBlob, recordedExt, plan, baseName, onProgress){
+    const ffmpeg = await getFFmpeg(onProgress);
+    recLabel.textContent = 'جارٍ تحويل الصيغة إلى ' + originalFileExt.toUpperCase() + '…';
+
+    const { fetchFile } = window.FFmpeg;
+    const inputName = 'input.' + recordedExt;
+    const outputName = 'output.' + originalFileExt;
+
+    ffmpeg.FS('writeFile', inputName, await fetchFile(webmBlob));
+    await ffmpeg.run('-i', inputName, ...plan.args, outputName);
+    const data = ffmpeg.FS('readFile', outputName);
+
+    try{ ffmpeg.FS('unlink', inputName); }catch(e){}
+    try{ ffmpeg.FS('unlink', outputName); }catch(e){}
+
+    if(!data || !data.length) throw new Error('ناتج التحويل فارغ');
+    return new Blob([data.buffer], { type: plan.mime });
+  }
+
   async function convertToOriginalFormat(webmBlob, recordedExt, baseName){
     const plan = ffmpegPlanFor(originalFileExt);
 
@@ -1397,37 +1935,41 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     recBarFg.style.width = '0%';
     recPercent.textContent = '0%';
 
+    const onProgress = ({ ratio }) => {
+      const pct = Math.max(0, Math.min(100, Math.round((ratio || 0) * 100)));
+      recBarFg.style.width = pct + '%';
+      recPercent.textContent = pct + '%';
+    };
+
     try{
-      const ffmpeg = await getFFmpeg(({ ratio }) => {
-        const pct = Math.max(0, Math.min(100, Math.round((ratio || 0) * 100)));
-        recBarFg.style.width = pct + '%';
-        recPercent.textContent = pct + '%';
-      });
-      recLabel.textContent = 'جارٍ تحويل الصيغة إلى ' + originalFileExt.toUpperCase() + '…';
+      let outBlob;
+      try{
+        outBlob = await runConversionOnce(webmBlob, recordedExt, plan, baseName, onProgress);
+      }catch(firstErr){
+        // إعادة محاولة تلقائية واحدة بعد إعادة تهيئة الأداة من الصفر —
+        // يعالج غالبية حالات "ffmpeg.wasm is not ready" الناتجة عن فشل
+        // تحميل جزئي أو حالة معطوبة من محاولة سابقة، دون تدخل المستخدم.
+        const msg = String(firstErr && firstErr.message || firstErr || '');
+        const looksRecoverable = /not ready|isLoaded|load\(\)|network|fetch|Failed to load/i.test(msg);
+        if(!looksRecoverable) throw firstErr;
 
-      const { fetchFile } = window.FFmpeg;
-      const inputName = 'input.' + recordedExt;
-      const outputName = 'output.' + originalFileExt;
+        ffmpegInstance = null;
+        ffmpegLoadPromise = null;
+        recLabel.textContent = 'تعذّرت المحاولة الأولى، جارٍ إعادة تهيئة أداة التحويل…';
+        recBarFg.style.width = '0%';
+        recPercent.textContent = '0%';
+        outBlob = await runConversionOnce(webmBlob, recordedExt, plan, baseName, onProgress);
+      }
 
-      ffmpeg.FS('writeFile', inputName, await fetchFile(webmBlob));
-      await ffmpeg.run('-i', inputName, ...plan.args, outputName);
-      const data = ffmpeg.FS('readFile', outputName);
-
-      try{ ffmpeg.FS('unlink', inputName); }catch(e){}
-      try{ ffmpeg.FS('unlink', outputName); }catch(e){}
-
-      if(!data || !data.length) throw new Error('ناتج التحويل فارغ');
-
-      const outBlob = new Blob([data.buffer], { type: plan.mime });
       triggerDownload(outBlob, baseName + '.' + originalFileExt);
       recLabel.textContent = 'تم التحويل والتحميل بصيغة ' + originalFileExt.toUpperCase() + ' ✓';
       recBarFg.style.width = '100%';
       recPercent.textContent = '100%';
       return { converted:true };
     }catch(err){
-      // تعذّر التحويل: نوفّر النسخة الوسيطة بدل فقدان النتيجة كليًا
+      // تعذّر التحويل نهائيًا: نوفّر النسخة الوسيطة بدل فقدان النتيجة كليًا
       triggerDownload(webmBlob, baseName + '.' + recordedExt);
-      showError('تعذّر تحويل الملف إلى صيغة ' + originalFileExt.toUpperCase() + ' (' + (err.message || 'خطأ غير معروف') + '). تم تنزيل نسخة بصيغة ' + recordedExt.toUpperCase() + ' بدلًا من ذلك، ويمكنك تحويلها لاحقًا بأي محوّل فيديو.');
+      showError('تعذّر تحويل الملف إلى صيغة ' + originalFileExt.toUpperCase() + ' (' + (err.message || 'خطأ غير معروف') + '). تم تنزيل نسخة بصيغة ' + recordedExt.toUpperCase() + ' بدلًا من ذلك، ويمكنك تحويلها لاحقًا بأي محوّل فيديو، أو إعادة المحاولة (اضغط تحميل الفيديو الجديد مرة أخرى).');
       return { converted:false, error:err };
     }finally{
       isConverting = false;
@@ -1451,13 +1993,39 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
   }
 
   /* ============================================================
-     recordSegment: يسجّل مقطعًا من [segStart, segEnd] من الفيديو
-     الحالي (بنفس شاشة الرسم المستخدمة في المعاينة الحية تمامًا)
-     ويُعيد Promise<{blob, recordedExt}>. تُستخدم هذه الدالة نفسها
-     في كل من "تحميل الفيديو الجديد" (النطاق الكامل أو المقصوص)
-     و"المعاينة السريعة" (٥ ثوانٍ فقط)، لضمان تطابق النتيجتين.
+     مزج الصوت عبر Web Audio API: يوفّر مسارًا صوتيًا واحدًا مستمرًا
+     يجمع صوت الفيديو الأصلي + صوت الخاتمة الخارجي (إن وجد) بالتوقيت
+     المطلوب، ضمن نفس جلسة التسجيل — دون الحاجة لدمج ملفين لاحقًا.
      ============================================================ */
-  function recordSegment({ segStart, segEnd, bitsPerSecond, labelPrefix }){
+  let sharedAudioCtx = null;
+  let persistentVideoAudioSource = null;
+  let lastAudioDestNode = null;
+
+  function getSharedAudioCtx(){
+    if(!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume().catch(()=>{});
+    return sharedAudioCtx;
+  }
+
+  function getPersistentVideoAudioSource(audioCtx){
+    if(persistentVideoAudioSource) return persistentVideoAudioSource;
+    try{
+      persistentVideoAudioSource = audioCtx.createMediaElementSource(video);
+      persistentVideoAudioSource.connect(audioCtx.destination); // يبقي الصوت مسموعًا أثناء المعاينة والتسجيل
+    }catch(e){
+      persistentVideoAudioSource = null; // سيستمر التسجيل بلا صوت أصلي إن فشل هذا (نادر)
+    }
+    return persistentVideoAudioSource;
+  }
+
+  /* ============================================================
+     recordSegment: يسجّل مقطعًا من [segStart, segEnd] من الفيديو
+     الحالي، مطبَّقًا عليه المقاس المختار وطريقة الملاءمة والشعار،
+     ثم — إن كان includeOutro فعّالًا وخاتمة مفعّلة — يستمر بتسجيل
+     طور الخاتمة (شعار كبير / شريط مستمر / خاتمة مخصّصة) ضمن نفس
+     الجلسة والمسار الصوتي المستمر. يُعيد Promise<{blob, recordedExt}>.
+     ============================================================ */
+  function recordSegment({ segStart, segEnd, bitsPerSecond, labelPrefix, includeOutro }){
     return new Promise((resolve, reject) => {
       if(!video.videoWidth){ reject(new Error('لم يتم تحميل الفيديو بعد.')); return; }
       if(!(workCanvas.captureStream && window.MediaRecorder)){
@@ -1467,17 +2035,44 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       const mimeType = pickMimeType();
       if(!mimeType){ reject(new Error('متصفحك لا يدعم أي صيغة فيديو مناسبة للتسجيل.')); return; }
 
-      workCanvas.width = video.videoWidth;
-      workCanvas.height = video.videoHeight;
+      const outSize = resolveOutputSize();
+      workCanvas.width = outSize.w;
+      workCanvas.height = outSize.h;
       const ctx = workCanvas.getContext('2d');
-      measureTicker(ctx, tickerBarHeightPx(workCanvas.height));
+      measureTicker(ctx, tickerBarHeightPx(outSize.h));
 
+      const useOutro = !!includeOutro && endScreenMode !== 'none';
+      const outroMode = useOutro ? endScreenMode : 'none';
+      let outroDuration = 0;
+      if(outroMode === 'logo') outroDuration = (logoConfig.enabled && logoConfig.el) ? logoOutroDuration : 0;
+      else if(outroMode === 'ticker') outroDuration = tickerOutroDuration;
+      else if(outroMode === 'custom') outroDuration = customOutro.mediaEl ? customOutro.duration : 0;
+
+      // ==== إعداد الصوت (Web Audio API): صوت الفيديو + صوت الخاتمة إن وُجد ====
       let audioTrack = null;
+      let outroAudioEl = null;
+      let audioStarted = false;
       try{
-        const vs = video.captureStream ? video.captureStream() : video.mozCaptureStream();
-        const atracks = vs.getAudioTracks();
-        if(atracks.length) audioTrack = atracks[0];
-      }catch(e){ /* بدون صوت إن تعذّر */ }
+        const audioCtx = getSharedAudioCtx();
+        const destNode = audioCtx.createMediaStreamDestination();
+        const videoSource = getPersistentVideoAudioSource(audioCtx);
+        if(videoSource){
+          if(lastAudioDestNode){ try{ videoSource.disconnect(lastAudioDestNode); }catch(e){} }
+          videoSource.connect(destNode);
+          lastAudioDestNode = destNode;
+        }
+        if(outroMode === 'custom' && customOutro.audioObjectUrl){
+          outroAudioEl = new Audio(customOutro.audioObjectUrl);
+          try{
+            const outroSource = audioCtx.createMediaElementSource(outroAudioEl);
+            outroSource.connect(destNode);
+            outroSource.connect(audioCtx.destination);
+          }catch(e){ /* يستمر التصدير بلا صوت خاتمة إن فشل هذا */ }
+        }
+        audioTrack = destNode.stream.getAudioTracks()[0] || null;
+      }catch(e){
+        audioTrack = null; // يستمر التسجيل بلا صوت عند فشل Web Audio API كليًا
+      }
 
       const canvasStream = workCanvas.captureStream(30);
       const tracks = [...canvasStream.getVideoTracks()];
@@ -1494,19 +2089,86 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
 
       let rafId = null;
       let stopped = false;
+      let outroStartWall = 0;
       const totalSpan = Math.max(0.05, segEnd - segStart);
 
-      function drawLoop(){
-        ctx.drawImage(video, 0, 0, workCanvas.width, workCanvas.height);
+      function startOutroAudioOnce(){
+        if(!outroAudioEl || audioStarted) return;
+        audioStarted = true;
+        outroAudioEl.play().catch(()=>{});
+      }
+
+      function maybeStartOutroAudioDuringMain(){
+        if(!outroAudioEl || audioStarted) return;
+        if(customOutro.audioStartMode === 'before'){
+          const lead = Math.max(0, Math.min(outroDuration || 30, customOutro.audioLeadSeconds || 1));
+          if(video.currentTime >= segEnd - lead) startOutroAudioOnce();
+        }
+      }
+
+      function drawMainPhase(){
+        drawMediaFit(ctx, video, video.videoWidth, video.videoHeight, outSize.w, outSize.h, outputSize.fit);
         const timeText = fmtTime(offsetSeconds + video.currentTime);
-        drawTickerBar(ctx, workCanvas.width, workCanvas.height, video.currentTime, timeText);
+        drawTickerBar(ctx, outSize.w, outSize.h, video.currentTime, timeText);
+        if(logoConfig.enabled && logoConfig.el){
+          drawLogoOnCanvas(ctx, outSize.w, outSize.h);
+        }
+        maybeStartOutroAudioDuringMain();
+
         const pct = Math.min(100, Math.max(0, Math.round(((video.currentTime - segStart)/totalSpan)*100)));
         recBarFg.style.width = pct + '%';
         recPercent.textContent = pct + '%';
-        if(!stopped && video.currentTime >= segEnd - 0.03){
+
+        if(video.currentTime >= segEnd - 0.03){
+          if(outroDuration > 0) enterOutroPhase();
+          else finish();
+        } else {
+          rafId = requestAnimationFrame(drawMainPhase);
+        }
+      }
+
+      function enterOutroPhase(){
+        outroStartWall = performance.now();
+        video.pause();
+        recLabel.textContent = 'جارٍ تسجيل خاتمة الفيديو…';
+        if(outroMode === 'custom' && customOutro.mediaType === 'video' && customOutro.mediaEl){
+          try{ customOutro.mediaEl.currentTime = 0; customOutro.mediaEl.muted = true; customOutro.mediaEl.play().catch(()=>{}); }catch(e){}
+        }
+        if(outroMode === 'logo' && logoConfig.type === 'video' && logoConfig.el){
+          try{ logoConfig.el.currentTime = 0; logoConfig.el.muted = true; logoConfig.el.play().catch(()=>{}); }catch(e){}
+        }
+        startOutroAudioOnce();
+        drawOutroPhase();
+      }
+
+      function drawOutroPhase(){
+        const elapsed = (performance.now() - outroStartWall) / 1000;
+
+        if(outroMode === 'logo'){
+          drawMediaFit(ctx, video, video.videoWidth, video.videoHeight, outSize.w, outSize.h, outputSize.fit);
+          const animMs = Math.min(1.2, Math.max(0.4, outroDuration*0.4));
+          const progress = Math.max(0, Math.min(1, elapsed/animMs));
+          const nw = logoNaturalW(), nh = logoNaturalH();
+          if(nw && nh){
+            const rect = computeLogoOutroRect(outSize.w, outSize.h, nw, nh, logoConfig.corner, logoConfig.sizePercent, progress);
+            try{ ctx.drawImage(logoConfig.el, rect.x, rect.y, rect.w, rect.h); }catch(e){}
+          }
+        } else if(outroMode === 'ticker'){
+          drawMediaFit(ctx, video, video.videoWidth, video.videoHeight, outSize.w, outSize.h, outputSize.fit);
+          const timeText = fmtTime(offsetSeconds + segEnd);
+          drawTickerBar(ctx, outSize.w, outSize.h, segEnd + elapsed, timeText);
+        } else if(outroMode === 'custom'){
+          drawCustomOutroFrame(ctx, outSize.w, outSize.h);
+        }
+
+        const pct = Math.min(100, Math.max(0, Math.round((elapsed/outroDuration)*100)));
+        recBarFg.style.width = pct + '%';
+        recPercent.textContent = pct + '%';
+
+        if(!stopped && elapsed >= outroDuration){
           finish();
         } else {
-          rafId = requestAnimationFrame(drawLoop);
+          rafId = requestAnimationFrame(drawOutroPhase);
         }
       }
 
@@ -1516,6 +2178,9 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
         if(rafId) cancelAnimationFrame(rafId);
         video.onended = null;
         video.pause();
+        if(outroAudioEl){ try{ outroAudioEl.pause(); }catch(e){} }
+        if(customOutro.mediaEl && customOutro.mediaType === 'video'){ try{ customOutro.mediaEl.pause(); }catch(e){} }
+        if(logoConfig.el && logoConfig.type === 'video'){ try{ logoConfig.el.pause(); }catch(e){} }
         if(recorder.state !== 'inactive') recorder.stop();
       }
 
@@ -1530,13 +2195,13 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       recPercent.textContent = '0%';
       recProgress.style.display = 'block';
 
-      video.onended = finish;
+      video.onended = () => { if(outroDuration > 0) enterOutroPhase(); else finish(); };
       video.currentTime = segStart;
 
       const startPlayback = () => {
         video.play().catch(()=>{}).then(() => {
           recorder.start(250);
-          drawLoop();
+          drawMainPhase();
         });
       };
       // ننتظر اكتمال الانتقال (seek) للحظة البداية قبل بدء التسجيل، لضمان الدقة
@@ -1575,7 +2240,8 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     try{
       const { blob, recordedExt } = await recordSegment({
         segStart, segEnd, bitsPerSecond: 12000000,
-        labelPrefix: 'جارٍ تسجيل النسخة الجديدة'
+        labelPrefix: 'جارٍ تسجيل النسخة الجديدة',
+        includeOutro: true
       });
       isRecording = false; // انتهى التسجيل، قد تبدأ مرحلة التحويل الآن
       const baseName = sanitizeFilename(currentMeta.name) + '-بالشريط';
@@ -1604,7 +2270,8 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     try{
       const { blob } = await recordSegment({
         segStart, segEnd, bitsPerSecond: 6000000,
-        labelPrefix: 'جارٍ تجهيز معاينة سريعة'
+        labelPrefix: 'جارٍ تجهيز معاينة سريعة',
+        includeOutro: false
       });
       if(quickPreviewVideo.src) URL.revokeObjectURL(quickPreviewVideo.src);
       quickPreviewVideo.src = URL.createObjectURL(blob);
