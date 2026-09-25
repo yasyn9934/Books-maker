@@ -2054,8 +2054,6 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
   const FFMPEG_CORE_SOURCES = [
     'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
     'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
-    'https://unpkg.com/@ffmpeg/core-st@0.11.0/dist/ffmpeg-core.js',
-    'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.0/dist/ffmpeg-core.js',
     'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
     'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
   ];
@@ -2087,7 +2085,16 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     let lastErr = null;
     for(const corePath of FFMPEG_CORE_SOURCES){
       try{
-        const inst = createFFmpeg({ log:false, corePath });
+        // نواة core-st (أحادية الخيط) تصدّر نقطة الدخول باسم 'main' بدل
+        // الاسم الافتراضي؛ بدون mainName:'main' هنا يحدث عدم توافق في
+        // تخطيط الذاكرة بين المُحمِّل والنواة فيفشل التحميل برسالة
+        // "WebAssembly.instantiate(): ... memory import has N pages
+        // which is smaller than the declared initial of M" رغم أن كلا
+        // الملفين (js وwasm) من نفس الحزمة الصحيحة.
+        const isSingleThreadCore = /core-st/.test(corePath);
+        const inst = createFFmpeg(isSingleThreadCore
+          ? { log:false, corePath, mainName:'main' }
+          : { log:false, corePath });
         await inst.load();
         if(!inst.isLoaded || !inst.isLoaded()){
           throw new Error('اكتمل load() لكن الأداة ما زالت غير جاهزة (isLoaded=false).');
