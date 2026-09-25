@@ -947,8 +947,30 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     return { w: nativeW, h: nativeH };
   }
 
-  function computeFitRect(srcW, srcH, dstW, dstH, fit){
-    if(!srcW || !srcH) return { sx:0, sy:0, sw:0, sh:0, dx:0, dy:0, dw:dstW, dh:dstH };
+  /* ============================================================
+     معدّل بت مناسب لدقة الإخراج — بدل رقم ثابت (12 ميجابت/ث) كان
+     يُستخدَم أيًا كانت الدقة، فيُنتج لفيديو 240p (مثلًا) ملفًا أضخم
+     بعشر مرات من اللازم. لفيديو طويل هذا وحده قد يجعل حجم التسجيل
+     يبلغ غيغابايتات، وتغذية ذلك لاحقًا إلى ffmpeg.wasm (الذي يعمل
+     بذاكرة WebAssembly محدودة) هي السبب الأرجح لتجمّد الصفحة بالكامل
+     عند مرحلة "تحويل الصيغة" — إذ يحاول تحميل الملف الضخم بالكامل
+     في الذاكرة وترميزه من جديد.
+     ============================================================ */
+  function recommendedBitsPerSecond(h){
+    if(h <= 270) return 1500000;
+    if(h <= 380) return 2200000;
+    if(h <= 540) return 3500000;
+    if(h <= 740) return 5500000;
+    if(h <= 1100) return 9000000;
+    return 14000000;
+  }
+
+  // حد أقصى آمن (تقريبي) لحجم الملف الذي نحاول تمريره لـ ffmpeg.wasm
+  // لإعادة التغليف إلى الصيغة الأصلية. فوق هذا الحد تنهار غالبية
+  // المتصفحات (نفاد ذاكرة WebAssembly) وتظهر الصفحة "متجمّدة" تمامًا.
+  const FFMPEG_SAFE_MAX_BYTES = 380 * 1024 * 1024; // ~380 ميجابايت
+
+  function computeFitRect(srcW, srcH, dstW, dstH, fit){    if(!srcW || !srcH) return { sx:0, sy:0, sw:0, sh:0, dx:0, dy:0, dw:dstW, dh:dstH };
     const srcRatio = srcW/srcH, dstRatio = dstW/dstH;
     if(fit === 'stretch'){
       return { sx:0, sy:0, sw:srcW, sh:srcH, dx:0, dy:0, dw:dstW, dh:dstH };
@@ -2192,6 +2214,19 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       return { converted:false };
     }
 
+    // ملف كبير جدًا: محاولة تمريره لـ ffmpeg.wasm غالبًا ما تُجمِّد الصفحة
+    // بالكامل (نفاد ذاكرة WebAssembly أثناء تحميله/ترميزه من جديد) بدل أن
+    // تفشل بخطأ واضح. أسلم تصرّف هو تفادي المحاولة من الأساس، وتسليم
+    // WebM (يعمل في كل المتصفحات الحديثة) مع توضيح السبب للمستخدم.
+    if(webmBlob.size > FFMPEG_SAFE_MAX_BYTES){
+      triggerDownload(webmBlob, baseName + '.' + recordedExt);
+      showError('الملف الناتج كبير جدًا (' + formatBytes(webmBlob.size) + ') بحيث لا يمكن تحويله بأمان إلى صيغة ' + originalFileExt.toUpperCase()
+        + ' داخل المتصفح (قد يُجمِّد الصفحة كليًا). لذلك نُزِّلت نسخة بصيغة ' + recordedExt.toUpperCase()
+        + ' مباشرة — وهي تعمل في كل المتصفحات الحديثة. لتحويلها إلى ' + originalFileExt.toUpperCase()
+        + ' استخدم محوّل فيديو خارجيًا، أو قصّر مدة المقطع عبر "نطاق القص" ثم أعد المحاولة.');
+      return { converted:false, skippedTooLarge:true };
+    }
+
     isConverting = true;
     recProgress.style.display = 'block';
     recLabel.textContent = 'جارٍ تحضير أداة تحويل الصيغة (أول مرة فقط)…';
@@ -2558,7 +2593,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
 
     try{
       const { blob, recordedExt } = await recordSegment({
-        segStart, segEnd, bitsPerSecond: 12000000,
+        segStart, segEnd, bitsPerSecond: recommendedBitsPerSecond(resolveOutputSize().h),
         labelPrefix: 'جارٍ تسجيل النسخة الجديدة',
         includeOutro: true
       });
@@ -2588,7 +2623,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
 
     try{
       const { blob } = await recordSegment({
-        segStart, segEnd, bitsPerSecond: 6000000,
+        segStart, segEnd, bitsPerSecond: Math.min(6000000, recommendedBitsPerSecond(resolveOutputSize().h)),
         labelPrefix: 'جارٍ تجهيز معاينة سريعة',
         includeOutro: false
       });
