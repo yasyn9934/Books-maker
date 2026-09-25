@@ -891,6 +891,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
   let originalFileSize = 0;
   let trimStart = 0;              // بداية نطاق القص بالثواني (داخل الملف المرفوع)
   let trimEnd = 0;                // نهاية نطاق القص بالثواني
+  let suppressNextTrimReset = false; // true قبل أي video.load() داخلي (تبديل مصدر لا يعنيه المستخدم) كي لا يُصفَّر نطاق القص
   let tickerStyle = { position:'bottom', color:'gold', size:'md', showQR:true, showSeries:true };
 
   // ===== مقاس الفيديو الناتج =====
@@ -1697,6 +1698,7 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
 
       stageInfo.textContent = 'يبدأ العداد من ' + fmtTime(offsetSeconds) + ' من الفيديو الأصلي — سيُحفظ الناتج النهائي بصيغة ' + originalFileExt.toUpperCase()
         + ' (نفس صيغة الملف الأصلي). ملاحظة: تعمل الصفحة الآن على نسخة WebM مؤقتة لأن هذا المتصفح لا يفك ترميز ' + (label || 'هذا الملف') + '.';
+      suppressNextTrimReset = true;   // لا نريد أن يصفّر تحميل النسخة المؤقتة نطاق القص الذي ضبطه المستخدم
       video.src = fb.proxyUrl;
       video.load();
       video.play().catch(() => {});
@@ -1762,7 +1764,22 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     measureTicker(previewCtx, tickerBarHeightPx(previewCanvas.height));
     renderPreviewFrame();
     updateControlsUI();
-    initTrimUI(video.duration || 0);
+    // عند تبديل video.src داخليًا (مثلاً بعد تحويل نسخة احتياطية متوافقة)
+    // لا نصفّر نطاق القص الذي رُبما ضبطه المستخدم بالفعل — فقط نُثبّته
+    // ضمن حدود المدة الجديدة. initTrimUI (الذي يعيده لكامل الفيديو) يُستدعى
+    // فقط عند اختيار المستخدم ملفًا جديدًا فعليًا.
+    if(suppressNextTrimReset){
+      suppressNextTrimReset = false;
+      clampTrim();
+      setTrimFieldsFromSeconds('Start', trimStart);
+      setTrimFieldsFromSeconds('End', trimEnd);
+      $('trimStartRange').max = video.duration || 0;
+      $('trimEndRange').max = video.duration || 0;
+      updateTrimReadouts();
+      trimPanel.style.display = (video.duration || 0) > 0 ? 'block' : 'none';
+    } else {
+      initTrimUI(video.duration || 0);
+    }
     updateSizeSummary();
   });
   video.addEventListener('loadeddata', () => { renderPreviewFrame(); });
@@ -2029,7 +2046,16 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
     'https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js',
     'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js'
   ];
+  // core-st = نواة أحادية الخيط لا تحتاج SharedArrayBuffer، وتعمل في أي صفحة
+  // (بما فيها الملف المفتوح مباشرة file://) دون حاجة لخادم يضبط ترويسات
+  // عزل المصدر (COOP/COEP). النواة العادية @ffmpeg/core تحتاج تلك الترويسات
+  // وإلا فشلت برسالة "SharedArrayBuffer is not defined"، لذا نجعلها الخيار
+  // الأخير فقط لمن يملك خادمًا مهيّأً لها.
   const FFMPEG_CORE_SOURCES = [
+    'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+    'https://unpkg.com/@ffmpeg/core-st@0.11.0/dist/ffmpeg-core.js',
+    'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.0/dist/ffmpeg-core.js',
     'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
     'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
   ];
@@ -2322,6 +2348,56 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       let outroStartWall = 0;
       const totalSpan = Math.max(0.05, segEnd - segStart);
 
+      /* ==== رصد تجمّد الصورة أثناء التسجيل ====
+         بعض المتصفحات/الملفات تجعل video.currentTime يستمر بالتقدّم
+         (يُحرَّك أحيانًا بساعة الصوت) بينما تتوقف الصورة المعروضة فعليًا
+         عند إطار واحد — فيُسجَّل مقطع طويل بصورة ثابتة دون أن يظهر أي
+         خطأ. نعتمد على requestVideoFrameCallback (يُطلَق فقط عند عرض
+         إطار جديد فعليًا) كمؤشر تقدّم أدق من currentTime؛ فإن توقّف عن
+         الإطلاق لفترة نُوقف التسجيل برسالة خطأ واضحة بدل تسليم فيديو
+         تالف بصمت. مع رجوع إلى مراقبة currentTime إن لم يدعمه المتصفح. */
+      const STALL_MS = 7000;
+      let lastProgressWall = performance.now();
+      let lastSeenMediaTime = -1;
+      let rvfcHandle = null;
+      const hasRVFC = typeof video.requestVideoFrameCallback === 'function';
+
+      function noteFrameProgress(mediaTime){
+        if(mediaTime === undefined || mediaTime !== lastSeenMediaTime){
+          lastSeenMediaTime = mediaTime;
+          lastProgressWall = performance.now();
+        }
+      }
+      function pumpRVFC(){
+        if(stopped) return;
+        rvfcHandle = video.requestVideoFrameCallback((now, meta) => {
+          noteFrameProgress(meta && meta.mediaTime);
+          pumpRVFC();
+        });
+      }
+      if(hasRVFC) pumpRVFC();
+
+      const watchdogInterval = setInterval(() => {
+        if(stopped) return;
+        if(!hasRVFC) noteFrameProgress(video.currentTime); // احتياط بلا rVFC: أقل دقة لكنه أفضل من لا شيء
+        if(performance.now() - lastProgressWall > STALL_MS){
+          abortStalled();
+        }
+      }, 1000);
+
+      function abortStalled(){
+        if(stopped) return;
+        stopped = true;
+        clearInterval(watchdogInterval);
+        if(rafId) cancelAnimationFrame(rafId);
+        if(hasRVFC && rvfcHandle && video.cancelVideoFrameCallback){ try{ video.cancelVideoFrameCallback(rvfcHandle); }catch(e){} }
+        video.onended = null;
+        try{ video.pause(); }catch(e){}
+        try{ if(recorder.state !== 'inactive') recorder.stop(); }catch(e){}
+        recProgress.style.display = 'none';
+        reject(new Error('توقّفت الصورة عن التحديث أثناء التسجيل (تجمّد الفيديو) رغم استمرار الوقت — على الأرجح مشكلة في فك ترميز هذا الملف داخل هذا المتصفح. جرّب متصفح Chrome أو Edge حديثًا، أو حوّل الفيديو مسبقًا بأي محوّل خارجي، ثم أعد المحاولة.'));
+      }
+
       function startOutroAudioOnce(){
         if(!outroAudioEl || audioStarted) return;
         audioStarted = true;
@@ -2358,6 +2434,10 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       }
 
       function enterOutroPhase(){
+        // خاتمة الفيديو تعرض إطارًا ثابتًا عمدًا (فيديو متوقف) — لا علاقة
+        // لذلك برصد التجمّد، فنوقف المراقبة هنا كي لا تُطلق خطأً كاذبًا.
+        clearInterval(watchdogInterval);
+        if(hasRVFC && rvfcHandle && video.cancelVideoFrameCallback){ try{ video.cancelVideoFrameCallback(rvfcHandle); }catch(e){} }
         outroStartWall = performance.now();
         video.pause();
         recLabel.textContent = 'جارٍ تسجيل خاتمة الفيديو…';
@@ -2405,7 +2485,9 @@ global.QRCodeGenerator = { generateQRMatrix: generateQRMatrix };
       function finish(){
         if(stopped) return;
         stopped = true;
+        clearInterval(watchdogInterval);
         if(rafId) cancelAnimationFrame(rafId);
+        if(hasRVFC && rvfcHandle && video.cancelVideoFrameCallback){ try{ video.cancelVideoFrameCallback(rvfcHandle); }catch(e){} }
         video.onended = null;
         video.pause();
         if(outroAudioEl){ try{ outroAudioEl.pause(); }catch(e){} }
