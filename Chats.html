@@ -465,6 +465,40 @@ button{touch-action:manipulation;}
  .swatches{gap:6px;}
  .swatch{width:27px;height:27px;}
 }
+/* Keep message input and actions inside the viewport on narrow RTL screens. */
+.composer,.comp-row,.comp-area{min-width:0;}
+.composer{width:100%;max-width:100vw;}
+.comp-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:end;gap:8px;width:100%;max-width:100%;}
+.comp-area{width:100%;max-width:100%;min-width:0;}
+.comp-btns{width:44px;min-width:44px;max-width:44px;align-items:stretch;}
+.comp-btns .send-btn{width:44px;min-width:44px;max-width:44px;}
+.comp-user-wrap,.type-row{width:100%;max-width:100%;min-width:0;}
+.comp-user-sel,.comp-new-user,.comp-ta{min-width:0;max-width:100%;}
+@media(max-width:430px){
+ .composer{padding:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));}
+ .comp-row{grid-template-columns:minmax(0,1fr) 42px;gap:6px;}
+ .comp-btns,.comp-btns .send-btn{width:42px;min-width:42px;max-width:42px;}
+ .send-btn{height:42px;}
+ .comp-area{padding-inline:10px;}
+}
+/* Per-conversation message side controls and explicit horizontal type-chip scrolling. */
+.sh-hint{font-size:11.5px;color:var(--mt);line-height:1.6;padding:0 2px 7px;}
+.sh-member-info{flex:1;min-width:0;}
+.sh-member-info .sh-iname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.member-side-toggle{flex:0 0 auto;min-width:76px;padding:5px 8px;border:1px solid var(--br);border-radius:999px;background:var(--ibg);color:var(--ac);font-family:inherit;font-size:11px;font-weight:700;line-height:1.4;cursor:pointer;white-space:nowrap;touch-action:manipulation;}
+.member-side-toggle:active{background:var(--ac);color:#fff;}
+.type-strip-scroll{width:100%;max-width:100%;min-width:0;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--ac) transparent;cursor:grab;}
+.type-strip-scroll:active{cursor:grabbing;}
+.type-strip-scroll .tchip{scroll-snap-align:start;}
+.type-strip-scroll::-webkit-scrollbar{display:block;height:4px;}
+.type-strip-scroll::-webkit-scrollbar-thumb{background:var(--ac);border-radius:99px;}
+.type-strip-scroll::-webkit-scrollbar-track{background:transparent;}
+@media(max-width:430px){
+ .sh-item{gap:8px;}
+ .sh-dot.mini{width:36px;height:36px;}
+ .member-side-toggle{min-width:68px;padding:4px 6px;font-size:10.5px;}
+ .type-strip-scroll{padding-bottom:8px;}
+}
 </style>
 </head>
 <body>
@@ -542,7 +576,7 @@ button{touch-action:manipulation;}
   <div class="composer">
     <div class="comp-row">
       <div class="comp-area">
-        <div class="type-row" id="comp-types"></div>
+        <div class="type-row type-strip-scroll comp-type-strip" id="comp-types" role="group" aria-label="أنواع الرسائل" title="اسحب أفقيًا لاستعراض الخيارات"></div>
         <div class="comp-user-wrap" id="comp-user-wrap">
           <span class="comp-user-label">المرسل:</span>
           <select class="comp-user-sel" id="comp-sel"></select>
@@ -598,7 +632,7 @@ button{touch-action:manipulation;}
 <div class="mov" id="m-editmsg">
   <div class="modal wide">
     <h3>تعديل الرسالة</h3>
-    <div class="fld"><label>نوع النص</label><div class="type-row" id="em-types"></div></div>
+    <div class="fld"><label>نوع النص</label><div class="type-row type-strip-scroll" id="em-types" role="group" aria-label="أنواع الرسائل" title="اسحب أفقيًا لاستعراض الخيارات"></div></div>
     <div class="fld"><label for="em-sender">المرسل الحقيقي لهذه الرسالة</label><input id="em-sender" list="em-sender-options" autocomplete="off" placeholder="اكتب اسم المرسل أو اختر اسمًا موجودًا"><datalist id="em-sender-options"></datalist><div class="profile-extra-note">يغيّر هذا إسناد الرسالة الحالية فقط؛ بقية رسائل المرسل لا تتغير.</div></div>
     <div class="fld"><label>النص</label><textarea id="em-ta" rows="5"></textarea></div>
     <div class="fld">
@@ -683,6 +717,7 @@ button{touch-action:manipulation;}
 ]</pre>
     <h4>الحقول:</h4>
     <p><code>id</code> معرّف فريد · <code>name</code> اسم المرسل (<code>أنا</code> = رسائل صادرة) · <code>text</code> النص · <code>Rep</code> معرّف رسالة يُرد عليها · <code>chat</code> محادثة فرعية · <code>type</code> نوع النص: <code>reply</code> رد (الافتراضي) أو <code>comment</code> تعليق أو <code>post</code> منشور أو <code>note</code> تعليق توضيحي (بلا مرسل) · <code>imgs</code> مصفوفة صور، لكل صورة <code>src</code> (رابط أو data URL) و<code>name</code> و<code>caption</code> و<code>transcript</code></p>
+    <p>يمكن تغيير جهة رسائل أي عضو في المحادثة الحالية من زر الأعضاء. تُحفظ تلقائيًا ضمن المحادثة وتُصدّر معها عبر <code>memberSides</code> بالقيمة <code>right</code> أو <code>left</code>. التعليقات التوضيحية بلا مرسل تبقى في الوسط.</p>
     <h4>ملف المحادثات الكامل:</h4>
     <pre class="help-pre">{"format":"tg-viewer","version":4,"conversations":[],"profiles":{}}</pre>
     <h4>التمييز التلقائي:</h4>
@@ -933,9 +968,14 @@ function migrateMsg(m){
   if(m.imgs&&!m.imgs.length)delete m.imgs;
   if(m.type&&!TYPES[m.type])delete m.type;
 }
+function normalizeMemberSides(v){
+  const out={};if(!v||typeof v!=='object'||Array.isArray(v))return out;
+  Object.keys(v).forEach(n=>{if(v[n]==='right'||v[n]==='left')out[String(n)]=v[n];});return out;
+}
 function migrateConv(c){
   if(!Array.isArray(c.messages))c.messages=[];
   if(!Array.isArray(c.participants))c.participants=[];
+  c.memberSides=normalizeMemberSides(c.memberSides);
   c.messages.forEach(migrateMsg);
   ensureColors(c);
 }
@@ -1209,6 +1249,7 @@ function renameInConv(c,old,nn){
   c.messages.forEach(m=>{if(m.name===old)m.name=nn;if(m.chat&&m.chat.Loc===old)m.chat.Loc=nn;});
   if(c.participants){const i=c.participants.indexOf(old);if(i>-1)c.participants[i]=nn;else if(!c.participants.includes(nn))c.participants.push(nn);}
   if(c.colors&&c.colors[old]){if(!c.colors[nn])c.colors[nn]=c.colors[old];delete c.colors[old];}
+  if(c.memberSides&&c.memberSides[old]){if(!c.memberSides[nn])c.memberSides[nn]=c.memberSides[old];delete c.memberSides[old];}
   markEdited(c);
 }
 let PF=null;
@@ -1585,11 +1626,17 @@ function buildNote(m,c){
   return row;
 }
 
+function defaultMessageOut(c,name){
+  const parts=c.participants||[];return isMe(name)||(parts.length===2&&parts.indexOf(name)===1);
+}
+function messageOut(c,name){
+  const side=c&&c.memberSides&&c.memberSides[name];
+  return side==='right'?true:side==='left'?false:defaultMessageOut(c,name);
+}
 function buildRow(m,c,byId){
   const type=mType(m);
   if(type==='note')return buildNote(m,c);
-  const parts=c.participants||[];
-  const out=isMe(m.name)||(parts.length===2&&parts.indexOf(m.name)===1);
+  const out=messageOut(c,m.name);
   const pc=colorOf(c,m.name);
   const row=document.createElement('div');
   row.className='msg-row '+(out?'out':'in')+' t-'+type;
@@ -1819,6 +1866,7 @@ document.getElementById('rb-close').onclick=clearReply;
 ═══════════════════════════════ */
 const PLACEHOLDERS={reply:'اكتب رسالة...',comment:'اكتب التعليق...',post:'اكتب المنشور...',note:'اكتب تعليقًا توضيحيًا (منك أنت، لا من أحد المتحاورين)...'};
 function renderTypeChips(wrap,cur,onPick){
+  const keepScroll=wrap.scrollLeft;
   wrap.innerHTML='';
   TYPE_ORDER.forEach(t=>{
     const b=document.createElement('button');b.type='button';b.className='tchip'+(t===cur?' on':'');
@@ -1826,6 +1874,7 @@ function renderTypeChips(wrap,cur,onPick){
     b.onclick=()=>{onPick(t);renderTypeChips(wrap,t,onPick);};
     wrap.appendChild(b);
   });
+  wrap.scrollLeft=keepScroll;
 }
 function applyComposeType(){
   const t=S.composeType;
@@ -1922,16 +1971,21 @@ function openMembers(){
   ensureColors(c);
   document.getElementById('sh-title').textContent='أعضاء المحادثة';
   const list=document.getElementById('sh-list');list.innerHTML='';
+  const hint=document.createElement('div');hint.className='sh-hint';hint.textContent='اضغط على ↔ يمين/يسار لتغيير جهة جميع رسائل العضو في هذه المحادثة.';list.appendChild(hint);
   uUsers(c).forEach(u=>{
     const n=c.messages.filter(m=>m.name===u).length;
     const item=document.createElement('div');item.className='sh-item';
     const dot=document.createElement('div');dot.className='sh-dot mini';paintAv(dot,u,colorOf(c,u));
-    const info=document.createElement('div');
+    const info=document.createElement('div');info.className='sh-member-info';
     info.innerHTML='<div class="sh-iname"></div><div class="sh-isub"></div>';
     info.querySelector('.sh-iname').textContent=isMe(u)?'أنا':u;
     info.querySelector('.sh-isub').textContent=n+' رسالة';
+    const side=(c.memberSides&&c.memberSides[u])||(defaultMessageOut(c,u)?'right':'left');
+    const toggle=document.createElement('button');toggle.type='button';toggle.className='member-side-toggle';toggle.textContent=side==='right'?'↔ يمين':'↔ يسار';
+    toggle.title='تبديل جهة جميع رسائل هذا العضو في هذه المحادثة';toggle.setAttribute('aria-label','جهة رسائل '+u+': '+(side==='right'?'اليمين':'اليسار')+' — اضغط للتبديل');toggle.setAttribute('aria-pressed',side==='right'?'true':'false');
+    toggle.onclick=e=>{e.stopPropagation();if(!c.memberSides)c.memberSides={};const current=c.memberSides[u]||(defaultMessageOut(c,u)?'right':'left');const next=current==='right'?'left':'right';c.memberSides[u]=next;markEdited(c);save();renderMsgs(c);renderHome();renderChatHeader(c);openMembers();toast('أصبحت رسائل '+u+' من جهة '+(next==='right'?'اليمين':'اليسار'));};
     const sw=document.createElement('span');sw.style.cssText='margin-inline-start:auto;width:14px;height:14px;border-radius:50%;background:'+colorOf(c,u);
-    item.appendChild(dot);item.appendChild(info);item.appendChild(sw);
+    item.appendChild(dot);item.appendChild(info);item.appendChild(toggle);item.appendChild(sw);
     item.onclick=()=>{closeSheet();openProfile(u);};
     list.appendChild(item);
   });
@@ -2092,7 +2146,7 @@ function normalizeConv(r){
     return o;
   });
   const seen=new Set();msgs.forEach(m=>{if(seen.has(m.id))m.id=uid();seen.add(m.id);});
-  const c={id:r.id||cuid(),name:r.name||'محادثة مستوردة',participants:Array.isArray(r.participants)?r.participants.map(String):[],messages:msgs,colors:(r.colors&&typeof r.colors==='object')?r.colors:{}};
+  const c={id:r.id||cuid(),name:r.name||'محادثة مستوردة',participants:Array.isArray(r.participants)?r.participants.map(String):[],messages:msgs,colors:(r.colors&&typeof r.colors==='object')?r.colors:{},memberSides:normalizeMemberSides(r.memberSides)};
   ensureColors(c);
   return c;
 }
