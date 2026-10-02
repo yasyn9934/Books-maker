@@ -422,6 +422,49 @@ button{touch-action:manipulation;}
  .lb-btn{padding:0 10px;font-size:12px;}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}}
+
+/* ═══ v5 full-page profile and responsive structure ═══ */
+#m-profile{z-index:100;align-items:stretch;justify-content:stretch;padding:0;background:var(--bg);}
+#m-profile.open{opacity:1;pointer-events:auto;}
+#m-profile .profile-shell{width:100%;max-width:none;height:100%;max-height:100dvh;margin:0;padding:0;border-radius:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+.pf-header{flex:0 0 auto;position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) clamp(16px,4vw,48px) 10px;margin:0!important;min-height:60px;background:var(--hbg);border-bottom:1px solid var(--br);box-shadow:0 2px 10px rgba(0,0,0,.08);}
+.pf-close{color:var(--mt);font-size:20px;}
+.profile-scroll{flex:1;min-height:0;overflow:auto;padding:20px clamp(16px,4vw,48px) 26px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.pf-identity{width:min(100%,1080px);margin:0 auto 18px;display:grid;grid-template-columns:140px minmax(0,1fr);grid-template-rows:auto auto;align-items:center;column-gap:24px;padding:18px;background:var(--crd);border:1px solid var(--br);border-radius:20px;box-shadow:var(--sh);}
+.pf-identity .prof-hero{grid-row:1/3;grid-column:1;}
+.pf-identity .fld{margin:6px 0;}
+.pf-identity .fld:last-child{grid-column:2;}
+.profile-grid{width:min(100%,1080px);margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+.profile-column{min-width:0;display:grid;gap:14px;align-content:start;}
+.profile-column>.fld,.profile-column>.profile-extra{margin:0;padding:14px;background:var(--crd);border:1px solid var(--br);border-radius:18px;box-shadow:0 2px 10px rgba(20,16,8,.06);}
+.profile-column>.profile-extra{border-top:1px solid var(--br);}
+.profile-column>.btn-line{margin:0;}
+.profile-actions{flex:0 0 auto;position:sticky;bottom:0;z-index:3;margin:0!important;padding:12px clamp(16px,4vw,48px) calc(12px + env(safe-area-inset-bottom,0px));background:var(--hbg);border-top:1px solid var(--br);box-shadow:0 -3px 12px rgba(0,0,0,.07);}
+.profile-actions .btn{max-width:320px;}
+#m-profile .prof-av{width:112px;height:112px;border-radius:50%;}
+.em-sender-hint{color:var(--mt);font-size:11.5px;line-height:1.65;}
+@media(max-width:720px){
+ .profile-grid{grid-template-columns:1fr;gap:12px;}
+ .pf-identity{grid-template-columns:86px minmax(0,1fr);column-gap:14px;padding:13px;border-radius:16px;}
+ .pf-identity .prof-hero{grid-row:1/3;}
+ #m-profile .prof-av{width:76px;height:76px;border-radius:50%;font-size:30px;}
+ .prof-av-btns{flex-direction:column;gap:5px;align-items:center;}
+ .prof-av-btns .ie-btn{padding:5px 7px;font-size:11px;}
+ .profile-scroll{padding:12px 12px 18px;}
+ .pf-header{padding-inline:14px;}
+ .profile-actions{padding-inline:12px;gap:8px;}
+ .profile-actions .btn{padding:10px 6px;font-size:13px;}
+}
+@media(max-width:380px){
+ .tg-header .header-actions{gap:0;}
+ .tg-header .icon-btn{width:31px;font-size:15px;}
+ .conv-card{gap:8px;padding:10px;}
+ .conv-action-btns .mini-btn{width:26px;}
+ .pf-identity{grid-template-columns:70px minmax(0,1fr);gap:9px;padding:10px;}
+ #m-profile .prof-av{width:64px;height:64px;font-size:25px;}
+ .swatches{gap:6px;}
+ .swatch{width:27px;height:27px;}
+}
 </style>
 </head>
 <body>
@@ -527,8 +570,8 @@ button{touch-action:manipulation;}
   <div class="ctx-i" id="ctx-reply"><span class="ctx-ico">↩</span>رد</div>
   <div class="ctx-i" id="ctx-copy"><span class="ctx-ico">📋</span>نسخ النص</div>
   <div class="ctx-i" id="ctx-profile"><span class="ctx-ico">🪪</span>الملف الشخصي</div>
-  <div class="ctx-i" id="ctx-edit"><span class="ctx-ico">✏️</span>تعديل النص</div>
-  <div class="ctx-i" id="ctx-rename"><span class="ctx-ico">👤</span>تغيير اسم المرسل</div>
+  <div class="ctx-i" id="ctx-edit"><span class="ctx-ico">✏️</span>تعديل الرسالة / المرسل</div>
+  <div class="ctx-i" id="ctx-rename"><span class="ctx-ico">👤</span>إعادة تسمية المرسل في المحادثة</div>
   <div class="ctx-i danger" id="ctx-del"><span class="ctx-ico">🗑️</span>حذف الرسالة</div>
 </div>
 
@@ -556,6 +599,7 @@ button{touch-action:manipulation;}
   <div class="modal wide">
     <h3>تعديل الرسالة</h3>
     <div class="fld"><label>نوع النص</label><div class="type-row" id="em-types"></div></div>
+    <div class="fld"><label for="em-sender">المرسل الحقيقي لهذه الرسالة</label><input id="em-sender" list="em-sender-options" autocomplete="off" placeholder="اكتب اسم المرسل أو اختر اسمًا موجودًا"><datalist id="em-sender-options"></datalist><div class="profile-extra-note">يغيّر هذا إسناد الرسالة الحالية فقط؛ بقية رسائل المرسل لا تتغير.</div></div>
     <div class="fld"><label>النص</label><textarea id="em-ta" rows="5"></textarea></div>
     <div class="fld">
       <label>الصور — لكل صورة تعليق وتفريغ</label>
@@ -675,43 +719,42 @@ button{touch-action:manipulation;}
 </div>
 
 <!-- ═══ MODAL: Profile ═══ -->
-<div class="mov" id="m-profile">
-  <div class="modal wide">
-    <h3>🪪 الملف الشخصي</h3>
-    <div class="prof-hero">
-      <div class="prof-av" id="pf-av" title="تغيير الصورة"></div>
-      <div class="prof-av-btns">
-        <button type="button" class="ie-btn" id="pf-av-set">📷 تغيير الصورة</button>
-        <button type="button" class="ie-btn" id="pf-av-rm" style="color:var(--danger)">إزالة</button>
+<div class="mov profile-page" id="m-profile" role="dialog" aria-modal="true" aria-labelledby="pf-title">
+  <div class="modal wide profile-shell">
+    <h3 class="pf-header"><span id="pf-title">🪪 الملف الشخصي</span><button type="button" class="icon-btn pf-close" id="pf-close" aria-label="إغلاق الملف الشخصي" title="إغلاق">✕</button></h3>
+    <div class="profile-scroll">
+      <section class="pf-identity">
+        <div class="prof-hero">
+          <div class="prof-av" id="pf-av" title="تغيير الصورة"></div>
+          <div class="prof-av-btns"><button type="button" class="ie-btn" id="pf-av-set">📷 تغيير الصورة</button><button type="button" class="ie-btn" id="pf-av-rm" style="color:var(--danger)">إزالة</button></div>
+        </div>
+        <div class="fld"><label for="pf-name">الاسم</label><input id="pf-name" type="text"></div>
+        <div class="fld"><label>اللون الموحد لهذا الطرف في جميع المحادثات</label><div class="swatches" id="pf-colors"></div><div class="pf-hint">الألوان مميزة عالميًا؛ اختيار لون مستخدم ينقل اللون السابق بين الطرفين.</div></div>
+      </section>
+      <div class="profile-grid">
+        <div class="profile-column">
+          <div class="fld"><label for="pf-bio">الوصف الشخصي / اليدوي</label><textarea id="pf-bio" rows="4" placeholder="نبذة تكتبها بنفسك..."></textarea></div>
+          <section class="profile-extra" aria-label="الأوصاف والوسوم">
+            <div class="profile-extra-title">وصف تحليلي معمّق</div>
+            <div id="pf-deepbio" class="profile-ai-text" style="font-size:13px;color:var(--tx);min-height:24px">لا يوجد وصف تحليلي بعد.</div>
+            <button type="button" class="btn-line" id="pf-ai">تحليل محادثات هذا الطرف بالذكاء الاصطناعي…</button>
+            <div class="profile-extra-title" style="margin-top:12px">أوصاف مختصرة / وسوم</div>
+            <div id="pf-tags" class="party-tags"></div>
+            <div class="add-part-row"><input id="pf-tag-input" type="text" placeholder="أضف وسمًا قصيرًا…" aria-label="وسم جديد"><button type="button" class="btn-add" id="pf-tag-add">إضافة</button></div>
+            <div class="profile-extra-note">الوسوم مرنة العرض، وتحفظ ضمن ملف الطرف في جميع محادثاته.</div>
+          </section>
+        </div>
+        <div class="profile-column">
+          <section class="profile-extra" aria-label="العلاقات المستخرجة من المحادثات">
+            <div class="profile-extra-title">العلاقات المستخرجة آليًا</div><div id="pf-rel-summary" class="profile-extra-note"></div><div id="pf-relations" class="relation-list"></div>
+            <div class="profile-extra-note">الحساب يستند إلى الأسماء والرسائل في الملف فقط؛ لا توجد طوابع زمنية، لذا طول المحادثة يعني عدد الرسائل لا مدتها.</div>
+          </section>
+          <div class="fld"><label>صور الوصف</label><div id="pf-imgs"></div><button type="button" class="btn-add" id="pf-addimg" style="margin-top:6px">＋ إضافة صور للوصف</button></div>
+          <button type="button" class="btn-line" id="pf-links">🗂️ المحادثات المرتبطة</button>
+        </div>
       </div>
     </div>
-    <div class="fld"><label>الاسم</label><input id="pf-name" type="text"></div>
-    <div class="fld"><label>لون هذا العضو في المحادثة الحالية</label><div class="swatches" id="pf-colors"></div>
-      <div class="pf-hint">النقطة الصغيرة تعني أن اللون مستخدم عند عضو آخر؛ اختياره يبدّل اللونين بينهما.</div></div>
-    <div class="fld"><label>وصف العضو الشخصي / اليدوي</label><textarea id="pf-bio" rows="4" placeholder="نبذة تكتبها بنفسك..."></textarea></div>
-    <section class="profile-extra" aria-label="الأوصاف والوسوم">
-      <div class="profile-extra-title">وصف تحليلي معمّق</div>
-      <div id="pf-deepbio" class="profile-ai-text" style="font-size:13px;color:var(--tx);min-height:24px">لا يوجد وصف تحليلي بعد.</div>
-      <button type="button" class="btn-line" id="pf-ai">تحليل محادثات هذا الطرف بالذكاء الاصطناعي…</button>
-      <div class="profile-extra-title" style="margin-top:12px">أوصاف مختصرة / وسوم</div>
-      <div id="pf-tags" class="party-tags"></div>
-      <div class="add-part-row"><input id="pf-tag-input" type="text" placeholder="أضف وسمًا قصيرًا…" aria-label="وسم جديد"><button type="button" class="btn-add" id="pf-tag-add">إضافة</button></div>
-      <div class="profile-extra-note">الوسوم دوائر مرنة يتحدد عرضها تلقائيًا بحسب النص، وتحفظ ضمن ملف الطرف في جميع محادثاته.</div>
-    </section>
-    <section class="profile-extra" aria-label="العلاقات المستخرجة من المحادثات">
-      <div class="profile-extra-title">العلاقات المستخرجة آليًا</div>
-      <div id="pf-rel-summary" class="profile-extra-note"></div>
-      <div id="pf-relations" class="relation-list"></div>
-      <div class="profile-extra-note">الإحصاءات مبنية فقط على أسماء المرسلين/الأعضاء والرسائل الموجودة في الملف؛ لا توجد طوابع زمنية، لذا طول المحادثة يعني عدد الرسائل لا مدتها الزمنية.</div>
-    </section>
-    <div class="fld"><label>صور الوصف</label>
-      <div id="pf-imgs"></div>
-      <button type="button" class="btn-add" id="pf-addimg" style="margin-top:6px">＋ إضافة صور للوصف</button></div>
-    <button type="button" class="btn-line" id="pf-links">🗂️ المحادثات المرتبطة</button>
-    <div class="mbtns">
-      <button class="btn btn-s" id="pf-cancel">إلغاء</button>
-      <button class="btn btn-p" id="pf-save">حفظ</button>
-    </div>
+    <div class="mbtns profile-actions"><button class="btn btn-s" id="pf-cancel">إغلاق دون حفظ</button><button class="btn btn-p" id="pf-save">حفظ التغييرات</button></div>
   </div>
 </div>
 
@@ -900,8 +943,8 @@ function mergeProfiles(p){
   if(!p||typeof p!=='object')return;
   Object.keys(p).forEach(n=>{
     const s=p[n]||{},cur=S.profiles[n]||{};
-    const m={avatar:cur.avatar||s.avatar||'',bio:cur.bio||s.bio||'',deepBio:cur.deepBio||s.deepBio||'',tags:Array.isArray(cur.tags)&&cur.tags.length?cur.tags:(Array.isArray(s.tags)?s.tags:[]),imgs:(cur.imgs&&cur.imgs.length)?cur.imgs:normalizeImgs({imgs:s.imgs||[]})};
-    if(m.avatar||m.bio||m.imgs.length)S.profiles[n]=m;
+    const m={avatar:cur.avatar||s.avatar||'',bio:cur.bio||s.bio||'',deepBio:cur.deepBio||s.deepBio||'',tags:Array.isArray(cur.tags)&&cur.tags.length?cur.tags:(Array.isArray(s.tags)?s.tags:[]),imgs:(cur.imgs&&cur.imgs.length)?cur.imgs:normalizeImgs({imgs:s.imgs||[]}),color:cur.color||s.color||''};
+    if(m.avatar||m.bio||m.deepBio||m.tags.length||m.imgs.length||m.color)S.profiles[n]=m;
   });
 }
 async function load(){
@@ -924,6 +967,7 @@ async function load(){
   });
   mergeProfiles(SEED_DATA.profiles);
   S.convs.forEach(migrateConv);
+  ensureGlobalColors();
   S.loaded=true;
   save();
 }
@@ -944,32 +988,38 @@ const TYPE_ORDER=['reply','comment','post','note'];
 const mType=m=>(m&&TYPES[m.type])?m.type:'reply';
 const iid=()=>'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
-/* 12 distinct member colors; a conversation never gives two members the same one. */
+/* Stable global party colors: distinct across the full dataset, not just one conversation. */
 const PALETTE=['#2f6b5e','#a6752e','#7a3f5c','#2e5a9a','#a8402c','#6b7a2f','#6a4fa0','#1f7f8f','#b0507a','#8a5a2f','#4f5c8a','#9a3f8a'];
 function hslToHex(h,s,l){
   s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l);
   const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
   return'#'+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
 }
-function ensureColors(c){
-  if(!c.colors||typeof c.colors!=='object')c.colors={};
-  const used=new Set(Object.values(c.colors).map(x=>String(x).toLowerCase()));
-  const names=[];
-  c.messages.forEach(m=>{if(mType(m)!=='note'&&m.name&&!names.includes(m.name))names.push(m.name);});
-  (c.participants||[]).forEach(p=>{if(p&&!names.includes(p))names.push(p);});
-  names.forEach(n=>{
-    if(c.colors[n])return;
-    let col=FIXED_COLORS[n];
-    if(col&&used.has(col.toLowerCase()))col=null;
-    if(!col)col=PALETTE.find(x=>!used.has(x));
-    if(!col){let k=Object.keys(c.colors).length,t=0;do{col=hslToHex((k*137.5+t*29)%360,48,38);t++;}while(used.has(col)&&t<40);}
-    c.colors[n]=col;used.add(col.toLowerCase());
+function ensureGlobalColors(extra){
+  const convs=[...new Set([...S.convs,...(extra?[extra]:[])])],names=[];
+  convs.forEach(c=>{(c.participants||[]).forEach(n=>{if(n&&!names.includes(n))names.push(n);});(c.messages||[]).forEach(m=>{if(mType(m)!=='note'&&m.name&&!names.includes(m.name))names.push(m.name);});});
+  const used=new Set();
+  names.forEach((n,i)=>{
+    const p=S.profiles[n]||{};let col=p.color;
+    if(!/^#[0-9a-f]{6}$/i.test(col||'')||used.has(col.toLowerCase())){
+      const legacy=convs.map(c=>c.colors&&c.colors[n]).find(x=>/^#[0-9a-f]{6}$/i.test(x||'')&&!used.has(x.toLowerCase()));
+      col=legacy||FIXED_COLORS[n];
+      if(col&&used.has(col.toLowerCase()))col=null;
+      if(!col)col=PALETTE.find(x=>!used.has(x.toLowerCase()));
+      let t=0;while(!col||used.has(col.toLowerCase())){col=hslToHex((i*137.508+t*23.7)%360,64,42);t++;}
+    }
+    S.profiles[n]={...p,color:col};used.add(col.toLowerCase());
   });
+  convs.forEach(c=>{if(!c.colors||typeof c.colors!=='object')c.colors={};(c.participants||[]).forEach(n=>{if(S.profiles[n]?.color)c.colors[n]=S.profiles[n].color;});(c.messages||[]).forEach(m=>{if(mType(m)!=='note'&&m.name&&S.profiles[m.name]?.color)c.colors[m.name]=S.profiles[m.name].color;});});
+}
+function ensureColors(c){
+  if(!c)return;ensureGlobalColors(c);if(!c.colors||typeof c.colors!=='object')c.colors={};
+  (c.participants||[]).forEach(n=>{if(S.profiles[n]?.color)c.colors[n]=S.profiles[n].color;});
+  (c.messages||[]).forEach(m=>{if(mType(m)!=='note'&&m.name&&S.profiles[m.name]?.color)c.colors[m.name]=S.profiles[m.name].color;});
 }
 function colorOf(c,name){
-  if(!c)return hc(name||'');
-  if(!c.colors||!c.colors[name])ensureColors(c);
-  return(c.colors&&c.colors[name])||hc(name||'');
+  if(S.profiles[name]?.color)return S.profiles[name].color;
+  if(c)ensureColors(c);return(S.profiles[name]?.color)||(c&&c.colors&&c.colors[name])||hc(name||'');
 }
 function markEdited(c){if(c)c.localEdited=true;}
 
@@ -1186,7 +1236,7 @@ function renderPfAvatar(){
 function renderPfColors(){
   const wrap=document.getElementById('pf-colors');wrap.innerHTML='';
   const c=PF.c,mine=PF.d.color.toLowerCase();
-  const usedBy={};Object.keys(c.colors).forEach(k=>{if(k!==PF.orig)usedBy[c.colors[k].toLowerCase()]=k;});
+  const usedBy={};Object.keys(S.profiles).forEach(k=>{const col=S.profiles[k]&&S.profiles[k].color;if(k!==PF.orig&&col)usedBy[col.toLowerCase()]=k;});
   PALETTE.forEach(col=>{
     const b=document.createElement('button');b.type='button';
     b.className='swatch'+(col.toLowerCase()===mine?' on':'')+(usedBy[col]?' used':'');
@@ -1221,6 +1271,7 @@ document.getElementById('bio-in').addEventListener('change',async e=>{
 document.getElementById('pf-name').addEventListener('input',e=>{PF.d.name=e.target.value;});
 document.getElementById('pf-bio').addEventListener('input',e=>{PF.d.bio=e.target.value;});
 document.getElementById('pf-cancel').onclick=()=>{PF=null;closeM('m-profile');};
+document.getElementById('pf-close').onclick=()=>document.getElementById('pf-cancel').click();
 document.getElementById('pf-links').onclick=()=>{const n=PF&&PF.orig;closeM('m-profile');PF=null;if(n)openSheet(n);};
 document.getElementById('pf-save').onclick=()=>{
   if(!PF)return;const d=PF.d,c=PF.c;let name=PF.orig;
@@ -1526,6 +1577,7 @@ function buildNote(m,c){
   const row=document.createElement('div');row.className='msg-row note';row.dataset.id=m.id;
   const card=document.createElement('div');card.className='note-card';
   const h=document.createElement('div');h.className='note-h';h.textContent='📝 تعليق توضيحي';card.appendChild(h);
+  if(m.rep){const orig=c.messages.find(x=>x.id===m.rep),rb=document.createElement('div');rb.className='rep-box';rb.style.color=orig&&orig.name?colorOf(c,orig.name):'var(--ac)';rb.innerHTML='<div class="rep-name"></div><div class="rep-text"></div>';rb.querySelector('.rep-name').textContent=orig?(orig.name||'تعليق توضيحي'):'رسالة مرتبطة غير موجودة';rb.querySelector('.rep-text').textContent=orig?repPreview(orig):'—';rb.onclick=e=>{e.stopPropagation();if(orig)jumpTo(m.rep,c);};card.appendChild(rb);}
   if((m.text||'').trim()){const t=document.createElement('div');t.className='msg-text';t.innerHTML=hilite(m.text);card.appendChild(t);}
   if(m.imgs&&m.imgs.length)card.appendChild(buildImgGrid(m,false));
   attachCtx(card,m.id);
@@ -1915,11 +1967,12 @@ let EM=null;
 function openEditMsg(id){
   const c=conv(),m=c&&c.messages.find(x=>x.id===id);if(!m)return;
   S.ctxId=id;
-  EM={id,type:mType(m),imgs:JSON.parse(JSON.stringify(m.imgs||[]))};
+  EM={id,type:mType(m),sender:m.name||'أنا',rep:m.rep||null,imgs:JSON.parse(JSON.stringify(m.imgs||[]))};
   document.getElementById('em-ta').value=m.text||'';
+  const sender=document.getElementById('em-sender');sender.value=EM.sender;
+  const opts=document.getElementById('em-sender-options');opts.innerHTML='';uUsers(c).forEach(n=>{const o=document.createElement('option');o.value=n;opts.appendChild(o);});
   renderTypeChips(document.getElementById('em-types'),EM.type,t=>{EM.type=t;});
-  renderEmImgs();
-  openM('m-editmsg');setTimeout(()=>document.getElementById('em-ta').focus(),200);
+  renderEmImgs();openM('m-editmsg');setTimeout(()=>document.getElementById('em-ta').focus(),200);
 }
 function renderEmImgs(){
   const wrap=document.getElementById('em-imgs');wrap.innerHTML='';
@@ -1933,15 +1986,18 @@ document.getElementById('em-img-in').addEventListener('change',async e=>{
 document.getElementById('em-cancel').onclick=()=>{EM=null;closeM('m-editmsg');};
 document.getElementById('em-save').onclick=()=>{
   const c=conv(),m=c&&EM&&c.messages.find(x=>x.id===EM.id);if(!m)return;
-  const text=document.getElementById('em-ta').value;
+  const text=document.getElementById('em-ta').value,sender=document.getElementById('em-sender').value.trim();
   const imgs=EM.imgs.map(cleanImg);
   if(!text.trim()&&!imgs.length){toast('لا يمكن حفظ رسالة فارغة');return;}
+  if(EM.type!=='note'&&!sender){toast('أدخل اسم المرسل الحقيقي');document.getElementById('em-sender').focus();return;}
   m.text=text;m.type=EM.type;
   if(imgs.length)m.imgs=imgs;else delete m.imgs;
-  if(EM.type==='note'){m.name='';delete m.rep;}
-  else if(!m.name)m.name='أنا';
+  if(EM.type==='note')m.name=sender||EM.sender||m.name||'أنا';
+  else{m.name=sender;if(!isMe(sender)&&!(c.participants||[]).includes(sender)){if(!Array.isArray(c.participants))c.participants=[];c.participants.push(sender);}}
+  /* Preserve original reply metadata when switching between reply/comment/post/note. */
+  if(EM.rep)m.rep=EM.rep;
   ensureColors(c);markEdited(c);
-  save();EM=null;closeM('m-editmsg');renderMsgs(c);renderCompUser(c);renderHome();toast('تم تعديل الرسالة');
+  save();EM=null;closeM('m-editmsg');renderMsgs(c);renderCompUser(c);renderHome();renderChatHeader(c);toast('تم حفظ تعديل الرسالة والمرسل');
 };
 
 /* Rename Sender */
@@ -2026,7 +2082,7 @@ function normalizeConv(r){
     const type=TYPES[m.type]?m.type:'reply';
     const o={
       id:m.id!=null?String(m.id):('a'+i),
-      name:type==='note'?'':(m.name?String(m.name):'مجهول'),
+      name:m.name!=null?String(m.name):(type==='note'?'':'مجهول'),
       text:m.text!=null?String(m.text):'',
       type
     };
@@ -2252,7 +2308,7 @@ function renderPartyRelations(name){
   wrap.innerHTML='';
   p.partners.forEach(r=>{
     const b=document.createElement('button');b.type='button';b.className='relation-card';
-    const d=document.createElement('span');d.className='relation-dot';d.style.background=hc(r.name);
+    const d=document.createElement('span');d.className='relation-dot';d.style.background=colorOf(null,r.name);
     const text=document.createElement('span');text.innerHTML='<strong></strong><small></small>';
     text.querySelector('strong').textContent=r.name;
     text.querySelector('small').textContent=`${r.convIndexes.length} محادثة مشتركة · ${r.messages} رسالة للطرفين داخلها`;
@@ -2275,7 +2331,6 @@ document.getElementById('pf-tag-add').onclick=()=>{
   PF.d.tags.push({text:text.slice(0,48),color:tagColor(text)});input.value='';renderProfileTags();
 };
 document.getElementById('pf-tag-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('pf-tag-add').click();}});
-const baseProfileSave=document.getElementById('pf-save').onclick;
 document.getElementById('pf-save').onclick=()=>{
   if(!PF)return;const d=PF.d,c=PF.c;let name=PF.orig;const nn=(d.name||'').trim();
   if(!isMe(name)){
@@ -2285,10 +2340,15 @@ document.getElementById('pf-save').onclick=()=>{
       renameInConv(c,name,nn);name=nn;
     }
   }
-  const old=S.profiles[name]||{};const bio=(d.bio||'').trim(),imgs=d.imgs.map(cleanImg),deepBio=(d.deepBio||'').trim(),tags=normTags(d.tags);
-  if(d.avatar||bio||imgs.length||deepBio||tags.length)S.profiles[name]={...old,avatar:d.avatar||'',bio,imgs,deepBio,tags};else delete S.profiles[name];
-  ensureColors(c);const want=String(d.color||'').toLowerCase();
-  if(want&&c.colors[name]!==want){const other=Object.keys(c.colors).find(k=>k!==name&&String(c.colors[k]).toLowerCase()===want);if(other)c.colors[other]=c.colors[name];c.colors[name]=want;}
+  const old=S.profiles[name]||{};const oldColor=old.color||colorOf(c,name);const bio=(d.bio||'').trim(),imgs=d.imgs.map(cleanImg),deepBio=(d.deepBio||'').trim(),tags=normTags(d.tags);
+  S.profiles[name]={...old,avatar:d.avatar||'',bio,imgs,deepBio,tags,color:oldColor};
+  const want=String(d.color||'').toLowerCase();
+  if(/^#[0-9a-f]{6}$/i.test(want)&&want!==oldColor.toLowerCase()){
+    const other=Object.keys(S.profiles).find(k=>k!==name&&String(S.profiles[k]?.color||'').toLowerCase()===want);
+    if(other)S.profiles[other]={...S.profiles[other],color:oldColor};
+    S.profiles[name]={...S.profiles[name],color:want};
+  }
+  ensureGlobalColors();S.convs.forEach(cv=>ensureColors(cv));
   markEdited(c);save();PF=null;closeM('m-profile');renderChat();renderHome();toast('تم حفظ ملف الطرف');
 };
 
