@@ -2147,6 +2147,8 @@ async function _pvEnsureFullContent(book, reqId) {
 function _pvLoadVault(book, reqId) {
     try {
         const r = indexedDB.open('RoyalBookDB', 1);
+        // [FIX-حرج] إنشاء مخزن الوسائط إن لم يوجد؛ وإلا تُنشأ قاعدة ناقصة تكسر editor.html
+        r.onupgradeneeded = ev => { const d = ev.target.result; if (!d.objectStoreNames.contains('mediaVaultStore')) d.createObjectStore('mediaVaultStore'); };
         r.onsuccess = e => {
             try {
                 const g = e.target.result
@@ -2998,6 +3000,8 @@ function updateGlobalBooksList(book) {
 function _pvLoadVaultForCover(book, callback) {
     try {
         const r = indexedDB.open('RoyalBookDB', 1);
+        // [FIX-حرج] إنشاء مخزن الوسائط إن لم يوجد؛ وإلا تُنشأ قاعدة ناقصة تكسر editor.html
+        r.onupgradeneeded = ev => { const d = ev.target.result; if (!d.objectStoreNames.contains('mediaVaultStore')) d.createObjectStore('mediaVaultStore'); };
         r.onsuccess = e => {
             try {
                 const g = e.target.result

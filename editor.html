@@ -2749,13 +2749,27 @@
 
     // --- 2. قاعدة البيانات والخزنة ---
     function initDB(callback) {
-        let req = indexedDB.open(DB_NAME, 1);
+        let req = indexedDB.open(DB_NAME);   // بلا رقم إصدار: نفتح أياً كان الموجود
         req.onupgradeneeded = (e) => {
             let db = e.target.result;
             if (!db.objectStoreNames.contains(VAULT_STORE)) db.createObjectStore(VAULT_STORE);
         };
-        req.onsuccess = (e) => callback(e.target.result);
+        req.onsuccess = (e) => {
+            const db = e.target.result;
+            // [FIX-حرج] قاعدة أنشأتها index.html سابقاً بلا المخزن: نرفع الإصدار وننشئه
+            if (!db.objectStoreNames.contains(VAULT_STORE)) {
+                const v = db.version + 1;
+                db.close();
+                const r2 = indexedDB.open(DB_NAME, v);
+                r2.onupgradeneeded = (ev) => { const d = ev.target.result; if (!d.objectStoreNames.contains(VAULT_STORE)) d.createObjectStore(VAULT_STORE); };
+                r2.onsuccess = (ev) => callback(ev.target.result);
+                r2.onerror = r2.onblocked = () => callback(null);
+                return;
+            }
+            callback(db);
+        };
         req.onerror   = ()  => callback(null);          // ← fallback: تعذّر فتح IndexedDB
+        req.onblocked = ()  => callback(null);
     }
     function saveVaultToDB() {
         initDB(db => {
@@ -2765,12 +2779,17 @@
         });
     }
     function loadVaultFromDB(callback) {
+        let done = false;
+        const finish = (v) => { if (!done) { done = true; callback(v || {}); } };
+        setTimeout(() => finish({}), 4000);   // [FIX] لا نترك تحميل الكتاب معلّقاً بسبب IndexedDB أبداً
         initDB(db => {
-            if (!db) { callback({}); return; }          // ← DB فشل: أعد قاموساً فارغاً
-            let tx  = db.transaction(VAULT_STORE, 'readonly');
-            let req = tx.objectStore(VAULT_STORE).get('currentVault');
-            req.onsuccess = () => callback(req.result || {});
-            req.onerror   = () => callback({});         // ← طلب القراءة فشل
+            if (!db) { finish({}); return; }
+            try {
+                let tx  = db.transaction(VAULT_STORE, 'readonly');
+                let req = tx.objectStore(VAULT_STORE).get('currentVault');
+                req.onsuccess = () => finish(req.result);
+                req.onerror   = () => finish({});
+            } catch (err) { finish({}); }
         });
     }
     function addToMediaVault(event) {
