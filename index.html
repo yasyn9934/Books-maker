@@ -1436,15 +1436,91 @@ function saveData() {
             return;
         }
         localStorage.removeItem('bookData');
+        localStorage.removeItem('bookData_cover');
+        localStorage.removeItem('bookData_frameMedia');
         window.location.href = 'editor.html';
     }
 
-    function openBook(bookId) {
-        const book = books.find(b => b.id === bookId);
-        if (book) {
-            localStorage.setItem('bookData', JSON.stringify(book));
-            window.location.href = 'editor.html';
+    // [FIX-حرج] فتح الكتاب في المحرر:
+    // 1) إن كانت النسخة المحلية "خفيفة" (بلا نص) نجلب الكتاب الكامل من درايف أولاً،
+    //    وإلا كان المحرر يُفتح فارغاً.
+    // 2) نكتب الكتاب بنفس التقسيم الذي يقرؤه editor.html (bookData خفيف + bookData_cover
+    //    + bookData_frameMedia) بدل تخزين كل شيء في مفتاح واحد: غلاف بحجم 1.6MB كان يتجاوز
+    //    حصة localStorage فيفشل setItem بصمت ولا تنتقل الصفحة أبداً.
+    // 3) نمسح مفاتيح الغلاف/الإطارات القديمة لئلا يظهر غلاف كتاب سابق على هذا الكتاب.
+    let _openingBook = false;
+    function _splitBookForEditor(book) {
+        const light = Object.assign({}, book);
+        const cover = light.cover || light.coverImg || '';
+        delete light.cover; delete light.coverImg; delete light.cardImage; delete light._light;
+        const media = { frameGeneral: null, framePages: {}, chapterGeneral: null, chapterCustom: {} };
+        if (light.frames) {
+            const f = JSON.parse(JSON.stringify(light.frames));
+            if (f.general && f.general.imageData) { media.frameGeneral = f.general.imageData; f.general.imageData = null; f.general.hasImage = true; }
+            for (const p in f.pages || {}) if (f.pages[p].imageData) { media.framePages[p] = f.pages[p].imageData; f.pages[p].imageData = null; f.pages[p].hasImage = true; }
+            light.frames = f;
         }
+        if (light.chapterFmt) {
+            const c = JSON.parse(JSON.stringify(light.chapterFmt));
+            if (c.general && c.general.frameImage) { media.chapterGeneral = c.general.frameImage; c.general.frameImage = null; c.general.hasImage = true; }
+            for (const k in c.chapters || {}) if (c.chapters[k].frameImage) { media.chapterCustom[k] = c.chapters[k].frameImage; c.chapters[k].frameImage = null; c.chapters[k].hasImage = true; }
+            light.chapterFmt = c;
+        }
+        return { light, cover, media };
+    }
+
+    async function openBook(bookId) {
+        if (_openingBook) return;
+        const book = books.find(b => b.id === bookId);
+        if (!book) return;
+        _openingBook = true;
+        try {
+            if (book._light || (book.text === undefined && book.t === undefined)) {
+                if (!navigator.onLine || typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'member') {
+                    alert('هذا الكتاب لم يُحمَّل محتواه على هذا الجهاز بعد. اتصل بالإنترنت ثم أعد المحاولة.');
+                    return;
+                }
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 60000);
+                let data;
+                try {
+                    const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
+                        method: 'POST', signal: ctrl.signal,
+                        body: JSON.stringify({ action: 'fetch_book', userId: currentUser.id, token: currentUser.token, userName: currentUser.username, bookId: book.id })
+                    });
+                    data = await res.json();
+                } finally { clearTimeout(timer); }
+                if (!data || !data.success || !data.book || (data.book.text === undefined && data.book.t === undefined)) {
+                    alert('تعذّر تحميل محتوى الكتاب من درايف. حاول مجدداً.');
+                    return;
+                }
+                Object.assign(book, data.book);
+                delete book._light;
+            }
+            const { light, cover, media } = _splitBookForEditor(book);
+            try {
+                localStorage.removeItem('bookData_cover');
+                localStorage.removeItem('bookData_frameMedia');
+                localStorage.setItem('bookData', JSON.stringify(light));
+                localStorage.setItem('bookData_cover', JSON.stringify({ cover: cover }));
+                localStorage.setItem('bookData_frameMedia', JSON.stringify(media));
+            } catch (qe) {
+                // الحصة ممتلئة: نحرّر مساحة بحذف مفاتيح مؤقتة ثم نحاول بدون الصور الثقيلة
+                localStorage.removeItem('pending_sync_book');
+                try {
+                    localStorage.setItem('bookData', JSON.stringify(light));
+                    localStorage.setItem('bookData_cover', JSON.stringify({ cover: '' }));
+                    localStorage.removeItem('bookData_frameMedia');
+                    alert('مساحة التخزين المحلي ممتلئة؛ فُتح الكتاب دون صورة الغلاف/الإطارات مؤقتاً. لا تحفظ قبل إعادة تحميلها.');
+                } catch (qe2) {
+                    alert('تعذّر فتح الكتاب: مساحة تخزين المتصفح ممتلئة.');
+                    return;
+                }
+            }
+            window.location.href = 'editor.html';
+        } catch (e) {
+            alert('تعذّر فتح الكتاب: ' + (e && e.name === 'AbortError' ? 'انتهت مهلة الاتصال.' : e.message));
+        } finally { _openingBook = false; }
     }
 
     // --- Category Logic ---

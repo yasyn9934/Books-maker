@@ -2598,8 +2598,8 @@
         _writeLightBookData(bookData);
         _writeCoverIfChanged(bookData.cover);
         _writeHeavyImagesIfChanged(bookData);
-        updateGlobalBooksList(bookData);
-        localStorage.setItem('pending_sync_book', JSON.stringify(bookData));
+        try { updateGlobalBooksList(bookData); } catch(qe) { console.warn('حصة التخزين ممتلئة (قائمة الكتب)', qe); }
+        try { localStorage.setItem('pending_sync_book', JSON.stringify(bookData)); } catch(qe) { console.warn('حصة التخزين ممتلئة (pending)', qe); }
         try {
             if (!navigator.onLine) throw new Error("Offline");
             const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
@@ -2742,7 +2742,9 @@
         let index = allBooks.findIndex(b => b.id === book.id);
         if (index !== -1) allBooks[index] = { ...allBooks[index], ...book };
         else allBooks.push(book);
-        localStorage.setItem('royal_books_list', JSON.stringify(allBooks));
+        allBooks.forEach(b => { if (b.id === book.id) delete b._light; }); // النسخة هنا كاملة
+        try { localStorage.setItem('royal_books_list', JSON.stringify(allBooks)); }
+        catch (qe) { console.warn('حصة التخزين ممتلئة: لم تُحدَّث قائمة الكتب محلياً', qe); }
     }
 
     // --- 2. قاعدة البيانات والخزنة ---
@@ -3963,6 +3965,8 @@
     // [FIX] تطبيق بيانات كتاب على الواجهة (دالة مشتركة)
     // ──────────────────────────────────────────────────────────────
     function _applyBookData(s) {
+        // [FIX-حرج] نسخة بلا نص (فهرس خفيف) لا يجوز أن تُفرغ المحرر ثم تُحفظ فوق الكتاب
+        if (!s || (typeof s.text !== 'string' && typeof s.t !== 'string')) return;
         currentBookId = s.id;
         document.getElementById('mainText').value  = s.text  || '';
         document.getElementById('focusText').value = s.text  || '';
