@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
-    <script src="auth.js"></script>
+    <script src="app-bridge.js"></script>
+<script src="auth.js"></script>
+    <script src="sanitize.js"></script>
     <script src="plugins.js"></script>
     <title>موقع صانع الكتب - الرئيسية</title>
     <style>
@@ -1356,7 +1358,7 @@
         }
         // تحويل أسطر جديدة إلى <br>
         res = res.replace(/\n/g, '<br>');
-        return res;
+        return royalSanitize(res);
     }
 
     if (!categories.find(c => c.id === 'default')) {
@@ -1385,6 +1387,7 @@
         if (!hasPendingBook && !hasPendingCats) return;
 
         try {
+            const _syncStartedAt = Date.now();
             const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
             const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
             const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
@@ -1393,7 +1396,7 @@
                     action:          'sync_library', token:currentUser.token,
                     userId:          currentUser.id,
                     userName:        currentUser.username,
-                    localBooks,
+                    localBooks: _prepareBooksForSync(localBooks),
                     localCategories
                 })
             });
@@ -1407,6 +1410,7 @@
                     categories = result.mergedCategories;
                     localStorage.setItem('royal_categories_list', JSON.stringify(categories));
                 }
+                localStorage.setItem('royal_last_sync', String(_syncStartedAt));
                 localStorage.removeItem('pending_sync_book');
                 localStorage.removeItem('pending_sync_categories');
                 renderBooks();
@@ -1432,13 +1436,13 @@ function saveData() {
     function createNewBook() {
         if (typeof canAddMoreBooks === 'function' && !canAddMoreBooks()) {
             alert("تنبيه: لقد استنفدت الحد المسموح. يرجى تسجيل الدخول.");
-            window.location.href = 'login.html';
+            royalNavigate('login.html');
             return;
         }
         localStorage.removeItem('bookData');
         localStorage.removeItem('bookData_cover');
         localStorage.removeItem('bookData_frameMedia');
-        window.location.href = 'editor.html';
+        royalNavigate('editor.html');
     }
 
     // [FIX-حرج] فتح الكتاب في المحرر:
@@ -1517,7 +1521,7 @@ function saveData() {
                     return;
                 }
             }
-            window.location.href = 'editor.html';
+            royalNavigate('editor.html');
         } catch (e) {
             alert('تعذّر فتح الكتاب: ' + (e && e.name === 'AbortError' ? 'انتهت مهلة الاتصال.' : e.message));
         } finally { _openingBook = false; }
@@ -1722,8 +1726,8 @@ function saveData() {
             const isChecked = bookCatIds.includes(cat.id) ? 'checked' : '';
             container.innerHTML += `
                 <label class="cat-checkbox-item">
-                    <input type="checkbox" value="${cat.id}" ${isChecked}>
-                    <span style="color:${cat.color}; font-weight:bold;">${cat.name}</span>
+                    <input type="checkbox" value="${royalEscapeAttr(cat.id)}" ${isChecked}>
+                    <span style="color:${royalEscapeAttr(cat.color)}; font-weight:bold;">${royalEscapeHtml(cat.name)}</span>
                 </label>
             `;
         });
@@ -1811,7 +1815,7 @@ function saveData() {
             }
 
             const catsHtml = bookCats.map(c =>
-                `<span class="card-category-tag" style="background-color: ${c.color}">${c.name}</span>`
+                `<span class="card-category-tag" style="background-color: ${royalEscapeAttr(c.color)}">${royalEscapeHtml(c.name)}</span>`
             ).join('');
 
             // [FIX] صورة البطاقة تتبع غلاف الكتاب تلقائياً بشكل افتراضي — لا يوجد داعٍ
@@ -1834,7 +1838,7 @@ function saveData() {
             card.dataset.bookId = book.id;
             card.innerHTML = `
                 <div class="card-header" onclick="event.stopPropagation()">
-                    <div class="card-title" title="${book.title || 'بدون عنوان'}">${applyRoyalStyles(book.title || 'بدون عنوان')}</div>
+                    <div class="card-title" title="${royalEscapeAttr(book.title || 'بدون عنوان')}">${applyRoyalStyles(book.title || 'بدون عنوان')}</div>
                     <div style="position:relative;">
                         <button class="dots-btn" onclick="openBookPreview('${book.id}')" title="خيارات الكتاب">⋮</button>
                     </div>
@@ -1902,7 +1906,7 @@ function saveData() {
             title.innerText = 'إلحاق بتصنيف جديد';
             input.style.display = 'none';
             select.style.display = 'block';
-            select.innerHTML = categories.map(c => `<option value="${c.id}" ${book.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+            select.innerHTML = categories.map(c => `<option value="${royalEscapeAttr(c.id)}" ${book.categoryId === c.id ? 'selected' : ''}>${royalEscapeHtml(c.name)}</option>`).join('');
         }
         openModal('actionModal');
     }
@@ -2026,7 +2030,10 @@ function saveData() {
         }
     }
 
-    if ('serviceWorker' in navigator) {
+    // داخل التطبيق الملفات تُقدَّم محلياً من الغلاف، فلا حاجة لـ service worker (بل يتعارض معها)
+    if ('serviceWorker' in navigator && window.ROYAL_IN_APP) {
+        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+    } else if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
             .then(reg => console.log('تم تفعيل محرك الأوف لاين بنجاح ✅', reg))
@@ -2187,7 +2194,7 @@ function _pvApply(text, fnList) {
             return `<img src="${m.data}" style="max-width:100%;border-radius:5px;display:block;margin:5px auto">`;
         return `<div style="text-align:center;padding:4px;border:1px dashed #ccc;font-size:9pt;color:#666">${m.type === 'video' ? '🎥' : '🎵'} ${k}</div>`;
     });
-    return r;
+    return royalSanitize(r);
 }
 
 /* ─── ترقيم الحواشي (مطابق تماماً لـ editor.html) ─── */
@@ -3088,7 +3095,7 @@ function _pvRenderCoverToCanvas(book, vault, callback) {
         let r = t;
         if (typeof RoyalFeatures !== 'undefined')
             for (const f in RoyalFeatures) r = RoyalFeatures[f].execute(r, []);
-        return r;
+        return royalSanitize(r);
     }
 
     const coverBg = book.cover
@@ -3673,7 +3680,7 @@ async function confirmShareChanges() {
 
             if (authBtn) {
                 authBtn.textContent = 'تسجيل الدخول / إنشاء حساب';
-                authBtn.onclick = () => window.location.href = 'login.html';
+                authBtn.onclick = () => royalNavigate('login.html');
             }
         }
     }
@@ -3683,7 +3690,7 @@ async function confirmShareChanges() {
         if (currentUser && currentUser.role === 'member') {
             window.location.href = 'profile.html';
         } else {
-            window.location.href = 'login.html';
+            royalNavigate('login.html');
         }
     }
 
