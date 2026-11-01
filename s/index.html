@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض الكتاب المشترك - صانع الكتب</title>
     <!-- ══ توجيه فوري لروابط التعليقات والردود — قبل أي مورد ══ -->
-    <script>
+    <script src="../app-bridge.js"></script>
+<script src="../sanitize.js"></script>
+<script>
         (function () {
             var p   = new URLSearchParams(window.location.search);
             var sid = p.get('id');
@@ -23,9 +25,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="../plugins.js"></script>
     
-    <script src="../PDFs/royal-assets.js"></script>
-    <script src="../PDFs/royal-parser.js"></script>
-    <script src="../PDFs/royal-renderer.js"></script>
 
     <!-- تهيئة RoyalFeatures بنفس طريقة editor.html -->
     <script>
@@ -392,6 +391,28 @@
         updateUI();
     });
 
+
+    // [التطبيق] بطاقة صاحب الكتاب: لغير صاحبه تفتح ملفه الشخصي داخل نفس تبويب المشاركات، ولصاحبه تُعرض بلا تفاعل
+    async function renderOwnerChip(ownerId) {
+        if (!window.ROYAL_IN_APP || !ownerId || document.getElementById('ownerChip')) return;
+        try {
+            const r = await fetch(AUTH_CONFIG.SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'get_public_profile', targetUserId: ownerId }) });
+            const d = await r.json(); if (!d.success || !d.user) return;
+            const me = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null, mine = (me === ownerId);
+            const chip = document.createElement('div'); chip.id = 'ownerChip';
+            chip.style.cssText = 'display:flex;align-items:center;gap:7px;padding:4px 10px 4px 6px;border-radius:20px;border:1.5px solid #ddd;background:#fafafa;max-width:150px;' +
+                (mine ? 'pointer-events:none;opacity:.85' : 'cursor:pointer');
+            if (d.user.profilePhoto && /^(https?:|data:image\/)/i.test(d.user.profilePhoto)) {
+                const im = document.createElement('img'); im.src = d.user.profilePhoto; im.alt = '';
+                im.style.cssText = 'width:26px;height:26px;border-radius:50%;object-fit:cover'; chip.appendChild(im);
+            } else { const sp = document.createElement('span'); sp.textContent = '👤'; chip.appendChild(sp); }
+            const nm = document.createElement('span'); nm.textContent = d.user.username || d.user.accountName || 'صاحب الكتاب';
+            nm.style.cssText = 'font-size:10.5pt;font-weight:bold;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'; chip.appendChild(nm);
+            if (!mine) chip.onclick = () => royalNavigate('../profile.html?uid=' + encodeURIComponent(ownerId));
+            const left = document.querySelector('.top-bar-left'); if (left) left.insertBefore(chip, left.firstChild);
+        } catch (e) {}
+    }
+
     async function fetchSharedBook() {
         try {
             const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
@@ -407,6 +428,7 @@
                 renderBook();
                 // تسجيل هذه المشاركة في "مشاركات الآخرين" في profile.html
                 recordViewedShare(result);
+                renderOwnerChip((result.shareSettings && result.shareSettings.userId) || (result.bookData && result.bookData.ownerId) || '');
             } else {
                 showError(result.message || "تعذر العثور على الكتاب.");
             }
@@ -537,7 +559,7 @@
                 res = RoyalFeatures[feature].execute(res, footnoteList);
             }
         }
-        return processMediaKeys(res);
+        return royalSanitize(processMediaKeys(res));
     }
 
     function toArabicNum(n) { return String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
@@ -694,7 +716,7 @@
             }
         }
         featuresStr += "};";
-        let vaultDataStr = JSON.stringify(vaultData);
+        let vaultDataStr = JSON.stringify(vaultData).replace(/</g, '\\u003c');
 
         // بناء HTML التطبيق التفاعلي (نسخة طبق الأصل من exportInteractiveBook)
         let interactiveHTML = `<!DOCTYPE html>
@@ -702,7 +724,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${bookData.title || 'تطبيق القراءة'}</title>
+    <title>${royalEscapeHtml(bookData.title || 'تطبيق القراءة')}</title>
     <style>
         @font-face { font-family: 'Amiri'; src: url('fonts/Amiri-Regular.ttf') format('truetype'); }
         @font-face { font-family: 'Aref Ruqaa'; src: url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); }
@@ -741,7 +763,7 @@
 <body>
     <header>
         <div><button class="nav-btn" onclick="toggleSidebar()">☰ الفهرس</button></div>
-        <div class="header-title">${bookData.title || 'كتاب تفاعلي'}</div>
+        <div class="header-title">${royalEscapeHtml(bookData.title || 'كتاب تفاعلي')}</div>
         <div style="display:flex;">
             <button class="nav-btn" onclick="changeFontSize(2)">A+</button>
             <button class="nav-btn" onclick="changeFontSize(-2)">A-</button>
@@ -771,13 +793,14 @@
     </div>
 
     <script>
+        ${ROYAL_SANITIZER_SRC}
         ${featuresStr}
         const vault = ${vaultDataStr};
-        const rawContent = \`${content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
-        const coverImg = \`${(bookData.cover || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\`;
-        const bTitle   = \`${(bookData.title  || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\`;
-        const bAuthor  = \`${(bookData.author || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\`;
-        const bDate    = \`${(bookData.date   || '').replace(/\\/g, '\\\\').replace(/`/g, '\\`')}\`;
+        const rawContent = ${royalJsLiteral(content)};
+        const coverImg = ${royalJsLiteral(bookData.cover || '')};
+        const bTitle = ${royalJsLiteral(bookData.title || '')};
+        const bAuthor = ${royalJsLiteral(bookData.author || '')};
+        const bDate = ${royalJsLiteral(bookData.date || '')};
 
         let chapters = []; let currentChapterIndex = 0; let baseFontSize = ${bookData.size || 20};
 
@@ -791,7 +814,7 @@
                 let icon = media.type === 'video' ? '🎥 فيديو' : '🎵 صوت';
                 return '<div style="text-align:center; margin: 20px 0;"><button class="media-btn" onclick="playMedia(\\''+key.trim()+'\\')">'+icon+' | تشغيل: '+key+'</button></div>';
             });
-            return res;
+            return royalSanitize(res);
         }
 
         let dynStyle = ""; if(typeof RoyalFeatures !== 'undefined') { for(let f in RoyalFeatures) { if(RoyalFeatures[f].css) dynStyle += RoyalFeatures[f].css + "\\n"; } }
