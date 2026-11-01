@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>المشاركات</title>
+<script src="app-bridge.js"></script>
+<style>
+@font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf')}
+@font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf');font-weight:700}
+:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--gold-line:rgba(201,162,39,.3);--dim:#a89b7c;--muted:#6b5f48}
+*{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--text);font-family:'Amiri',serif;padding:18px;min-height:100vh}
+h1{font-family:'Aref Ruqaa',serif;color:var(--gold);font-size:24px;text-align:center;margin:6px 0 4px}
+.sub{color:var(--dim);text-align:center;margin-bottom:18px;font-size:15px}
+.box{background:var(--card);border:1px solid var(--gold-line);border-radius:18px;padding:14px;margin-bottom:16px}
+.row{display:flex;gap:8px}input{flex:1;min-width:0;background:var(--surf2);border:1px solid var(--gold-line);color:var(--text);border-radius:12px;padding:11px 12px;font:inherit;font-size:16px;direction:ltr;text-align:left}
+button{background:var(--gold);color:#1a1405;border:0;border-radius:12px;padding:0 18px;font:700 16px 'Amiri',serif;cursor:pointer}
+h2{font-size:17px;color:var(--green);margin:4px 0 10px}
+.item{display:flex;gap:10px;align-items:center;width:100%;text-align:right;background:var(--surf2);border:1px solid transparent;border-radius:14px;padding:11px 12px;margin-bottom:8px;color:var(--text);cursor:pointer;font:inherit}
+.item small{display:block;color:var(--muted);font-size:12px}.err{color:#e07a73;font-size:14px;margin-top:8px;min-height:18px}
+.empty{color:var(--muted);text-align:center;padding:14px}
+</style></head><body>
+<h1>🌍 المشاركات</h1>
+<p class="sub">افتح كتاباً شاركه أحدهم بلصق رابط المشاركة</p>
+<div class="box">
+  <div class="row"><input id="lnk" placeholder="الصق رابط المشاركة هنا" autocomplete="off"><button id="go">فتح</button></div>
+  <div class="err" id="err"></div>
+</div>
+<div class="box"><h2>🕘 فتحتَها مؤخراً</h2><div id="recent"></div></div>
+<script>
+function parse(v){
+  v=(v||'').trim(); if(!v) return null;
+  try{ const u=new URL(v, location.href); const id=u.searchParams.get('id'), enc=u.searchParams.get('v');
+       if(enc) return 'index.html?v='+encodeURIComponent(enc);
+       if(id)  return 's/index.html?id='+encodeURIComponent(id); }catch(e){}
+  if(/^[\w-]{6,}$/.test(v)) return 's/index.html?id='+encodeURIComponent(v);
+  return null;
+}
+document.getElementById('go').onclick=()=>{
+  const t=parse(document.getElementById('lnk').value);
+  if(!t){document.getElementById('err').textContent='الرابط غير صالح، تأكد من نسخه كاملاً.';return}
+  royalNavigate(t);
+};
+document.getElementById('lnk').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('go').click()});
+let rec=[];try{rec=JSON.parse(localStorage.getItem('royal_app_recent_shares')||'[]')}catch(e){}
+const box=document.getElementById('recent');
+if(!rec.length) box.innerHTML='<div class="empty">لا توجد مشاركات مفتوحة بعد</div>';
+rec.forEach(r=>{const b=document.createElement('button');b.className='item';
+  const t=document.createElement('div');t.textContent=r.title||'كتاب مشارَك';
+  const s=document.createElement('small');s.textContent=new Date(r.time).toLocaleDateString('ar');t.appendChild(s);
+  b.innerHTML='<span>📖</span>';b.appendChild(t);b.onclick=()=>royalNavigate(r.url);box.appendChild(b);});
+</script></body></html>

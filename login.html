@@ -160,6 +160,7 @@
     </button>
 </div>
 
+<script src="app-bridge.js"></script>
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVIL8_9oYVEfAIvIlzcQjz9SV1SR2Fni0k2Euo__92mtERHfiPJHnoxQKSkvYM5lB6/exec";
     const INDEX_PAGE = './';
@@ -276,7 +277,7 @@
 
                 // [FIX] مزامنة أولية بعد التسجيل (ترفع أي بيانات زائر موجودة)
                 await syncLibrary(data.user.id, data.user.username, data.user.token);
-                setTimeout(() => window.location.href = INDEX_PAGE, 1200);
+                setTimeout(() => royalNavigate(INDEX_PAGE), 1200);
             } else {
                 showStatus(data.message, "red");
             }
@@ -311,7 +312,7 @@
 
                 // [FIX] مزامنة ذكية: دمج المحلي والسحابة وأخذ الأحدث
                 await syncLibrary(data.user.id, data.user.username, data.user.token);
-                window.location.href = INDEX_PAGE;
+                royalNavigate(INDEX_PAGE);
             } else {
                 showStatus(data.message, "red");
             }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>التحميل والتحديثات</title>
+<script src="app-bridge.js"></script>
+<style>
+@font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf')}
+@font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf');font-weight:700}
+:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--surf3:#2c291a;--gold-line:rgba(201,162,39,.3);--dim:#a89b7c;--muted:#6b5f48;--red:#d9534f}
+*{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--text);font-family:'Amiri',serif;padding:16px 16px 40px}
+.card{background:var(--card);border:1px solid var(--gold-line);border-radius:18px;padding:16px;margin-bottom:14px}
+h1{font-family:'Aref Ruqaa',serif;color:var(--gold);font-size:23px;text-align:center;margin:2px 0 14px}
+h2{font-size:17px;color:var(--green);margin-bottom:10px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(201,162,39,.15);font-size:15.5px}
+.kv:last-child{border:0}.kv span:first-child{color:var(--dim)}
+.chip{display:inline-block;padding:2px 11px;border-radius:12px;font-size:13px;background:var(--surf3);border:1px solid var(--gold-line)}
+.chip.ok{color:#9fd16f;border-color:#5a8a3a}.chip.warn{color:#f0b94a;border-color:#a37a1d}.chip.bad{color:#f08a82;border-color:#a8433d}
+.t-major{color:#f08a82}.t-minor{color:#9fd16f}.t-patch{color:#8ec1e8}.t-hotfix{color:#f0b94a}
+.btn{width:100%;padding:13px;border-radius:14px;border:0;font:700 17px 'Amiri',serif;cursor:pointer;background:var(--gold);color:#1a1405;margin-top:10px;transition:opacity .2s,transform .15s}
+.btn:active{transform:scale(.98)}.btn.sec{background:var(--surf3);color:var(--text);border:1px solid var(--gold-line)}.btn:disabled{opacity:.45}
+.bar{height:10px;border-radius:6px;background:var(--surf3);overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .25s}
+.msg{margin-top:10px;font-size:15px;min-height:20px}.msg.err{color:#f08a82}.msg.ok{color:#9fd16f}
+ul.ch{padding:0 18px 0 0;margin-top:6px;line-height:1.9;font-size:15.5px}
+.desc{line-height:1.8;font-size:15.5px;color:var(--text);margin:6px 0;white-space:pre-wrap}
+label.sw{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:16px}
+input[type=checkbox]{width:44px;height:24px;appearance:none;background:var(--surf3);border-radius:14px;position:relative;cursor:pointer;border:1px solid var(--gold-line);transition:.2s}
+input[type=checkbox]::after{content:'';position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:var(--dim);transition:.2s}
+input[type=checkbox]:checked{background:rgba(127,168,85,.35)}input[type=checkbox]:checked::after{right:22px;background:var(--green)}
+details summary{cursor:pointer;color:var(--dim);font-size:15px}details pre{font:12px/1.7 monospace;direction:ltr;text-align:left;color:var(--dim);margin-top:8px;max-height:220px;overflow:auto}
+</style></head><body>
+<h1>⬇️ التحميل والتحديثات</h1>
+
+<div class="card" id="statusCard">
+  <div class="kv"><span>الإصدار المثبَّت</span><span id="instV">—</span></div>
+  <div class="kv"><span>آخر إصدار منشور</span><span id="latestV">—</span></div>
+  <div class="kv"><span>الحالة</span><span id="stat" class="chip">—</span></div>
+  <div class="kv"><span>آخر فحص</span><span id="lastChk">—</span></div>
+  <button class="btn sec" id="chkBtn">🔍 التحقق من التحديثات</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="card" id="relCard" hidden>
+  <h2 id="relTitle">تفاصيل التحديث</h2>
+  <div class="kv"><span>إصدار التحديث</span><span id="rV"></span></div>
+  <div class="kv"><span>نوع التحديث</span><span id="rType"></span></div>
+  <div class="kv"><span>تاريخ التحديث</span><span id="rDate"></span></div>
+  <div class="kv"><span>الحجم</span><span id="rSize"></span></div>
+  <div class="kv"><span>التوقيع</span><span id="rSig"></span></div>
+  <div style="margin-top:10px;color:var(--dim)">موجز التحديث</div><div class="desc" id="rSummary"></div>
+  <div style="margin-top:6px;color:var(--dim)">وصف التحديث</div><div class="desc" id="rDesc"></div>
+  <div style="margin-top:6px;color:var(--dim)">التغييرات</div><ul class="ch" id="rChanges"></ul>
+  <button class="btn" id="dlBtn">⬇️ تحميل ملفات الموقع وتحديثها</button>
+  <div class="bar" id="barWrap" hidden><i id="bar"></i></div>
+  <details style="margin-top:12px"><summary>قائمة الملفات</summary><pre id="fileList"></pre></details>
+</div>
+
+<div class="card">
+  <h2>⚙️ الإعدادات</h2>
+  <label class="sw"><span>التحديث التلقائي عند توفر إصدار جديد</span><input type="checkbox" id="autoUp"></label>
+  <label class="sw"><span>صوت التنبيهات</span><input type="checkbox" id="snd"></label>
+  <button class="btn sec" id="reloadBtn" hidden>🔄 إعادة تشغيل الواجهة لتفعيل التحديث</button>
+</div>
+
+<script>
+(function(){
+  const H = (function(){try{return window.parent.RoyalApp}catch(e){return null}})();
+  const $=id=>document.getElementById(id);
+  if(!H){ $('msg').className='msg err'; $('msg').textContent='افتح هذه الصفحة من داخل التطبيق.'; $('chkBtn').disabled=true; return; }
+  const U=H.Updater, TYPES={major:['تحديث كبير','t-major'],minor:['ميزات جديدة','t-minor'],patch:['إصلاحات','t-patch'],hotfix:['إصلاح عاجل','t-hotfix']};
+  const STAT={idle:['لم يُفحص بعد',''],checking:['جارٍ الفحص…',''],available:['يتوفر تحديث','warn'],uptodate:['محدَّث ✓','ok'],downloading:['جارٍ التحميل…','warn'],installed:['تم التحديث ✓','ok'],error:['خطأ','bad']};
+  const fmt=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+  const ago=t=>t?new Date(t).toLocaleString('ar'):'—';
+  function render(s){
+    const inst=s.installed; $('instV').textContent=inst?('v'+inst.version+' (build '+inst.build+')'):'غير مثبَّت';
+    $('latestV').textContent=s.release?('v'+s.release.version):'—';
+    const st=STAT[s.status]||STAT.idle; $('stat').textContent=st[0]; $('stat').className='chip '+st[1];
+    $('lastChk').textContent=ago(s.lastCheck);
+    const m=$('msg'); m.className='msg'; m.textContent='';
+    if(s.status==='error'){m.className='msg err';m.textContent=s.error||'حدث خطأ';}
+    if(s.status==='installed'){m.className='msg ok';m.textContent='تم تحميل الملفات والتحقق منها بنجاح.';$('reloadBtn').hidden=false;}
+    const r=s.release; $('relCard').hidden=!r;
+    if(r){
+      $('rV').textContent='v'+r.version+' (build '+r.build+')';
+      const t=TYPES[r.type]||[r.type||'—','']; $('rType').textContent=t[0]; $('rType').className=t[1];
+      $('rDate').textContent=r.date||'—'; $('rSummary').textContent=r.summary||'—'; $('rDesc').textContent=r.description||'—';
+      $('relTitle').textContent=r.title||'تفاصيل التحديث';
+      const total=(r.files||[]).reduce((a,f)=>a+(f.size||0),0); $('rSize').textContent=(r.files||[]).length+' ملف — '+fmt(total);
+      $('rSig').innerHTML=''; const c=document.createElement('span'); c.className='chip '+(s.signed?'ok':'warn'); c.textContent=s.signed?'موثَّق ✓':'غير مفعَّل ⚠'; $('rSig').appendChild(c);
+      const ul=$('rChanges'); ul.innerHTML=''; (r.changes||[]).forEach(x=>{const li=document.createElement('li');li.textContent=x;ul.appendChild(li)});
+      $('fileList').textContent=(r.files||[]).map(f=>f.path+'  '+fmt(f.size||0)).join('\n');
+      const need=!inst||r.build>inst.build;
+      $('dlBtn').textContent=need?'⬇️ تحميل التحديث وتثبيته':'🔁 إعادة تحميل ملفات الموقع';
+    }
+    const busy=s.status==='downloading'||s.status==='checking'; $('dlBtn').disabled=busy; $('chkBtn').disabled=busy;
+    $('barWrap').hidden=s.status!=='downloading'; if(s.progress&&s.progress.total) $('bar').style.width=Math.round(100*s.progress.done/s.progress.total)+'%';
+  }
+  U.on(render); render(U.state);
+  $('chkBtn').onclick=()=>U.check().catch(()=>{});
+  $('dlBtn').onclick=()=>U.apply().catch(()=>{});
+  $('reloadBtn').onclick=()=>window.parent.location.reload();
+  $('autoUp').checked=!!H.settings.autoUpdate; $('snd').checked=!!H.settings.sound;
+  $('autoUp').onchange=e=>{H.settings.autoUpdate=e.target.checked;H.saveSettings()};
+  $('snd').onchange=e=>{H.settings.sound=e.target.checked;H.saveSettings()};
+  if(!U.state.release) U.check().catch(()=>{});
+})();
+</script></body></html>
