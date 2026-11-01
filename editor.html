@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محرك الكتب الملكي - الإصدار الماسي المعتمد</title>
-    <script src="auth.js"></script>
+    <script src="app-bridge.js"></script>
+<script src="auth.js"></script>
     <!-- [FIX] أُزيلت مكتبة jsPDF — كانت محمّلة بالكامل (~200 كيلوبايت) دون أي استخدام فعلي
          في الكود؛ تصدير PDF يعتمد بالكامل على window.print() (طباعة المتصفح). -->
+    <script src="sanitize.js"></script>
     <script src="plugins.js"></script>
-    <script src="PDFs/royal-assets.js"></script>
-    <script src="PDFs/royal-parser.js"></script>
-    <script src="PDFs/royal-renderer.js"></script>
 
     <script>
         let currentSiteFeatures = {};
@@ -2581,12 +2580,12 @@
 
     function handleBackAction() {
         if (isDataChanged()) document.getElementById('confirmModal').style.display = 'flex';
-        else window.location.href = 'index.html';
+        else royalNavigate('index.html');
     }
     function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; }
-    function exitWithoutSaving() { window.location.href = 'index.html'; }
+    function exitWithoutSaving() { royalNavigate('index.html'); }
 
-    async function saveAndExit() { await saveToDrive(); window.location.href = 'index.html'; }
+    async function saveAndExit() { await saveToDrive(); royalNavigate('index.html'); }
 
     async function saveToDrive() {
         const bookData = getCurrentBookObject();
@@ -2990,7 +2989,7 @@
         if (!text) return "";
         let res = text;
         if (typeof RoyalFeatures !== 'undefined') { for (let feature in RoyalFeatures) { res = RoyalFeatures[feature].execute(res, footnoteList); } }
-        return processMediaKeys(res);
+        return royalSanitize(processMediaKeys(res));
     }
 
     // --- 5. بناء صفحات الكتاب (مع محرك الحواشي الاحترافي) ---
@@ -3358,14 +3357,14 @@
         let featuresStr = "const RoyalFeatures = {";
         if (typeof RoyalFeatures !== 'undefined') { for (let f in RoyalFeatures) { featuresStr += `"${f}": { css: \`${RoyalFeatures[f].css}\`, execute: ${RoyalFeatures[f].execute.toString()} },`; } }
         featuresStr += "};";
-        let vaultDataStr = JSON.stringify(mediaVault);
+        let vaultDataStr = JSON.stringify(mediaVault).replace(/</g, '\\u003c');
 
         let interactiveHTML = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${bookData.title || 'تطبيق القراءة'}</title>
+    <title>${royalEscapeHtml(bookData.title || 'تطبيق القراءة')}</title>
     <style>
         @font-face { font-family:'Amiri';      src:url('fonts/Amiri-Regular.ttf')     format('truetype'); }
         @font-face { font-family:'Aref Ruqaa'; src:url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); }
@@ -3401,7 +3400,7 @@
 <body>
     <header>
         <div><button class="nav-btn" onclick="toggleSidebar()">☰ الفهرس</button></div>
-        <div class="header-title">${bookData.title||'كتاب تفاعلي'}</div>
+        <div class="header-title">${royalEscapeHtml(bookData.title || 'كتاب تفاعلي')}</div>
         <div style="display:flex;">
             <button class="nav-btn" onclick="changeFontSize(2)">A+</button>
             <button class="nav-btn" onclick="changeFontSize(-2)">A-</button>
@@ -3421,13 +3420,14 @@
         <div id="mediaContainer"></div>
     </div>
     <script>
+        ${ROYAL_SANITIZER_SRC}
         ${featuresStr}
         const vault = ${vaultDataStr};
-        const rawContent = \`${content.replace(/\\/g,'\\\\').replace(/`/g,'\\`').replace(/\$/g,'\\$')}\`;
-        const coverImg = \`${bookData.cover||''}\`;
-        const bTitle = \`${bookData.title||''}\`;
-        const bAuthor = \`${bookData.author||''}\`;
-        const bDate = \`${bookData.date||''}\`;
+        const rawContent = ${royalJsLiteral(content)};
+        const coverImg = ${royalJsLiteral(bookData.cover || '')};
+        const bTitle = ${royalJsLiteral(bookData.title || '')};
+        const bAuthor = ${royalJsLiteral(bookData.author || '')};
+        const bDate = ${royalJsLiteral(bookData.date || '')};
         let chapters = []; let currentChapterIndex = 0; let baseFontSize = ${bookData.size||20};
         function applyStyles(text, fns) {
             let res = text;
@@ -3439,7 +3439,7 @@
                 let icon = media.type==='video' ? '🎥 فيديو' : '🎵 صوت';
                 return '<div style="text-align:center;margin:20px 0;"><button class="media-btn" onclick="playMedia(\\''+key.trim()+'\\')">'+icon+' | تشغيل: '+key+'</button></div>';
             });
-            return res;
+            return royalSanitize(res);
         }
         let dynStyle=""; if(typeof RoyalFeatures!=='undefined'){for(let f in RoyalFeatures){if(RoyalFeatures[f].css) dynStyle+=RoyalFeatures[f].css+"\\n";}} document.head.innerHTML+="<style>"+dynStyle+"</style>";
         function buildBookData() {

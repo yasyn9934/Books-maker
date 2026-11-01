@@ -136,9 +136,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 //  [FIX] مزامنة صامتة تلقائية (بدون نوافذ منبثقة)
 // ══════════════════════════════════════════════════════
 
+
+// [FIX-أداء] لا نُرسل كل الكتب بنصوصها وأغلفتها في كل مزامنة: نُرسل كاملاً فقط ما تغيّر منذ آخر
+// مزامنة ناجحة (أو ما ليس له updatedAt)، وبقية الكتب تُرسل كـ"ظلّ" خفيف (بيانات وصفية بلا نص ولا صور).
+const _HEAVY_SYNC_KEYS = ['text','t','cover','coverImg','cardImage','frames','customBgs','chapterFmt'];
+function _prepareBooksForSync(books) {
+    const last = Number(localStorage.getItem('royal_last_sync') || 0);
+    return (books || []).map(b => {
+        const t = b.updatedAt || 0;
+        const hasText = (typeof b.text === 'string') || (typeof b.t === 'string');
+        if (hasText && (!t || t > last - 60000)) return b;          // تغيّر حديثاً: نُرسله كاملاً
+        const stub = Object.assign({}, b);
+        _HEAVY_SYNC_KEYS.forEach(k => delete stub[k]);
+        stub._light = true;
+        return stub;
+    });
+}
+
 async function autoSyncSilently() {
     if (_syncInProgress || _syncedThisSession) return;
     _syncInProgress = true;
+    const _syncStartedAt = Date.now();
 
     const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
     const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
@@ -147,10 +165,10 @@ async function autoSyncSilently() {
         const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action:          "sync_library",
+                action:          "sync_library", token: currentUser.token,
                 userId:          currentUser.id,
                 userName:        currentUser.username,
-                localBooks:      localBooks,
+                localBooks:      _prepareBooksForSync(localBooks),
                 localCategories: localCategories
             })
         });
@@ -166,6 +184,7 @@ async function autoSyncSilently() {
             }
             localStorage.removeItem('pending_sync_book');
             localStorage.removeItem('pending_sync_categories');
+            localStorage.setItem('royal_last_sync', String(_syncStartedAt));
             _syncedThisSession = true;
             console.log('✅ تمت المزامنة التلقائية بنجاح');
             if (typeof renderBooks === 'function') renderBooks();
@@ -192,7 +211,7 @@ async function _syncProfileData() {
     try {
         const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({ action: 'login_refresh', userId: currentUser.id })
+            body: JSON.stringify({ action: 'login_refresh', token: currentUser.token, userId: currentUser.id })
         });
         const data = await res.json();
         if (data.success && data.user) {
@@ -216,7 +235,7 @@ async function _syncNotificationsFromCloud() {
         const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action:  'get_notifications',
+                action:  'get_notifications', token: currentUser.token,
                 userId:  currentUser.id,
                 readIds: localReadIds   // أخبر السحابة بما قرأناه محلياً
             })
@@ -255,7 +274,7 @@ async function _syncUserContent() {
         const res  = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action:  'get_user_content',
+                action:  'get_user_content', token: currentUser.token,
                 userId:  currentUser.id
             })
         });
@@ -381,6 +400,7 @@ async function startSyncProcess() {
     const notice = document.getElementById('syncNotice');
     if (notice) notice.innerHTML = '<p style="margin:0">⏳ جاري المزامنة...</p>';
 
+    const _syncStartedAt = Date.now();
     const localBooks      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
     const localCategories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
 
@@ -388,10 +408,10 @@ async function startSyncProcess() {
         const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({
-                action:          "sync_library",
+                action:          "sync_library", token: currentUser.token,
                 userId:          currentUser.id,
                 userName:        currentUser.username,
-                localBooks:      localBooks,
+                localBooks:      _prepareBooksForSync(localBooks),
                 localCategories: localCategories
             })
         });
@@ -407,6 +427,7 @@ async function startSyncProcess() {
             }
             localStorage.removeItem('pending_sync_book');
             localStorage.removeItem('pending_sync_categories');
+            localStorage.setItem('royal_last_sync', String(_syncStartedAt));
             _syncedThisSession = true;
 
             alert("✅ تمت المزامنة بنجاح! تم تحديث الكتب والتصنيفات.");
