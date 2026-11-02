@@ -3016,7 +3016,28 @@
     }
 
     // --- 5. بناء صفحات الكتاب (مع محرك الحواشي الاحترافي) ---
+    // [FIX] إحصاءات الكتاب (كلمات/حروف/عناوين): كانت تُحسب فقط عند الكتابة، فتظهر أصفاراً عند فتح كتاب موجود.
+    function _updateStatsFromText() {
+        const t = (document.getElementById('mainText') || {}).value || '';
+        const w = document.getElementById('stat-words'), c = document.getElementById('stat-chars'), h = document.getElementById('stat-headers');
+        if (w) w.innerText = t.trim() ? t.trim().split(/\s+/).length : 0;
+        if (c) c.innerText = t.length;
+        if (h) h.innerText = (t.match(/^# /gm) || []).length;
+    }
+    // [FIX] الترقيم يقيس أبعاد العناصر فعلياً؛ إن بُني الكتاب والإطار مخفيّ (تبويب آخر في التطبيق) كانت كل الأبعاد
+    // أصفاراً فتخرج معاينة ناقصة (عناوين فصول بلا نص) إلى أن يكتب المستخدم شيئاً. نؤجّل البناء حتى يظهر الإطار.
+    var _buildPending = false;
+    function _canMeasureLayout() {
+        const c = document.getElementById('book-container');
+        return !!c && c.getClientRects().length > 0 && document.documentElement.clientWidth > 0;
+    }
+    window.addEventListener('resize', () => { if (_buildPending && _canMeasureLayout()) { _buildPending = false; buildBook(); } });
+    document.addEventListener('visibilitychange', () => { if (_buildPending && !document.hidden && _canMeasureLayout()) { _buildPending = false; buildBook(); } });
+    setInterval(() => { if (_buildPending && _canMeasureLayout()) { _buildPending = false; buildBook(); } }, 400);
+
     function buildBook() {
+        _updateStatsFromText();
+        if (!_canMeasureLayout()) { _buildPending = true; return; }
         updateFontSize(document.getElementById('cFontSize').value);
         const container = document.getElementById('book-container'); container.innerHTML = '';
         const coverPage = createPage(container, false);

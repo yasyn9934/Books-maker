@@ -26,8 +26,8 @@
     }
     .topbar-right{display:flex;align-items:center;gap:10px;}
     .topbar-title{font-family:'Aref Ruqaa',serif;font-size:18pt;color:var(--green);}
-    .back-btn{background:none;border:none;cursor:pointer;font-size:20pt;color:#555;padding:4px 8px;border-radius:8px;transition:.2s;}
-    .back-btn:hover{background:#f0f0f0;}
+    .back-btn{background:none;border:none;cursor:pointer;font-size:20pt;color:var(--rt-dim,#555);padding:4px 8px;border-radius:8px;transition:.2s;}
+    .back-btn:hover{background:var(--rt-s3,#f0f0f0);}
     .topbar-actions{display:flex;gap:8px;}
     .btn-save{
       background:var(--green);color:#fff;border:none;border-radius:10px;
@@ -39,9 +39,9 @@
     .btn-cancel{
       background:none;border:1.5px solid var(--border);border-radius:10px;
       padding:8px 16px;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;
-      color:#666;transition:.2s;
+      color:var(--rt-dim,#666);transition:.2s;
     }
-    .btn-cancel:hover{background:#f0f0f0;}
+    .btn-cancel:hover{background:var(--rt-s3,#f0f0f0);}
 
     /* FORM WRAPPER */
     .form-wrapper{max-width:680px;margin:20px auto;padding:0 16px;}
@@ -62,7 +62,7 @@
     .avatar-picker{display:flex;flex-direction:column;align-items:center;gap:14px;}
     .avatar-preview{
       width:100px;height:100px;border-radius:50%;border:3px solid var(--border);
-      background:#eee;display:flex;align-items:center;justify-content:center;
+      background:var(--rt-s3,#eee);display:flex;align-items:center;justify-content:center;
       font-size:40pt;overflow:hidden;position:relative;cursor:pointer;
     }
     .avatar-preview img{width:100%;height:100%;object-fit:cover;}
@@ -76,9 +76,9 @@
     .avatar-btn{
       padding:7px 16px;border-radius:10px;border:1.5px solid var(--border);
       background:none;font-family:'Amiri',serif;font-size:11pt;cursor:pointer;
-      color:#555;transition:.2s;display:flex;align-items:center;gap:6px;
+      color:var(--rt-dim,#555);transition:.2s;display:flex;align-items:center;gap:6px;
     }
-    .avatar-btn:hover{background:#f0f0f0;}
+    .avatar-btn:hover{background:var(--rt-s3,#f0f0f0);}
     .avatar-btn.primary{background:var(--green);color:#fff;border-color:var(--green);}
     .avatar-btn.primary:hover{background:var(--rt-a1d,#5a7a1e);}
     #avatarInput{display:none;}
@@ -98,9 +98,9 @@
 
     /* FORM FIELDS */
     .field-group{margin-bottom:16px;}
-    .field-label{font-size:11pt;color:#555;margin-bottom:6px;display:block;}
+    .field-label{font-size:11pt;color:var(--rt-dim,#555);margin-bottom:6px;display:block;}
     .field-label span.required{color:var(--red);margin-right:3px;}
-    .field-hint{font-size:9.5pt;color:#aaa;margin-top:4px;}
+    .field-hint{font-size:9.5pt;color:var(--rt-muted,#aaa);margin-top:4px;}
     .field-error{font-size:9.5pt;color:var(--red);margin-top:4px;display:none;}
 
     input[type=text],input[type=number],textarea,select{
@@ -118,7 +118,7 @@
     /* ACCOUNTNAME PREVIEW */
     .accountname-preview{
       display:flex;align-items:center;gap:6px;margin-top:6px;
-      font-size:10.5pt;color:#888;
+      font-size:10.5pt;color:var(--rt-dim,#888);
     }
     .accountname-at{color:var(--gold);}
 
@@ -139,7 +139,7 @@
     }
     .social-icon{font-size:22pt;flex-shrink:0;width:36px;text-align:center;}
     .social-row input{flex:1;}
-    .social-label{font-size:10pt;color:#888;min-width:60px;}
+    .social-label{font-size:10pt;color:var(--rt-dim,#888);min-width:60px;}
 
     /* ONLINE STATUS */
     .sync-status{
@@ -239,9 +239,9 @@
     <div class="section-body">
       <div class="color-picker-wrap" id="colorSwatches"></div>
       <div class="color-custom" style="margin-top:12px">
-        <span style="font-size:11pt;color:#555">لون مخصص:</span>
+        <span style="font-size:11pt;color:var(--rt-dim,#555)">لون مخصص:</span>
         <input type="color" id="customColor" oninput="selectCustomColor(this.value)">
-        <span id="customColorHex" style="font-size:10pt;color:#888;font-family:monospace">#2c3e50</span>
+        <span id="customColorHex" style="font-size:10pt;color:var(--rt-dim,#888);font-family:monospace">#2c3e50</span>
       </div>
     </div>
   </div>

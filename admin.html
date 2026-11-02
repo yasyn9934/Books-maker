@@ -22,7 +22,7 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
   padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
   position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.05);}
 .topbar-title{font-family:'Aref Ruqaa',serif;font-size:20pt;color:var(--green);}
-.topbar-user{display:flex;align-items:center;gap:10px;font-size:11pt;color:#555;}
+.topbar-user{display:flex;align-items:center;gap:10px;font-size:11pt;color:var(--rt-dim,#555);}
 .topbar-user img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
 
 /* ── SEARCH BAR ── */
@@ -46,25 +46,25 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .user-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.12);}
 .user-card-cover{height:100px;background:linear-gradient(135deg,#2c3e50,#3498db);}
 .user-avatar-wrap{margin:-52px auto 0;width:104px;height:104px;border-radius:50%;
-  border:4px solid var(--card);overflow:hidden;background:#eee;
+  border:4px solid var(--card);overflow:hidden;background:var(--rt-s3,#eee);
   display:flex;align-items:center;justify-content:center;font-size:38pt;}
 .user-avatar-wrap img{width:100%;height:100%;object-fit:cover;}
 .user-info{text-align:center;padding:10px 12px 14px;}
-.user-name{font-family:'Aref Ruqaa',serif;font-size:14pt;color:#2c3e50;margin-bottom:2px;}
+.user-name{font-family:'Aref Ruqaa',serif;font-size:14pt;color:var(--rt-text,#2c3e50);margin-bottom:2px;}
 .user-acct{font-size:10pt;color:var(--gold);}
 .user-tier{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;
   font-size:9.5pt;font-weight:bold;}
-.tier-basic{background:#f0f4f0;color:#555;}
+.tier-basic{background:var(--rt-s3,#f0f4f0);color:var(--rt-dim,#555);}
 .tier-premium{background:#fff8e0;color:var(--rt-a2,#b8860b);}
 .tier-elite{background:#f0e8ff;color:#8e44ad;}
 .tier-admin{background:#ffe8e8;color:#e74c3c;}
 .user-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-top:6px;}
 .badge-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;
   border-radius:12px;font-size:9pt;}
-.user-card-dots{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.85);
+.user-card-dots{position:absolute;top:8px;left:8px;background:rgba(var(--rt-s1-rgb,255,255,255),.85);
   border:none;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15pt;
   display:flex;align-items:center;justify-content:center;transition:.2s;}
-.user-card-dots:hover{background:#fff;}
+.user-card-dots:hover{background:var(--rt-s1,#fff);}
 
 /* ── ACTION MODAL ── */
 .action-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
@@ -79,18 +79,18 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
   border-radius:20px 20px 0 0;padding:6px 0 16px;
   box-shadow:0 -6px 30px rgba(0,0,0,.2);animation:slideUp .22s ease;}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.am-handle{width:40px;height:4px;border-radius:2px;background:#ddd;margin:10px auto 12px;}
-.am-title{font-family:'Aref Ruqaa',serif;font-size:13pt;color:#555;
+.am-handle{width:40px;height:4px;border-radius:2px;background:var(--rt-line,#ddd);margin:10px auto 12px;}
+.am-title{font-family:'Aref Ruqaa',serif;font-size:13pt;color:var(--rt-dim,#555);
   text-align:center;padding:0 16px 10px;border-bottom:1px solid var(--border);margin-bottom:4px;}
 .am-item{display:flex;align-items:center;gap:14px;padding:13px 22px;
   cursor:pointer;transition:.15s;font-size:12pt;}
-.am-item:hover{background:#f5f5f5;}
+.am-item:hover{background:var(--rt-s2,#f5f5f5);}
 .am-item.danger{color:var(--red);}
 .am-icon{font-size:18pt;width:28px;text-align:center;flex-shrink:0;}
 .am-cancel{margin:8px 16px 0;width:calc(100% - 32px);padding:12px;border-radius:12px;
-  border:none;background:#f0f0f0;font-family:'Amiri',serif;font-size:12pt;
-  cursor:pointer;transition:.2s;color:#555;}
-.am-cancel:hover{background:#e0e0e0;}
+  border:none;background:var(--rt-s3,#f0f0f0);font-family:'Amiri',serif;font-size:12pt;
+  cursor:pointer;transition:.2s;color:var(--rt-dim,#555);}
+.am-cancel:hover{background:var(--rt-line,#e0e0e0);}
 
 /* ── FULL MODAL ── */
 .full-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
@@ -103,25 +103,25 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .full-modal-head{padding:16px 20px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
 .full-modal-head h2{font-family:'Aref Ruqaa',serif;font-size:16pt;color:var(--green);}
-.modal-close-btn{background:none;border:none;font-size:18pt;cursor:pointer;color:#888;
+.modal-close-btn{background:none;border:none;font-size:18pt;cursor:pointer;color:var(--rt-dim,#888);
   width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-.modal-close-btn:hover{background:#f0f0f0;}
+.modal-close-btn:hover{background:var(--rt-s3,#f0f0f0);}
 .full-modal-body{flex:1;overflow-y:auto;padding:16px 20px;}
 
 /* ── TABS (داخل المودال) ── */
 .modal-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;}
 .modal-tab{white-space:nowrap;padding:7px 16px;border-radius:20px;
   border:1.5px solid var(--border);background:none;
-  font-family:'Amiri',serif;font-size:10.5pt;cursor:pointer;transition:.2s;color:#555;}
+  font-family:'Amiri',serif;font-size:10.5pt;cursor:pointer;transition:.2s;color:var(--rt-dim,#555);}
 .modal-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
 .modal-tab-content{display:none;}
 .modal-tab-content.active{display:block;}
 
 /* ── STATS GRID ── */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
-.stat-box{background:#f5f7f5;border-radius:10px;padding:12px;text-align:center;}
+.stat-box{background:var(--rt-s2,#f5f7f5);border-radius:10px;padding:12px;text-align:center;}
 .stat-box-num{font-family:'Aref Ruqaa',serif;font-size:20pt;color:var(--green);}
-.stat-box-lbl{font-size:9.5pt;color:#888;}
+.stat-box-lbl{font-size:9.5pt;color:var(--rt-dim,#888);}
 .stat-list{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
 .stat-list-item{padding:10px 14px;border-bottom:1px solid var(--border);
   font-size:11pt;display:flex;align-items:center;gap:8px;}
@@ -129,18 +129,18 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 
 /* ── RANK EDITOR ── */
 .rank-section{margin-bottom:18px;}
-.rank-section-title{font-size:12pt;font-weight:bold;color:#2c3e50;margin-bottom:10px;
+.rank-section-title{font-size:12pt;font-weight:bold;color:var(--rt-text,#2c3e50);margin-bottom:10px;
   display:flex;align-items:center;gap:6px;}
 .rank-options{display:flex;gap:8px;flex-wrap:wrap;}
 .rank-btn{padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);
   background:none;font-family:'Amiri',serif;font-size:11pt;cursor:pointer;transition:.2s;}
 .rank-btn.selected{background:var(--green);color:#fff;border-color:var(--green);}
-.rank-btn:hover:not(.selected){background:#f0f4f0;border-color:var(--green);}
-.badge-builder{background:#f8f9fa;border-radius:12px;padding:14px;margin-top:12px;}
+.rank-btn:hover:not(.selected){background:var(--rt-s3,#f0f4f0);border-color:var(--green);}
+.badge-builder{background:var(--rt-s2,#f8f9fa);border-radius:12px;padding:14px;margin-top:12px;}
 .badge-preview{display:flex;align-items:center;gap:8px;margin-bottom:12px;
-  padding:10px;background:#fff;border-radius:8px;border:1px solid var(--border);}
+  padding:10px;background:var(--rt-s1,#fff);border-radius:8px;border:1px solid var(--border);}
 .form-row{display:flex;gap:10px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
-.form-label{font-size:10.5pt;color:#555;min-width:80px;}
+.form-label{font-size:10.5pt;color:var(--rt-dim,#555);min-width:80px;}
 .form-input{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;
   font-family:'Amiri',serif;font-size:11pt;outline:none;}
 .form-input:focus{border-color:var(--green);}
@@ -152,7 +152,7 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .shape-btn.active{background:var(--green);color:#fff;border-color:var(--green);}
 .badges-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
 .badge-item{display:flex;align-items:center;gap:6px;padding:4px 12px;
-  border-radius:10px;border:1px solid var(--border);background:#f5f5f5;}
+  border-radius:10px;border:1px solid var(--border);background:var(--rt-s2,#f5f5f5);}
 .badge-remove{background:none;border:none;cursor:pointer;color:var(--red);
   font-size:12pt;line-height:1;padding:0 2px;}
 
@@ -165,9 +165,9 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .notes-send-btn{padding:10px 16px;border-radius:10px;border:none;
   background:var(--green);color:#fff;font-family:'Amiri',serif;
   font-size:12pt;cursor:pointer;flex-shrink:0;}
-.note-card{background:#f8f9fa;border-radius:10px;padding:12px 14px;
+.note-card{background:var(--rt-s2,#f8f9fa);border-radius:10px;padding:12px 14px;
   margin-bottom:10px;border:1px solid var(--border);}
-.note-meta{font-size:9pt;color:#888;margin-bottom:6px;
+.note-meta{font-size:9pt;color:var(--rt-dim,#888);margin-bottom:6px;
   display:flex;justify-content:space-between;}
 .note-text{font-size:11.5pt;line-height:1.7;}
 .note-isnotif{background:#fffde7;border-color:#fbc02d;}
@@ -183,11 +183,11 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
   color:#fff;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;transition:.2s;}
 .btn-primary:hover{background:var(--rt-a1d,#5a7a1e);}
 .btn-secondary{padding:11px;border-radius:10px;border:1.5px solid var(--border);
-  background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:#555;}
+  background:none;font-family:'Amiri',serif;font-size:12pt;cursor:pointer;color:var(--rt-dim,#555);}
 
 /* ── LOADING / EMPTY ── */
-.loading-center{text-align:center;padding:40px;color:#aaa;font-size:13pt;}
-.empty-msg{text-align:center;padding:30px;color:#aaa;font-size:11pt;}
+.loading-center{text-align:center;padding:40px;color:var(--rt-muted,#aaa);font-size:13pt;}
+.empty-msg{text-align:center;padding:30px;color:var(--rt-muted,#aaa);font-size:11pt;}
 
 /* بطاقات سجل التعليقات */
 .cmt-hist-list{display:flex;flex-direction:column;gap:10px;padding:4px 0;}
@@ -196,7 +196,7 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
   cursor:pointer;transition:.18s;background:var(--card);
   position:relative;
 }
-.cmt-hist-card:hover{background:#f0f5ee;border-color:var(--green);
+.cmt-hist-card:hover{background:var(--rt-s3,#f0f5ee);border-color:var(--green);
   transform:translateX(-2px);}
 .cmt-hist-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
 .cmt-hist-badge{
@@ -206,16 +206,16 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .badge-comment{background:#e8f4fd;color:#2980b9;}
 .badge-reply  {background:#fef9e7;color:#d4a017;}
 .cmt-hist-source{
-  font-size:9.5pt;color:#555;flex:1;
+  font-size:9.5pt;color:var(--rt-dim,#555);flex:1;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.cmt-hist-time{font-size:9pt;color:#aaa;white-space:nowrap;}
+.cmt-hist-time{font-size:9pt;color:var(--rt-muted,#aaa);white-space:nowrap;}
 .cmt-hist-quote{
-  font-size:9.5pt;color:#999;border-right:3px solid #ddd;
+  font-size:9.5pt;color:var(--rt-dim,#999);border-right:3px solid var(--rt-line,#ddd);
   padding-right:8px;margin-bottom:5px;font-style:italic;
 }
-.cmt-hist-text{font-size:11pt;color:#333;line-height:1.55;}
-.cmt-hist-files{font-size:9.5pt;color:#888;margin-top:4px;}
+.cmt-hist-text{font-size:11pt;color:var(--rt-text,#333);line-height:1.55;}
+.cmt-hist-files{font-size:9.5pt;color:var(--rt-dim,#888);margin-top:4px;}
 .cmt-hist-link{
   position:absolute;left:12px;bottom:10px;
   font-size:9pt;color:var(--green);opacity:0;transition:.18s;
@@ -225,20 +225,20 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .admin-book-card{border-radius:10px;overflow:hidden;border:1px solid var(--border);
   cursor:pointer;transition:.2s;background:var(--card);}
 .admin-book-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12);}
-.admin-book-cover{height:110px;background:#e9ecef;background-size:cover;background-position:center;
-  display:flex;align-items:center;justify-content:center;color:#aaa;}
+.admin-book-cover{height:110px;background:var(--rt-s3,#e9ecef);background-size:cover;background-position:center;
+  display:flex;align-items:center;justify-content:center;color:var(--rt-muted,#aaa);}
 .admin-book-info{padding:8px 10px;}
-.admin-book-title{font-size:10pt;font-weight:bold;color:#333;
+.admin-book-title{font-size:10pt;font-weight:bold;color:var(--rt-text,#333);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;}
-.admin-book-meta{font-size:9pt;color:#999;}
+.admin-book-meta{font-size:9pt;color:var(--rt-dim,#999);}
 
 /* ── PROFILE MINI CARD ── */
 .user-mini-card{display:flex;gap:12px;align-items:center;
-  background:#f5f7f5;border-radius:12px;padding:12px;margin-bottom:16px;}
+  background:var(--rt-s2,#f5f7f5);border-radius:12px;padding:12px;margin-bottom:16px;}
 .user-mini-avatar{width:56px;height:56px;border-radius:50%;overflow:hidden;
-  background:#eee;display:flex;align-items:center;justify-content:center;font-size:24pt;flex-shrink:0;}
+  background:var(--rt-s3,#eee);display:flex;align-items:center;justify-content:center;font-size:24pt;flex-shrink:0;}
 .user-mini-avatar img{width:100%;height:100%;object-fit:cover;}
-.user-mini-name{font-family:'Aref Ruqaa',serif;font-size:15pt;color:#2c3e50;}
+.user-mini-name{font-family:'Aref Ruqaa',serif;font-size:15pt;color:var(--rt-text,#2c3e50);}
 .user-mini-acct{font-size:10pt;color:var(--gold);}
 .user-mini-tier{font-size:9.5pt;margin-top:4px;}
 
@@ -250,7 +250,7 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
   padding:20px;
 }
 .gate-card{
-  background:rgba(255,255,255,.06);
+  background:rgba(var(--rt-s1-rgb,255,255,255),.06);
   border:1px solid rgba(255,255,255,.12);
   border-radius:20px;
   padding:36px 32px;
@@ -266,13 +266,13 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
 .gate-input{
   width:100%;padding:13px 16px 13px 44px;
   border:1.5px solid rgba(255,255,255,.2);
-  border-radius:12px;background:rgba(255,255,255,.08);
+  border-radius:12px;background:rgba(var(--rt-s1-rgb,255,255,255),.08);
   color:#fff;font-family:'Amiri',serif;font-size:13pt;
   outline:none;letter-spacing:2px;text-align:center;
   transition:.2s;
 }
 .gate-input::placeholder{letter-spacing:0;color:rgba(255,255,255,.35);}
-.gate-input:focus{border-color:var(--green);background:rgba(255,255,255,.12);}
+.gate-input:focus{border-color:var(--green);background:rgba(var(--rt-s1-rgb,255,255,255),.12);}
 .gate-eye{
   position:absolute;left:12px;top:50%;transform:translateY(-50%);
   background:none;border:none;color:rgba(255,255,255,.5);
@@ -346,7 +346,7 @@ body{font-family:'Amiri',serif;background:var(--bg);color:var(--text);
     <button id="changeCodeBtn" onclick="openCcModal()"
       style="background:none;border:1.5px solid var(--border);border-radius:10px;
              padding:7px 14px;font-family:'Amiri',serif;font-size:10.5pt;
-             cursor:pointer;color:#555;display:none;transition:.2s;"
+             cursor:pointer;color:var(--rt-dim,#555);display:none;transition:.2s;"
       title="تغيير رمز الدخول">🔑 تغيير الرمز</button>
     <div class="topbar-user" id="topbarUser"></div>
   </div>
@@ -706,7 +706,7 @@ async function openStatsModal(uid) {
            ['اسم الحساب',s.accountName?'@'+esc(s.accountName):'—'],
            ['التسجيل',s.registerDate||'—'],['آخر دخول',s.lastLogin||'—']].map(([k,v])=>
           `<div class="stat-list-item">
-            <span style="color:#888;min-width:90px">${k}</span>
+            <span style="color:var(--rt-dim,#888);min-width:90px">${k}</span>
             <span style="font-weight:bold">${v}</span>
           </div>`).join('')}
       </div>
@@ -718,7 +718,7 @@ async function openStatsModal(uid) {
             const cover = (sh.bookData && (sh.bookData.cardImage||sh.bookData.cover)) || '';
             const title = esc(sh.title || (sh.bookData&&sh.bookData.title) || sh.bookId || sh.shareId);
             return `<div class="admin-book-card" onclick="window.open('s/index.html?id=${sh.shareId}','_blank')">
-              <div class="admin-book-cover" style="${cover?`background-image:url('${cover}')`:'background:#ddd'}">
+              <div class="admin-book-cover" style="${cover?`background-image:url('${cover}')`:'background:var(--rt-line,#ddd)'}">
                 ${!cover?`<span style="font-size:22pt">📖</span>`:''}
               </div>
               <div class="admin-book-info">
@@ -738,7 +738,7 @@ async function openStatsModal(uid) {
             const title = esc(bd.title || v.shareId || '');
             const sid   = v.shareId || v;
             return `<div class="admin-book-card" onclick="window.open('s/index.html?id=${sid}','_blank')">
-              <div class="admin-book-cover" style="${cover?`background-image:url('${cover}')`:'background:#ddd'}">
+              <div class="admin-book-cover" style="${cover?`background-image:url('${cover}')`:'background:var(--rt-line,#ddd)'}">
                 ${!cover?`<span style="font-size:22pt">📚</span>`:''}
               </div>
               <div class="admin-book-info">
@@ -825,7 +825,7 @@ function renderRankModal() {
 
     <!-- الرتبة الأساسية -->
     <div class="rank-section">
-      <div class="rank-section-title">🏷️ الرتبة الأساسية <small style="color:#888;font-weight:normal">(واحدة فقط)</small></div>
+      <div class="rank-section-title">🏷️ الرتبة الأساسية <small style="color:var(--rt-dim,#888);font-weight:normal">(واحدة فقط)</small></div>
       <div class="rank-options">
         ${BASIC_TIERS.map(t=>`
           <button class="rank-btn ${u.tier===t.key?'selected':''}"
@@ -841,17 +841,17 @@ function renderRankModal() {
           <div class="badge-item">
             ${buildBadgeChip(b)}
             <button class="badge-remove" onclick="removeBadge(${i})">✕</button>
-          </div>`).join('') || '<span style="color:#aaa;font-size:10.5pt">لا توجد شارات</span>'}
+          </div>`).join('') || '<span style="color:var(--rt-muted,#aaa);font-size:10.5pt">لا توجد شارات</span>'}
       </div>
     </div>
 
     <!-- بناء شارة جديدة -->
     <div class="badge-builder">
-      <div style="font-size:12pt;font-weight:bold;color:#2c3e50;margin-bottom:12px">➕ إضافة شارة جديدة</div>
+      <div style="font-size:12pt;font-weight:bold;color:var(--rt-text,#2c3e50);margin-bottom:12px">➕ إضافة شارة جديدة</div>
 
       <!-- معاينة -->
       <div class="badge-preview">
-        <span style="font-size:10.5pt;color:#888">معاينة: </span>
+        <span style="font-size:10.5pt;color:var(--rt-dim,#888)">معاينة: </span>
         <div id="badgePreview">${buildBadgeChip(_badgeBuilder)}</div>
       </div>
 
@@ -1080,7 +1080,7 @@ async function sendNote(uid) {
     div.className = 'note-card';
     div.innerHTML = `<div class="note-meta"><span>${esc(currentUser.username)}</span><span>الآن</span></div>
       <div class="note-text">${esc(text)}</div>
-      ${filesPayload.length?`<span style="font-size:9.5pt;color:#888">📎 ${filesPayload.length} مرفق</span>`:''}`;
+      ${filesPayload.length?`<span style="font-size:9.5pt;color:var(--rt-dim,#888)">📎 ${filesPayload.length} مرفق</span>`:''}`;
     wrap.prepend(div);
     showToast('✅ تم إرسال الملاحظة');
   } else { showToast('⚠️ فشل الإرسال'); }
@@ -1090,7 +1090,7 @@ function previewNoteFiles(input) {
   const wrap = document.getElementById('noteFilesPreview');
   if (!wrap) return;
   wrap.innerHTML = Array.from(input.files).map(f=>
-    `<span style="background:#f0f4f0;border-radius:8px;padding:3px 10px;font-size:9.5pt;
+    `<span style="background:var(--rt-s3,#f0f4f0);border-radius:8px;padding:3px 10px;font-size:9.5pt;
       display:flex;align-items:center;gap:4px">📎 ${esc(f.name)}</span>`).join('');
 }
 
@@ -1112,7 +1112,7 @@ function previewNotifFiles(input) {
   const wrap = document.getElementById('notifFilesPreview');
   if (!wrap) return;
   wrap.innerHTML = Array.from(input.files).map(f=>
-    `<span style="background:#f0f4f0;border-radius:8px;padding:3px 10px;font-size:9.5pt;
+    `<span style="background:var(--rt-s3,#f0f4f0);border-radius:8px;padding:3px 10px;font-size:9.5pt;
       display:inline-flex;align-items:center;gap:4px">📎 ${esc(f.name)}</span>`).join('');
 }
 

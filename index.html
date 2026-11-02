@@ -1412,7 +1412,7 @@
             const result = await res.json();
             if (result.success) {
                 if (Array.isArray(result.mergedBooks)) {
-                    books = result.mergedBooks;
+                    books = royalMergeKeepLocalFull(result.mergedBooks);
                     localStorage.setItem('royal_books_list', JSON.stringify(books));
                 }
                 if (Array.isArray(result.mergedCategories)) {
@@ -1495,6 +1495,14 @@ function saveData() {
                 }
                 const ctrl = new AbortController();
                 const timer = setTimeout(() => ctrl.abort(), 60000);
+                // مؤشر تحميل: لا يبقى المستخدم أمام شاشة صامتة أثناء جلب الكتاب الكامل
+                var _ld = document.getElementById('royalOpeningBook');
+                if (!_ld) {
+                    _ld = document.createElement('div'); _ld.id = 'royalOpeningBook';
+                    _ld.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;font:700 18px Amiri,serif;direction:rtl';
+                    _ld.innerHTML = '<div style="background:#181510;border:1px solid rgba(201,162,39,.4);border-radius:16px;padding:20px 26px;text-align:center">⏳ جارٍ فتح الكتاب…<div style="font-weight:400;font-size:14px;color:#a89b7c;margin-top:6px">قد يستغرق لحظات حسب حجم الكتاب</div></div>';
+                    document.body.appendChild(_ld);
+                }
                 let data;
                 try {
                     const res = await fetch(AUTH_CONFIG.SCRIPT_URL, {
@@ -1502,7 +1510,7 @@ function saveData() {
                         body: JSON.stringify({ action: 'fetch_book', userId: currentUser.id, token: currentUser.token, userName: currentUser.username, bookId: book.id })
                     });
                     data = await res.json();
-                } finally { clearTimeout(timer); }
+                } finally { clearTimeout(timer); var _l2 = document.getElementById('royalOpeningBook'); if (_l2) _l2.remove(); }
                 if (!data || !data.success || !data.book || (data.book.text === undefined && data.book.t === undefined)) {
                     alert('تعذّر تحميل محتوى الكتاب من درايف. حاول مجدداً.');
                     return;
@@ -2015,7 +2023,7 @@ function saveData() {
             const result = await res.json();
             if (result.success) {
                 if (Array.isArray(result.mergedBooks)) {
-                    books = result.mergedBooks;
+                    books = royalMergeKeepLocalFull(result.mergedBooks);
                     localStorage.setItem('royal_books_list', JSON.stringify(books));
                 }
                 // [FIX] تحديث التصنيفات من السحابة أيضاً

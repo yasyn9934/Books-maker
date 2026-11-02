@@ -4,7 +4,7 @@
  * - 60 لوناً = 20 درجة × 3 تدرجات (داكن / عادي / فاتح).
  * - الصفحات الداكنة أصلاً (index/editor): الوضع عبر تفضيلها الأصلي dayMode، واللون عبر متغيرات تعلو متغيراتها.
  * - صفحات القراءة (share, s/index): الوضع عبر body.dark-mode.
- * - الصفحات الفاتحة (profile, login, admin, edit-account, comments): الوضع الليلي بقلب الألوان مع تصحيح لون التمييز.
+ * - الصفحات الفاتحة (profile, login, admin, edit-account, comments): قيم ليلية محدَّدة لرموز الأسطح والنصوص (بلا قلب ألوان).
  * - صفحات التطبيق (app*.html): كل المتغيرات.
  */
 (function (g) {
@@ -36,13 +36,6 @@
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
   function hex(c) { return '#' + c.map(function (v) { return Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'); }).join(''); }
   function lum(c) { return (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255; }
-  // مرشّح الصفحات الفاتحة: invert(1) ثم hue-rotate(180) ← عكسه: hue-rotate(180) ثم invert(1) (المصفوفة هي نفسها عند 180°)
-  function preInvert(c) {
-    var r = c[0], gg = c[1], b = c[2];
-    var R = -0.574 * r + 1.43 * gg + 0.144 * b, G = 0.426 * r + 0.43 * gg + 0.144 * b, B = 0.426 * r + 1.43 * gg - 0.856 * b;
-    function cl(v) { return Math.max(0, Math.min(255, v)); }
-    return [255 - cl(R), 255 - cl(G), 255 - cl(B)].map(Math.round);
-  }
 
   // ───────── الإعدادات ─────────
   function get() {
@@ -66,10 +59,10 @@
     var AD = hsl2rgb(h, acc.s, Math.max(aL - 12, 16));
     var t = { A: A, A2: A2, AD: AD, AL: AL, ink: lum(A) > 0.55 ? '#1a1405' : '#ffffff' };
     if (dark) {
-      t.bg = hsl2rgb(h, 22, 6); t.s1 = hsl2rgb(h, 20, 9); t.s2 = hsl2rgb(h, 18, 12); t.s3 = hsl2rgb(h, 16, 16);
+      t.bg = hsl2rgb(h, 22, 6); t.s1 = hsl2rgb(h, 20, 9); t.s2 = hsl2rgb(h, 18, 12); t.s3 = hsl2rgb(h, 16, 16); t.line = hsl2rgb(h, 14, 24);
       t.text = hsl2rgb(h, 28, 90); t.dim = hsl2rgb(h, 14, 66); t.muted = hsl2rgb(h, 10, 48);
     } else {
-      t.bg = hsl2rgb(h, 30, 96); t.s1 = [255, 255, 255]; t.s2 = hsl2rgb(h, 26, 93); t.s3 = hsl2rgb(h, 22, 88);
+      t.bg = hsl2rgb(h, 30, 96); t.s1 = [255, 255, 255]; t.s2 = hsl2rgb(h, 26, 93); t.s3 = hsl2rgb(h, 22, 88); t.line = hsl2rgb(h, 18, 84);
       t.text = hsl2rgb(h, 35, 14); t.dim = hsl2rgb(h, 16, 34); t.muted = hsl2rgb(h, 10, 48);
     }
     return t;
@@ -109,11 +102,19 @@
     } else if (kind === 'reader') {
       v.push(':root{' + accentVars + '--royal-green:' + rgbStr(A) + ' !important;--royal-gold:' + rgbStr(T.A2) + ' !important;}');
     } else if (kind === 'light') {
-      var c1 = dark ? rgbStr(preInvert(A)) : rgbStr(A), c1d = dark ? rgbStr(preInvert(T.AD)) : rgbStr(T.AD), c2 = dark ? rgbStr(preInvert(T.A2)) : rgbStr(T.A2);
-      v.push(':root{--rt-a1:' + c1 + ';--rt-a1d:' + c1d + ';--rt-a2:' + c2 + ';--green:' + c1 + ' !important;--gold:' + c2 + ' !important;}');
+      // الصفحات الفاتحة أصلاً: لا قلب للألوان. في الليلي نعرّف قيماً ليلية محدَّدة لرموز الأسطح والنصوص
+      // التي حُوِّلت إليها ألوان هذه الصفحات (--rt-*) ولمتغيراتها الأصلية، فلا يتأثر ما لا يجب أن يتأثر (إيموجي، صور، بطاقات…).
+      v.push(':root{' + accentVars + '--green:' + rgbStr(A) + ' !important;--gold:' + rgbStr(T.A2) + ' !important;' +
+        '--gold-light:' + rgba(T.A2, 0.12) + ' !important;--gold-mid:' + rgba(T.A2, 0.25) + ' !important;}');
       if (dark) {
-        v.push('html{filter:invert(1) hue-rotate(180deg);background:#fff}' +
-          'img,video,canvas,picture,iframe,svg image,[style*="background-image"],.avatar,.book-page,.page-wrapper{filter:invert(1) hue-rotate(180deg)}');
+        v.push(':root{color-scheme:dark;' +
+          '--rt-s1:' + rgbStr(T.s1) + ';--rt-s2:' + rgbStr(T.s2) + ';--rt-s3:' + rgbStr(T.s3) + ';--rt-line:' + rgbStr(T.line) +
+          ';--rt-text:' + rgbStr(T.text) + ';--rt-dim:' + rgbStr(T.dim) + ';--rt-muted:' + rgbStr(T.muted) +
+          ';--rt-s1-rgb:' + T.s1.join(',') + ';--rt-text-rgb:' + T.text.join(',') + ';' +
+          '--bg:' + rgbStr(T.s2) + ' !important;--card:' + rgbStr(T.s1) + ' !important;--white:' + rgbStr(T.s1) + ' !important;--text:' + rgbStr(T.text) +
+          ' !important;--border:' + rgbStr(T.line) + ' !important;--muted:' + rgbStr(T.dim) + ' !important;--input-bg:' + rgbStr(T.s3) +
+          ' !important;--danger-light:rgba(231,76,60,.14) !important;}' +
+          'html,body{background:' + rgbStr(T.s2) + ' !important;color:' + rgbStr(T.text) + ';}');
       }
     }
     return v.join('\n');

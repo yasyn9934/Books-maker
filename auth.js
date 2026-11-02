@@ -153,6 +153,30 @@ function _prepareBooksForSync(books) {
     });
 }
 
+
+/**
+ * [FIX-حرج] الخادم يرجع كتباً "خفيفة" (بلا نص/غلاف). لو استبدلنا بها نسخنا المحلية الكاملة لاضطر كل فتح
+ * لكتاب إلى جلبه من الشبكة (بطيء، وغلاف بحجم ميغابايتات) ولتعذّر العمل دون إنترنت.
+ * القاعدة: إن كانت النسخة المحلية كاملة وليست أقدم من نسخة الخادم نُبقيها كاملة (مع بيانات الخادم الوصفية).
+ * وإن كانت نسخة الخادم أحدث نأخذ الخفيفة (وتُجلب كاملةً عند الفتح).
+ */
+function royalMergeKeepLocalFull(serverBooks) {
+    let local = [];
+    try { local = JSON.parse(localStorage.getItem('royal_books_list') || '[]'); } catch (e) {}
+    const byId = {};
+    local.forEach(b => { if (b && b.id) byId[b.id] = b; });
+    return (serverBooks || []).map(sb => {
+        const lb = byId[sb.id];
+        const hasText = lb && (typeof lb.text === 'string' || typeof lb.t === 'string');
+        if (hasText && (lb.updatedAt || 0) >= (sb.updatedAt || 0)) {
+            const m = Object.assign({}, sb, lb);        // النص والغلاف المحليان + بيانات الخادم الوصفية
+            delete m._light;
+            return m;
+        }
+        return sb;
+    });
+}
+
 async function autoSyncSilently() {
     if (_syncInProgress || _syncedThisSession) return;
     _syncInProgress = true;
@@ -177,7 +201,7 @@ async function autoSyncSilently() {
         if (result.success) {
             // [FIX] حفظ البيانات المدمجة القادمة من السيرفر (تشمل ما في السحابة فقط)
             if (Array.isArray(result.mergedBooks)) {
-                localStorage.setItem('royal_books_list', JSON.stringify(result.mergedBooks));
+                localStorage.setItem('royal_books_list', JSON.stringify(royalMergeKeepLocalFull(result.mergedBooks)));
             }
             if (Array.isArray(result.mergedCategories)) {
                 localStorage.setItem('royal_categories_list', JSON.stringify(result.mergedCategories));
@@ -420,7 +444,7 @@ async function startSyncProcess() {
         if (result.success) {
             // [FIX] حفظ النتيجة المدمجة — تشمل الكتب الموجودة في السحابة فقط أيضاً
             if (Array.isArray(result.mergedBooks)) {
-                localStorage.setItem('royal_books_list', JSON.stringify(result.mergedBooks));
+                localStorage.setItem('royal_books_list', JSON.stringify(royalMergeKeepLocalFull(result.mergedBooks)));
             }
             if (Array.isArray(result.mergedCategories)) {
                 localStorage.setItem('royal_categories_list', JSON.stringify(result.mergedCategories));
