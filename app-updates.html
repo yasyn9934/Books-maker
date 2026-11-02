@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>التحميل والتحديثات</title>
+<script src="royal-theme.js"></script>
 <script src="app-bridge.js"></script>
 <style>
 @font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf')}
 @font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf');font-weight:700}
-:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--surf3:#2c291a;--gold-line:rgba(201,162,39,.3);--dim:#a89b7c;--muted:#6b5f48;--red:#d9534f}
+:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--surf3:#2c291a;--gold-line:rgba(var(--rt-rgb,201,162,39),.3);--dim:#a89b7c;--muted:#6b5f48;--red:#d9534f}
 *{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--text);font-family:'Amiri',serif;padding:16px 16px 40px}
 .card{background:var(--card);border:1px solid var(--gold-line);border-radius:18px;padding:16px;margin-bottom:14px}
 h1{font-family:'Aref Ruqaa',serif;color:var(--gold);font-size:23px;text-align:center;margin:2px 0 14px}
 h2{font-size:17px;color:var(--green);margin-bottom:10px}
-.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(201,162,39,.15);font-size:15.5px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed rgba(var(--rt-rgb,201,162,39),.15);font-size:15.5px}
 .kv:last-child{border:0}.kv span:first-child{color:var(--dim)}
 .chip{display:inline-block;padding:2px 11px;border-radius:12px;font-size:13px;background:var(--surf3);border:1px solid var(--gold-line)}
 .chip.ok{color:#9fd16f;border-color:#5a8a3a}.chip.warn{color:#f0b94a;border-color:#a37a1d}.chip.bad{color:#f08a82;border-color:#a8433d}

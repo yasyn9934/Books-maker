@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
-    <script src="app-bridge.js"></script>
+    <script src="royal-theme.js"></script>
+<script src="app-bridge.js"></script>
 <script src="auth.js"></script>
     <script src="sanitize.js"></script>
     <script src="plugins.js"></script>
@@ -16,15 +17,15 @@
         :root {
             /* [إعادة تصميم] هوية بصرية موحّدة مع editor.html بدل اللوحة الرمادية المسطّحة
                السابقة — نفس طابع "الملكي" الذهبي الداكن في كلا الملفين الآن. */
-            --royal-gold:  #c9a227;
+            --royal-gold:  var(--royal-gold,#c9a227);
             --royal-green: #7fa855;
             --bg-color:    #0d0c09;
             --text-color:  #ede8d5;
             --card-bg:     #181510;
             --surf2:       #21200f;
             --surf3:       #2c291a;
-            --gold-dim:    rgba(201,162,39,.16);
-            --gold-line:   rgba(201,162,39,.30);
+            --gold-dim:    rgba(var(--rt-rgb,201,162,39),.16);
+            --gold-line:   rgba(var(--rt-rgb,201,162,39),.30);
             --text-dim:    #a89b7c;
             --text-muted:  #6b5f48;
             --blue:        #4a90c4;
@@ -59,7 +60,7 @@
         body {
             user-select:none;-webkit-user-select:none;font-family: 'Amiri', serif;
             background:
-                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(201,162,39,.09), transparent 60%),
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(var(--rt-rgb,201,162,39),.09), transparent 60%),
                 radial-gradient(ellipse 700px 500px at 105% 10%, rgba(127,168,85,.06), transparent 60%),
                 var(--bg-color);
             background-attachment: fixed;
@@ -133,11 +134,11 @@
            رئيسي ذهبي مصمت (الفعل الأهم)، وزرّان ثانويان بحدود ذهبية شفافة فقط، فيتضح
            الترتيب البصري للأولوية بنظرة واحدة. */
         .btn-primary {
-            background: linear-gradient(180deg, #e0bb3d, var(--royal-gold));
+            background: linear-gradient(180deg, var(--rt-a-light,#e0bb3d), var(--royal-gold));
             color: #1a1608; font-weight: bold;
-            box-shadow: 0 8px 22px rgba(201,162,39,.35);
+            box-shadow: 0 8px 22px rgba(var(--rt-rgb,201,162,39),.35);
         }
-        .btn-primary:hover { box-shadow: 0 10px 26px rgba(201,162,39,.5); }
+        .btn-primary:hover { box-shadow: 0 10px 26px rgba(var(--rt-rgb,201,162,39),.5); }
         .btn-secondary, .btn-info {
             background: var(--surf2);
             color: var(--text-color);
@@ -257,7 +258,7 @@
             color: #1a1608;
             border-color: var(--royal-gold);
             transform: rotate(90deg);
-            box-shadow: 0 2px 10px rgba(201,162,39,.5);
+            box-shadow: 0 2px 10px rgba(var(--rt-rgb,201,162,39),.5);
         }
 
         .card-cover {
@@ -481,7 +482,7 @@
             color: #1a1608;
             transform: translateX(-5px);
             border-color: var(--royal-gold);
-            box-shadow: 0 4px 14px rgba(201,162,39,.35);
+            box-shadow: 0 4px 14px rgba(var(--rt-rgb,201,162,39),.35);
         }
 
         .modal-actions-list button.btn-danger {
@@ -511,7 +512,7 @@
             transform: translateY(-50%);
             width: 54px;
             height: 54px;
-            background: linear-gradient(180deg, #e0bb3d, var(--royal-gold));
+            background: linear-gradient(180deg, var(--rt-a-light,#e0bb3d), var(--royal-gold));
             color: #1a1608;
             border-radius: 50% 0 0 50%;
             display: flex;
@@ -525,7 +526,7 @@
 
         .royal-fab:hover {
             width: 62px;
-            box-shadow: -3px 0 18px rgba(201,162,39,.5);
+            box-shadow: -3px 0 18px rgba(var(--rt-rgb,201,162,39),.5);
         }
 
         /* النافذة المنبثقة للزر العائم */
@@ -823,7 +824,7 @@
         #userCard:hover {
             background: var(--surf3);
             border-color: var(--royal-gold);
-            box-shadow: 0 2px 12px rgba(201,162,39,.2);
+            box-shadow: 0 2px 12px rgba(var(--rt-rgb,201,162,39),.2);
         }
         .user-avatar-sm {
             width: 38px;
@@ -898,14 +899,14 @@
             border-radius: 20px;
             cursor: pointer;
             border: 1px solid transparent;
-            background: linear-gradient(180deg, #e0bb3d, var(--royal-gold));
+            background: linear-gradient(180deg, var(--rt-a-light,#e0bb3d), var(--royal-gold));
             color: #1a1608;
             font-weight: bold;
             transition: .25s;
             white-space: nowrap;
         }
         #authActionBtn:hover {
-            box-shadow: 0 4px 14px rgba(201,162,39,.4);
+            box-shadow: 0 4px 14px rgba(var(--rt-rgb,201,162,39),.4);
             transform: translateY(-1px);
         }
 
@@ -917,7 +918,15 @@
         }
         /* ════ end HEADER ════ */
 
-    </style>
+    
+/* [موبايل] شريط الحساب لا يتجاوز عرض الشاشة */
+@media (max-width:480px){
+  #mainHeader{flex-wrap:wrap; gap:8px;}
+  #userCard{max-width:100%; flex-wrap:wrap; min-width:0;}
+  #authStatusArea{min-width:0; max-width:100%; flex-shrink:1;}
+  #authActionBtn{max-width:100%; box-sizing:border-box;}
+}
+</style>
 </head>
 <body>
 

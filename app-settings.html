@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>الإعدادات</title>
+<script>window.ROYAL_IN_APP=true</script>
+<script src="royal-theme.js"></script>
+<script src="app-bridge.js"></script>
+<style>
+@font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf')}
+@font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf');font-weight:700}
+:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--surf3:#2c291a;--gold-line:rgba(var(--rt-rgb,201,162,39),.3);--gold-dim:rgba(var(--rt-rgb,201,162,39),.16);--dim:#a89b7c;--muted:#6b5f48;--red:#d9534f}
+*{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--text);font-family:'Amiri',serif;padding:14px 14px 40px}
+h1{font-family:'Aref Ruqaa',serif;color:var(--gold);font-size:23px;text-align:center;margin:2px 0 14px}
+.card{background:var(--card);border:1px solid var(--gold-line);border-radius:18px;padding:15px;margin-bottom:14px}
+h2{font-size:17px;color:var(--green);margin-bottom:11px;display:flex;align-items:center;gap:6px}
+.acct{display:flex;gap:14px;align-items:center}
+.av{width:68px;height:68px;border-radius:50%;background:var(--surf3);border:2px solid var(--gold-line);display:grid;place-items:center;font-size:30px;overflow:hidden;flex:none}
+.av img{width:100%;height:100%;object-fit:cover}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--gold-line);font-size:15.5px}
+.kv:last-child{border:0}.kv span:first-child{color:var(--dim)}.kv span:last-child{text-align:left;word-break:break-all}
+.btn{width:100%;padding:12px;border-radius:13px;border:0;font:700 16.5px 'Amiri',serif;cursor:pointer;margin-top:10px;background:var(--gold);color:var(--rt-ink,#1a1405)}
+.btn.sec{background:var(--surf3);color:var(--text);border:1px solid var(--gold-line)}.btn.red{background:rgba(217,83,79,.14);color:#f08a82;border:1px solid var(--red)}
+.seg{display:flex;background:var(--surf2);border:1px solid var(--gold-line);border-radius:14px;padding:3px;gap:3px}
+.seg button{flex:1;padding:10px 4px;border:0;border-radius:11px;background:none;color:var(--dim);font:16px 'Amiri',serif;cursor:pointer;transition:.2s}
+.seg button.on{background:var(--gold);color:var(--rt-ink,#1a1405);font-weight:700}
+.lbl{color:var(--dim);font-size:14.5px;margin:12px 0 7px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+.sw{aspect-ratio:1;border-radius:50%;border:2px solid transparent;cursor:pointer;display:grid;place-items:center;color:#fff;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.35);transition:transform .15s}
+.sw:active{transform:scale(.88)}.sw.on{border-color:var(--text);box-shadow:0 0 0 2px var(--gold)}
+#accName{color:var(--gold);font-weight:700}
+:root[data-rt-mode=light] .btn.red{color:#b03030}
+.note{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.6}
+</style></head><body>
+<h1>⚙️ الإعدادات</h1>
+
+<div class="card" id="acctCard">
+  <h2>👤 الحساب</h2>
+  <div id="acctBody"></div>
+</div>
+
+<div class="card">
+  <h2>🎨 المظهر</h2>
+  <div class="lbl">الوضع</div>
+  <div class="seg" id="modeSeg">
+    <button data-v="dark">🌙 ليلي</button><button data-v="light">☀️ نهاري</button><button data-v="auto">🌓 تلقائي</button>
+  </div>
+  <div class="lbl">لون التطبيق والموقع — <span id="accName"></span></div>
+  <div class="grid" id="grid"></div>
+  <div class="note">يتغيّر اللون والوضع في كل صفحات التطبيق والموقع داخله. في المتصفح العادي يبقى الموقع بمظهره الأصلي.</div>
+</div>
+
+<div class="card">
+  <h2>📱 طريقة العرض</h2>
+  <div class="seg" id="viewSeg"><button data-v="phone">📱 طبيعي</button><button data-v="desktop">🖥️ كحاسوب</button></div>
+  <div class="note">«كحاسوب» يعرض الصفحات بتخطيط شاشة الحاسوب مصغَّراً ليناسب شاشتك، وهو مفيد لأدوات المحرر الكبيرة.</div>
+</div>
+
+<script>
+(function(){
+  const P=(function(){try{return window.parent.RoyalApp}catch(e){return null}})(), T=(function(){try{return window.parent.RoyalTheme}catch(e){return null}})();
+  const $=id=>document.getElementById(id);
+  if(!P||!T){ document.body.innerHTML='<p style="padding:30px;text-align:center">افتح هذه الصفحة من داخل التطبيق.</p>'; return; }
+  const TIERS={basic:'عضو',premium:'عضو مميز',elite:'متقدم',admin:'مشرف'};
+  function row(k,v){const d=document.createElement('div');d.className='kv';const a=document.createElement('span');a.textContent=k;const b=document.createElement('span');b.textContent=v||'—';d.append(a,b);return d}
+  function renderAcct(){
+    const u=P.getUser(), box=$('acctBody'); box.innerHTML='';
+    if(u.role!=='member'){
+      const p=document.createElement('div');p.className='note';p.textContent='أنت تتصفح كزائر. سجّل الدخول لمزامنة كتبك وإدارة حسابك.';box.appendChild(p);
+      const b=document.createElement('button');b.className='btn';b.textContent='🔑 تسجيل الدخول';b.onclick=()=>royalNavigate('login.html');box.appendChild(b);return;
+    }
+    const top=document.createElement('div');top.className='acct';
+    const av=document.createElement('div');av.className='av';
+    if(u.profilePhoto&&/^(https?:|data:image\/)/i.test(u.profilePhoto)){const im=document.createElement('img');im.src=u.profilePhoto;im.alt='';av.appendChild(im)}else av.textContent='👤';
+    const nm=document.createElement('div');const n1=document.createElement('div');n1.style.cssText='font-size:20px;font-weight:700';n1.textContent=u.username||'—';
+    const n2=document.createElement('div');n2.style.cssText='color:var(--dim)';n2.textContent=u.accountName?('@'+u.accountName):'';nm.append(n1,n2);top.append(av,nm);box.appendChild(top);
+    const info=document.createElement('div');info.style.marginTop='10px';
+    info.append(row('اسم المستخدم',u.username),row('اسم الحساب',u.accountName?('@'+u.accountName):''),row('البريد الإلكتروني',u.email),row('الرتبة',TIERS[u.tier||'basic']||'عضو'));box.appendChild(info);
+    const e=document.createElement('button');e.className='btn sec';e.textContent='✏️ تعديل الحساب';e.onclick=()=>royalNavigate('edit-account.html');box.appendChild(e);
+    const l=document.createElement('button');l.className='btn red';l.textContent='🚪 تسجيل الخروج';l.onclick=()=>P.logout();box.appendChild(l);
+  }
+  function renderTheme(){
+    const s=T.get();
+    document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===s.mode));
+    document.querySelectorAll('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===s.view));
+    document.querySelectorAll('.sw').forEach(b=>b.classList.toggle('on',b.dataset.id===s.accent));
+    $('accName').textContent=T.findAccent(s.accent).name;
+  }
+  const grid=$('grid');
+  T.PALETTE.forEach(a=>{const b=document.createElement('button');b.className='sw';b.dataset.id=a.id;b.title=a.name;b.setAttribute('aria-label',a.name);
+    b.style.background=T.hex(a);b.textContent='';b.onclick=()=>{P.setTheme({accent:a.id});renderTheme()};grid.appendChild(b)});
+  $('modeSeg').onclick=e=>{const b=e.target.closest('button');if(b){P.setTheme({mode:b.dataset.v});renderTheme()}};
+  $('viewSeg').onclick=e=>{const b=e.target.closest('button');if(b){P.setTheme({view:b.dataset.v});renderTheme()}};
+  window.addEventListener('storage',e=>{if(e.key==='royal_user')renderAcct()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderAcct()});
+  renderAcct();renderTheme();
+})();
+</script></body></html>

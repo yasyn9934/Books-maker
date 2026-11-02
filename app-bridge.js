@@ -32,10 +32,46 @@
   // إخفاء ما يخصّ المتصفح: شريط الحساب/الدخول، أزرار الرئيسية/الدخول في عارض المشاركة، جرس الإشعارات في الملف الشخصي
   var st = document.createElement('style');
   st.textContent =
+    // شريط الحساب/الدخول، جرس الإشعارات المكرر، أزرار الرئيسية/الدخول في عارض المشاركة
     '.in-app #userCard,.in-app #authStatusArea,.in-app .notif-bell-wrap,' +
     '.in-app .shared-top-bar-right,.in-app .top-bar-right{display:none!important}' +
+    // الزر العائم في الصفحة الرئيسية
+    '.in-app .royal-fab,.in-app .fab-modal{display:none!important}' +
+    // أزرار تبديل المظهر: التحكم الآن من الإعدادات فقط
+    '.in-app .day-night-toggle,.in-app #pvDayNightToggle,.in-app #dayNightToggle,.in-app #themeSwatch,' +
+    '.in-app .nav-btn[onclick*="toggleDarkMode"]{display:none!important}' +
     '.in-app #mainHeader{justify-content:space-between}';
   (document.head || root).appendChild(st);
+
+  // المظهر (لون + وضع) من إعدادات التطبيق
+  try { if (window.RoyalTheme) window.RoyalTheme.apply(document); } catch (e) {}
+
+  // window.open / روابط target=_blank: لا تفتح نافذة جديدة تستبدل التطبيق؛ تمرّ عبر الموجّه
+  function openInApp(url) {
+    try {
+      var abs = new URL(url, location.href);
+      if (abs.origin === location.origin) {
+        if (!(host && host.route(abs.href, window.name || ''))) location.href = abs.href;
+      } else if (window.RoyalNative && window.RoyalNative.openExternal) {
+        window.RoyalNative.openExternal(abs.href);
+      } else {
+        window.__royalRealOpen && window.__royalRealOpen.call(window, abs.href, '_blank', 'noopener');
+      }
+    } catch (e) {}
+    return null;
+  }
+  window.__royalRealOpen = window.open;
+  window.open = function (url) { return url ? openInApp(url) : null; };
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    var t = (a.getAttribute('target') || '').toLowerCase();
+    if (t === '_blank' || t === '_top' || t === '_parent') {
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) === '#' || /^(javascript|blob|data):/i.test(href) || a.hasAttribute('download')) return;
+      e.preventDefault(); openInApp(href);
+    }
+  }, true);
 
   // اعتراض كل انتقال (روابط، location.href …) وتمريره للموجّه إن كان لتبويب آخر
   if (host && window.navigation && typeof navigation.addEventListener === 'function') {

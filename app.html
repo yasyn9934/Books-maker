@@ -7,11 +7,14 @@
 <title>صانع الكتب</title>
 <link rel="stylesheet" href="app.css">
 <script src="app-config.js"></script>
+<script>window.ROYAL_IN_APP=true</script>
+<script src="royal-theme.js"></script>
 </head>
 <body>
 <div id="appRoot">
   <header id="topbar">
     <button id="avatarBtn" class="avatar-btn" aria-label="حسابي"><span id="avatarInner">👤</span></button>
+    <button id="backBtn" class="back-btn" aria-label="رجوع" hidden><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     <div class="tb-title" id="tbTitle">الرئيسية</div>
     <button id="syncPill" hidden>⟳ مزامنة</button>
     <button id="bellBtn" class="bell-btn" aria-label="الإشعارات">
@@ -26,7 +29,8 @@
     <button class="tab active" data-slot="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>الرئيسية</span></button>
     <button class="tab" data-slot="editor"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 00-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg><span>المحرر</span><i class="dot" id="editDot" hidden></i></button>
     <button class="tab" data-slot="shares"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span>المشاركات</span></button>
-    <button class="tab" data-slot="updates"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 19h16"/></svg><span>التحميل</span><i class="dot" id="updDot" hidden></i></button>
+    <button class="tab" data-slot="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span>الإعدادات</span></button>
+    <button class="tab" data-slot="updates"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 19h16"/></svg><span>التحديث</span><i class="dot" id="updDot" hidden></i></button>
     <button class="tab" data-slot="admin" id="adminTab" hidden><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span>الإدارة</span></button>
   </nav>
 </div>

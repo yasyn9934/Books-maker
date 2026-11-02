@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محرك الكتب الملكي - الإصدار الماسي المعتمد</title>
-    <script src="app-bridge.js"></script>
+    <script src="royal-theme.js"></script>
+<script src="app-bridge.js"></script>
 <script src="auth.js"></script>
     <!-- [FIX] أُزيلت مكتبة jsPDF — كانت محمّلة بالكامل (~200 كيلوبايت) دون أي استخدام فعلي
          في الكود؛ تصدير PDF يعتمد بالكامل على window.print() (طباعة المتصفح). -->
@@ -57,9 +58,9 @@
             --surf1:     #181510;
             --surf2:     #21200f;
             --surf3:     #2c291a;
-            --gold:      #c9a227;
-            --gold-dim:  rgba(201,162,39,.18);
-            --gold-line: rgba(201,162,39,.28);
+            --gold:      var(--royal-gold,#c9a227);
+            --gold-dim:  rgba(var(--rt-rgb,201,162,39),.18);
+            --gold-line: rgba(var(--rt-rgb,201,162,39),.28);
             --green:     #4e7c5f;
             --blue:      #2980b9;
             --purple:    #8e44ad;
@@ -153,7 +154,7 @@
         .brand-gem { font-size:22pt; color:var(--gold); animation:gem-pulse 3.5s ease-in-out infinite; line-height:1; }
         @keyframes gem-pulse {
             0%,100% { text-shadow:0 0 8px var(--gold); opacity:1; }
-            50%      { text-shadow:0 0 22px var(--gold),0 0 45px rgba(201,162,39,.25); opacity:.75; }
+            50%      { text-shadow:0 0 22px var(--gold),0 0 45px rgba(var(--rt-rgb,201,162,39),.25); opacity:.75; }
         }
         .brand-name { font-family:'Aref Ruqaa',serif; font-size:16pt; color:var(--gold); white-space:nowrap; letter-spacing:.4px; }
         .hdr-stats  { display:flex; gap:7px; flex:1; justify-content:center; flex-wrap:wrap; }
@@ -313,15 +314,15 @@
 
         /* ── [تحريك/تحجيم اللوحة] وضع الحرية ────────────────── */
         #panel-freemode-btn {
-            background:linear-gradient(135deg, rgba(201,162,39,.22), rgba(150,110,20,.15));
-            border:1.5px solid rgba(201,162,39,.5); color:var(--gold);
+            background:linear-gradient(135deg, rgba(var(--rt-rgb,201,162,39),.22), rgba(150,110,20,.15));
+            border:1.5px solid rgba(var(--rt-rgb,201,162,39),.5); color:var(--gold);
             height:30px; border-radius:9px; padding:0 14px;
             cursor:pointer; font-size:10.5pt; font-family:'Amiri',serif;
             display:flex; align-items:center; gap:6px; white-space:nowrap;
             transition:all .2s; letter-spacing:.3px;
         }
-        #panel-freemode-btn:hover { background:linear-gradient(135deg, rgba(201,162,39,.38), rgba(150,110,20,.28)); }
-        #panel-freemode-btn.active { background:linear-gradient(135deg, rgba(201,162,39,.55), rgba(150,110,20,.42)); box-shadow:0 2px 10px rgba(201,162,39,.3); }
+        #panel-freemode-btn:hover { background:linear-gradient(135deg, rgba(var(--rt-rgb,201,162,39),.38), rgba(150,110,20,.28)); }
+        #panel-freemode-btn.active { background:linear-gradient(135deg, rgba(var(--rt-rgb,201,162,39),.55), rgba(150,110,20,.42)); box-shadow:0 2px 10px rgba(var(--rt-rgb,201,162,39),.3); }
 
         .fp-handle { display:none; position:absolute; z-index:25; align-items:center; justify-content:center; }
         #floating-panel.fp-free-mode .fp-handle { display:flex; }
@@ -349,14 +350,14 @@
         /* [مؤشر وضع التحرير] شارة صغيرة أسفل مقبض التحريك مباشرة */
         .fp-edit-badge {
             display:none; top:22px; left:50%; transform:translateX(-50%);
-            background:rgba(201,162,39,.16); border:1px solid rgba(201,162,39,.4); color:var(--gold);
+            background:rgba(var(--rt-rgb,201,162,39),.16); border:1px solid rgba(var(--rt-rgb,201,162,39),.4); color:var(--gold);
             font-size:8.5pt; font-family:'Amiri',serif; padding:2px 10px; border-radius:20px;
             white-space:nowrap; letter-spacing:.3px; pointer-events:none;
         }
         #floating-panel.fp-free-mode .fp-edit-badge { display:flex; }
         #floating-panel.fp-free-mode {
             border-radius:16px; border:2.5px solid var(--gold); /* [مؤشر وضع التحرير] حدود أوضح وأثخن */
-            box-shadow:0 14px 55px rgba(0,0,0,.65), 0 0 0 3px rgba(201,162,39,.15);
+            box-shadow:0 14px 55px rgba(0,0,0,.65), 0 0 0 3px rgba(var(--rt-rgb,201,162,39),.15);
             transition:none !important; /* لا نريد أي تأخير حركي أثناء السحب اليدوي */
         }
 
@@ -375,7 +376,7 @@
             transition:all .18s;
         }
         .fp-main-tab:hover  { color:var(--text); background:var(--gold-dim); }
-        .fp-main-tab.active { color:var(--gold); border-bottom-color:var(--gold); background:rgba(201,162,39,.1); }
+        .fp-main-tab.active { color:var(--gold); border-bottom-color:var(--gold); background:rgba(var(--rt-rgb,201,162,39),.1); }
 
         /* ── Tab panels ───────────────────────────────────── */
         .fp-panel { display:none; flex:1; overflow:hidden; flex-direction:column; }
@@ -543,7 +544,7 @@
             direction:rtl; min-height:60px;
             transition:box-shadow .18s;
         }
-        #mainText:focus { box-shadow:inset 0 2px 8px rgba(201,162,39,.07); }
+        #mainText:focus { box-shadow:inset 0 2px 8px rgba(var(--rt-rgb,201,162,39),.07); }
         #mainText::placeholder { color:var(--text-muted); line-height:1.8; }
 
         /* ════════════════════════
@@ -693,7 +694,7 @@
         #floating-toggle.ft-visible { display:flex; }
         @keyframes float-pulse {
             0%,100% { box-shadow:0 4px 24px rgba(0,0,0,.55),0 0 0 4px var(--gold-dim); }
-            50%      { box-shadow:0 4px 32px rgba(0,0,0,.65),0 0 0 8px rgba(201,162,39,.09); }
+            50%      { box-shadow:0 4px 32px rgba(0,0,0,.65),0 0 0 8px rgba(var(--rt-rgb,201,162,39),.09); }
         }
 
         /* ══════════════════════════════════════════════════════
@@ -717,7 +718,7 @@
         .icon-btn { background:var(--surf3); border:1px solid rgba(255,255,255,.07); border-radius:8px; color:var(--text); font-size:15pt; cursor:pointer; padding:0 11px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .18s; }
         .icon-btn:hover { background:var(--gold-dim); border-color:var(--gold); }
         .icon-btn.dark { background:var(--surf2); border-color:var(--gold-line); }
-        .icon-btn.dark:hover { background:rgba(201,162,39,.22); border-color:var(--gold); }
+        .icon-btn.dark:hover { background:rgba(var(--rt-rgb,201,162,39),.22); border-color:var(--gold); }
         .btn { background:var(--royal-green); color:white; border:none; padding:10px 18px; font-size:13pt; font-family:'Aref Ruqaa'; border-radius:8px; cursor:pointer; transition:filter .18s,transform .18s; }
         .btn:hover { filter:brightness(1.15); transform:translateY(-1px); }
         .btn-clear { background:var(--red); }
@@ -733,7 +734,7 @@
         .modal-buttons { display:flex; flex-direction:column; gap:10px; }
         .btn-modal     { padding:12px; font-size:14pt; border-radius:10px; font-family:'Amiri'; cursor:pointer; border:none; font-weight:bold; transition:transform .18s,filter .18s; }
         .btn-modal:hover { transform:translateY(-2px); filter:brightness(1.1); }
-        .btn-original  { background:linear-gradient(135deg,#c9a227,#a07d10); color:#fff; }
+        .btn-original  { background:linear-gradient(135deg,var(--royal-gold,#c9a227),#a07d10); color:#fff; }
         .btn-current   { background:linear-gradient(135deg,#4e7c5f,#3a5e47);  color:#fff; }
         .btn-cancel    { background:rgba(192,57,43,.15); color:#e07070; border:1px solid rgba(192,57,43,.3)!important; margin-top:4px; }
         .btn-cancel:hover { background:rgba(192,57,43,.28); }
@@ -797,7 +798,29 @@
             /* [FIX] تجنّب صفحة بيضاء زائدة بعد آخر صفحة في الكتاب */
             .page-wrapper:last-child { page-break-after:auto !important; break-after:auto !important; }
         }
-    </style>
+    
+/* ═════════ [موبايل] تخطيط المحرر لشاشات الهاتف (عرض ≤ 900px) ═════════ */
+@media (max-width:900px){
+  :root{ --hdr-h:44px; --panel-h:46vh; }
+  .app-header{padding:0 8px; gap:6px;}
+  .brand-gem{font-size:15pt;} .brand-name{font-size:12pt; letter-spacing:0;}
+  .hdr-stats{gap:3px; flex-wrap:nowrap; overflow:hidden; justify-content:flex-end;}
+  .stat-chip{padding:1px 8px 1px 6px; font-size:9pt; gap:4px;}
+  #main-content{overflow-x:hidden; position:relative;}
+  #book-container{margin:10px 0 0 !important; transform-origin:50% 0;}
+  #floating-panel{border-radius:16px 16px 0 0; border-top:2px solid var(--gold);}
+  .fp-control-bar{padding:4px 8px;}
+  .fp-main-tabs{height:40px;} .fp-main-tabs > *{font-size:10pt; padding-left:6px; padding-right:6px;}
+  #panel-drag-handle,#panel-resize-handle{display:none !important;}
+  #fp-tab-info.active{flex-direction:column !important; flex-wrap:nowrap !important; overflow-y:auto !important; overflow-x:hidden !important; padding:8px !important; gap:8px !important; align-items:stretch !important;}
+  .info-field{min-width:0 !important; width:100% !important; box-sizing:border-box; flex-shrink:0;}
+  .info-field input:not([type=color]):not([type=checkbox]),.info-field select,.info-field textarea{width:100% !important; box-sizing:border-box; min-width:0;}
+  .reqs-fields-row,.writing-sub-panel,.fp-sub-tabs{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .theme-swatches-row{grid-template-columns:repeat(auto-fill,minmax(30px,1fr)) !important;}
+  #smart-panel{padding:10px 12px; max-height:34vh;}
+  textarea{max-width:100%; box-sizing:border-box;}
+}
+</style>
 
     <style id="qh-modal-styles">
         /* ══════════════════════════════════════════════════
@@ -814,8 +837,8 @@
         .qh-modal.open { display:flex; }
         .qh-box {
             background:var(--surf1,#1e1e1e);
-            border:1px solid var(--gold-line,rgba(201,162,39,.3));
-            border-top:4px solid var(--gold,#c9a227);
+            border:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3));
+            border-top:4px solid var(--gold,var(--royal-gold,#c9a227));
             border-radius:16px;
             width:min(98vw, 920px);
             display:flex; flex-direction:column;
@@ -826,9 +849,9 @@
         .qh-header {
             display:flex; align-items:center; justify-content:space-between;
             padding:13px 20px 11px;
-            border-bottom:1px solid var(--gold-line,rgba(201,162,39,.3)); flex-shrink:0;
+            border-bottom:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); flex-shrink:0;
         }
-        .qh-title { font-family:'Aref Ruqaa',serif; font-size:17pt; color:var(--gold,#c9a227); }
+        .qh-title { font-family:'Aref Ruqaa',serif; font-size:17pt; color:var(--gold,var(--royal-gold,#c9a227)); }
         .qh-close {
             background:rgba(192,57,43,.18); color:#e07070;
             border:1px solid rgba(192,57,43,.35); border-radius:8px;
@@ -836,15 +859,15 @@
             font-family:'Amiri',serif; transition:all .18s;
         }
         .qh-close:hover { background:rgba(192,57,43,.32); color:#ff9898; }
-        .qh-tabs { display:flex; border-bottom:1px solid var(--gold-line,rgba(201,162,39,.3)); flex-shrink:0; }
+        .qh-tabs { display:flex; border-bottom:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); flex-shrink:0; }
         .qh-tab {
             flex:1; background:none; border:none;
             border-bottom:2.5px solid transparent;
             color:var(--text-dim,#888); font-family:'Aref Ruqaa',serif; font-size:12pt;
             padding:9px 0; cursor:pointer; transition:all .18s;
         }
-        .qh-tab:hover  { color:var(--text,#eee); background:var(--gold-dim,rgba(201,162,39,.08)); }
-        .qh-tab.active { color:var(--gold,#c9a227); border-bottom-color:var(--gold,#c9a227); background:rgba(201,162,39,.08); }
+        .qh-tab:hover  { color:var(--text,#eee); background:var(--gold-dim,rgba(var(--rt-rgb,201,162,39),.08)); }
+        .qh-tab.active { color:var(--gold,var(--royal-gold,#c9a227)); border-bottom-color:var(--gold,var(--royal-gold,#c9a227)); background:rgba(var(--rt-rgb,201,162,39),.08); }
         .qh-search-area {
             padding:12px 18px; border-bottom:1px solid rgba(255,255,255,.05);
             display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;
@@ -857,7 +880,7 @@
             border-radius:8px; color:var(--text,#eee); font-family:'Amiri',serif;
             font-size:12pt; padding:7px 10px; outline:none; transition:border-color .18s;
         }
-        .qh-field input:focus, .qh-field select:focus { border-color:var(--gold,#c9a227); }
+        .qh-field input:focus, .qh-field select:focus { border-color:var(--gold,var(--royal-gold,#c9a227)); }
         .qh-field input[type="number"] { width:88px; }
         .qh-search-btn {
             background:linear-gradient(135deg,#4e7c5f,#3a5e47);
@@ -895,26 +918,26 @@
             cursor:pointer; transition:all .2s;
             border-right:3px solid transparent;
         }
-        .qh-result-item:hover  { background:var(--gold-dim,rgba(201,162,39,.08)); border-right-color:var(--gold-line,rgba(201,162,39,.3)); }
-        .qh-result-item.selected { background:rgba(201,162,39,.18); border-right-color:var(--gold,#c9a227); border-color:var(--gold-line,rgba(201,162,39,.3)); }
+        .qh-result-item:hover  { background:var(--gold-dim,rgba(var(--rt-rgb,201,162,39),.08)); border-right-color:var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); }
+        .qh-result-item.selected { background:rgba(var(--rt-rgb,201,162,39),.18); border-right-color:var(--gold,var(--royal-gold,#c9a227)); border-color:var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); }
         .qh-verse-text { font-family:'Amiri',serif; font-size:14pt; color:var(--text,#eee); line-height:2; direction:rtl; }
         .qh-verse-meta { font-family:'Aref Ruqaa',serif; font-size:9.5pt; color:var(--text-muted,#888); display:flex; gap:8px; flex-wrap:wrap; margin-top:5px; align-items:center; }
-        .qh-meta-chip { background:var(--surf3,#2e2e2e); border-radius:20px; padding:2px 10px; color:var(--gold,#c9a227); font-size:9.5pt; border:1px solid var(--gold-line,rgba(201,162,39,.3)); }
+        .qh-meta-chip { background:var(--surf3,#2e2e2e); border-radius:20px; padding:2px 10px; color:var(--gold,var(--royal-gold,#c9a227)); font-size:9.5pt; border:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); }
         .qh-tafseer-text { font-family:'Amiri',serif; font-size:12.5pt; color:var(--text-dim,#aaa); line-height:1.85; direction:rtl; margin-top:5px; }
         .qh-tafseer-source { font-size:9.5pt; color:var(--text-muted,#888); font-family:'Aref Ruqaa',serif; margin-top:4px; }
         .qh-actions {
-            border-top:1px solid var(--gold-line,rgba(201,162,39,.3)); padding:11px 18px;
+            border-top:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); padding:11px 18px;
             background:var(--surf2,#262626); display:none;
             flex-wrap:wrap; gap:8px; align-items:center; flex-shrink:0;
         }
         .qh-actions.show { display:flex; }
-        .qh-action-info { font-family:'Amiri',serif; font-size:12pt; color:var(--gold,#c9a227); flex:1; min-width:160px; }
+        .qh-action-info { font-family:'Amiri',serif; font-size:12pt; color:var(--gold,var(--royal-gold,#c9a227)); flex:1; min-width:160px; }
         .qh-act-btn {
-            background:var(--surf3,#2e2e2e); border:1px solid var(--gold-line,rgba(201,162,39,.3));
+            background:var(--surf3,#2e2e2e); border:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3));
             border-radius:9px; color:var(--text,#eee); font-family:'Amiri',serif; font-size:12pt;
             padding:7px 15px; cursor:pointer; white-space:nowrap; transition:all .18s;
         }
-        .qh-act-btn:hover  { background:var(--gold-dim,rgba(201,162,39,.08)); border-color:var(--gold,#c9a227); color:var(--gold,#c9a227); }
+        .qh-act-btn:hover  { background:var(--gold-dim,rgba(var(--rt-rgb,201,162,39),.08)); border-color:var(--gold,var(--royal-gold,#c9a227)); color:var(--gold,var(--royal-gold,#c9a227)); }
         .qh-act-btn:disabled { opacity:.4; cursor:not-allowed; }
         .qh-act-btn.primary { background:linear-gradient(135deg,#4e7c5f,#3a5e47); color:#fff; border-color:transparent; }
         .qh-act-btn.primary:hover { filter:brightness(1.12); }
@@ -934,17 +957,17 @@
         .qh-meta-chip.h-grade-daif   { background:rgba(230,126,34,.13); border-color:rgba(230,126,34,.4); }
         .qh-meta-chip.h-grade-mawdoo { background:rgba(231,76,60,.13);  border-color:rgba(231,76,60,.4); }
         .qh-sharh-box {
-            background:var(--surf1,#1e1e1e); border-right:3px solid var(--gold-line,rgba(201,162,39,.3));
+            background:var(--surf1,#1e1e1e); border-right:3px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3));
             padding:6px 10px; margin-top:6px; border-radius:0 8px 8px 0;
             font-size:11pt; color:var(--text-dim,#aaa); font-family:'Amiri',serif; line-height:1.75;
         }
         .qh-hadith-direct-link {
             display:inline-flex; align-items:center; gap:5px;
-            color:var(--gold,#c9a227); text-decoration:none; font-family:'Amiri',serif; font-size:12pt;
-            border:1px solid var(--gold-line,rgba(201,162,39,.3)); border-radius:8px; padding:8px 16px;
-            background:var(--gold-dim,rgba(201,162,39,.08)); transition:all .18s; margin-top:8px;
+            color:var(--gold,var(--royal-gold,#c9a227)); text-decoration:none; font-family:'Amiri',serif; font-size:12pt;
+            border:1px solid var(--gold-line,rgba(var(--rt-rgb,201,162,39),.3)); border-radius:8px; padding:8px 16px;
+            background:var(--gold-dim,rgba(var(--rt-rgb,201,162,39),.08)); transition:all .18s; margin-top:8px;
         }
-        .qh-hadith-direct-link:hover { background:rgba(201,162,39,.3); }
+        .qh-hadith-direct-link:hover { background:rgba(var(--rt-rgb,201,162,39),.3); }
     </style>
 </head>
 <body>
@@ -3369,7 +3392,7 @@
         @font-face { font-family:'Amiri';      src:url('fonts/Amiri-Regular.ttf')     format('truetype'); }
         @font-face { font-family:'Aref Ruqaa'; src:url('fonts/ArefRuqaa-Regular.ttf') format('truetype'); }
         :root { --bg:${bookData.color||'#FFFDD0'}; --text:#333; --accent:#b8860b; --nav-bg:#f8f9fa; --border:#e1e4e8; --btn-bg:#fff; }
-        body.dark-mode { --bg:#121212; --text:#e0e0e0; --accent:#d4af37; --nav-bg:#1e1e1e; --border:#333; --btn-bg:#2c2c2c; }
+        body.dark-mode { --bg:#121212; --text:#e0e0e0; --accent:var(--royal-gold,#d4af37); --nav-bg:#1e1e1e; --border:#333; --btn-bg:#2c2c2c; }
         *{box-sizing:border-box;} body{margin:0;padding:0;background-color:var(--bg);color:var(--text);font-family:'Amiri',serif;transition:background-color .3s,color .3s;}
         header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--nav-bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.05);}
         .header-title{font-family:'Aref Ruqaa';font-size:18pt;color:var(--accent);font-weight:bold;margin:0 15px;text-align:center;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -3923,7 +3946,7 @@
                 // [FIX] لم نعد نستبدل تفضيل السمة العام بما هو محفوظ داخل هذا الكتاب تحديداً؛
                 // فقط إن لم يوجد أي تفضيل عام محفوظ بعد (مستخدم قديم) نأخذها من الكتاب كترقية لمرة واحدة
                 if (!localStorage.getItem(EDITOR_PREFS_KEY) && s.selectedTheme && royalThemes[s.selectedTheme]) {
-                    activeTheme = s.selectedTheme;
+                    if (!window.ROYAL_IN_APP) activeTheme = s.selectedTheme;   // داخل التطبيق: المظهر من الإعدادات العامة
                     applyThemeVars(s.selectedTheme);
                     _saveEditorPrefsLocally();
                 }
@@ -4289,7 +4312,7 @@ function renderQuranResults(results, isAyat) {
 function qhHlQuery(text, q) {
     if (!q) return text;
     const esc = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    try { return text.replace(new RegExp(esc,'g'), m=>`<mark style="background:rgba(201,162,39,.35);border-radius:3px;padding:0 2px;">${m}</mark>`); }
+    try { return text.replace(new RegExp(esc,'g'), m=>`<mark style="background:rgba(var(--rt-rgb,201,162,39),.35);border-radius:3px;padding:0 2px;">${m}</mark>`); }
     catch(e) { return text; }
 }
 
@@ -4763,5 +4786,34 @@ function qhStripHTML(s = '') {
     </div>
 </div>
 
+
+<script>
+/* [موبايل] ملاءمة صفحات الكتاب لعرض الشاشة + استجابة المحرر لتغيير الوضع من إعدادات التطبيق */
+(function () {
+  var mq = window.matchMedia('(max-width:900px)');
+  function fit() {
+    var bc = document.getElementById('book-container'), mc = document.getElementById('main-content');
+    if (!bc || !mc) return;
+    if (!mq.matches) { bc.style.transform = ''; bc.style.marginBottom = ''; return; }
+    var w = bc.offsetWidth; if (!w) return;
+    var k = Math.min(1, (document.documentElement.clientWidth - 8) / w);
+    bc.style.transform = 'none';                                   // نقيس الموضع الطبيعي أولاً (مستقل عن اتجاه الصفحة)
+    var mr = mc.getBoundingClientRect(), br = bc.getBoundingClientRect();
+    var shift = (mr.left + mr.width / 2) - (br.left + br.width / 2);
+    bc.style.transform = 'translateX(' + shift + 'px) scale(' + k + ')';
+    bc.style.marginBottom = (-(bc.offsetHeight * (1 - k)) + 24) + 'px';
+  }
+  var bc0 = document.getElementById('book-container');
+  if (bc0 && window.ResizeObserver) new ResizeObserver(fit).observe(bc0);
+  window.addEventListener('resize', fit); window.addEventListener('orientationchange', fit);
+  if (mq.addEventListener) mq.addEventListener('change', fit);
+  setTimeout(fit, 400); setTimeout(fit, 1500);
+  // داخل التطبيق: تغيير الوضع الليلي/النهاري من الإعدادات يصل عبر تفضيل المحرر المشترك
+  window.addEventListener('storage', function (ev) {
+    if (ev.key !== 'royal_editor_prefs') return;
+    try { _loadEditorPrefsLocally(); applyThemeVars(activeTheme); _refreshDayNightUI(); } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>
