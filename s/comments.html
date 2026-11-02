@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>التعليقات - صانع الكتب</title>
-    <script src="../app-bridge.js"></script>
+    <script src="../royal-theme.js"></script>
+<script src="../app-bridge.js"></script>
 <script src="../auth.js"></script>
     <style>
         @font-face { font-family: 'Amiri'; src: url('../fonts/Amiri-Regular.ttf') format('truetype'); font-weight: normal; }
         @font-face { font-family: 'Aref Ruqaa'; src: url('../fonts/ArefRuqaa-Bold.ttf') format('truetype'); font-weight: normal; }
 
         :root {
-            --gold: #b8860b;
-            --green: #6B8E23;
+            --gold: var(--rt-a2,#b8860b);
+            --green: var(--rt-a1,#6b8e23);
             --gold-light: rgba(184,134,11,0.12);
             --gold-mid: rgba(184,134,11,0.25);
             --bg: #f0f2f5;
@@ -278,7 +279,7 @@
             position: relative; overflow: hidden;
         }
         .send-btn:disabled { background: #c8c8c8; cursor: default; }
-        .send-btn:not(:disabled):hover { background: #9a6e09; }
+        .send-btn:not(:disabled):hover { background: var(--rt-a2,#9a6e09); }
         .send-btn:not(:disabled):active { transform: scale(.88); }
         /* حلقة التقدم داخل زر الإرسال */
         .send-btn svg.progress-ring {
@@ -292,7 +293,7 @@
             transition: stroke-dashoffset .12s linear;
             r: 17; cx: 20; cy: 20;
         }
-        .send-btn.sending { background: #9a6e09; cursor: wait; }
+        .send-btn.sending { background: var(--rt-a2,#9a6e09); cursor: wait; }
         .send-btn .send-icon { transition: opacity .18s; }
         .send-btn.sending .send-icon { opacity: 0; }
 
@@ -334,7 +335,7 @@
         .modal-body textarea { min-height: 75px; }
         .modal-btns { display: flex; gap: 9px; margin-top: 6px; }
         .btn-gold { flex: 1; padding: 10px; background: var(--gold); color: #fff; border: none; border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; cursor: pointer; transition: background .18s; }
-        .btn-gold:hover { background: #9a6e09; }
+        .btn-gold:hover { background: var(--rt-a2,#9a6e09); }
         .btn-red { flex: 1; padding: 10px; background: var(--danger); color: #fff; border: none; border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; cursor: pointer; }
         .btn-red:hover { background: #b71c1c; }
         .btn-cancel { flex: 1; padding: 10px; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: 8px; font-family: 'Amiri', serif; font-size: 12pt; cursor: pointer; }
