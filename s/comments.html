@@ -1335,7 +1335,7 @@ function getCmt(id, isReply) {
 // ACTIONS: LINK, EDIT, HIDE, DELETE, REPORT
 // =====================================================================
 function copyCommentLink(commentId, replyId) {
-    const base = window.location.origin + window.location.pathname.replace('comments.html','index.html');
+    const base = royalPublicUrl(window.location.origin + window.location.pathname.replace('comments.html','index.html'));
     let url = `${base}?id=${shareId}&comment=${commentId}`;
     if (replyId !== null && replyId !== undefined) url += `&reply=${replyId}`;
     navigator.clipboard.writeText(url).then(() => showToast('تم نسخ الرابط'));
