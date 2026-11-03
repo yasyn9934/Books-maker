@@ -1806,6 +1806,15 @@ function saveData() {
     }
 
     // --- Render Books ---
+    // [التطبيق] بعد مزامنة شاملة من الشريط العلوي: أعد قراءة المكتبة والتصنيفات وارسمها
+    window.addEventListener('royal-sync-done', function () {
+        try {
+            books = JSON.parse(localStorage.getItem('royal_books_list') || '[]');
+            categories = JSON.parse(localStorage.getItem('royal_categories_list') || '[]');
+            renderBooks();
+        } catch (e) {}
+    });
+
     function renderBooks() {
         // [FIX] إعادة قراءة البيانات من localStorage دائماً لضمان أحدث نسخة بعد المزامنة
         books      = JSON.parse(localStorage.getItem('royal_books_list')      || '[]');
@@ -3397,7 +3406,7 @@ async function generateShareLink() {
         });
         const result = await response.json();
         if (result.success) {
-            const shareUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 's/?id=' + result.shareId;
+            const shareUrl = royalPublicUrl(window.location.origin + window.location.pathname.replace('index.html', '') + 's/?id=' + result.shareId);
             document.getElementById('generatedLink').value = shareUrl;
             document.getElementById('generatedLinkArea').style.display = 'block';
             btn.innerText = "تم التوليد بنجاح";

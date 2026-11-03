@@ -1,6 +1,6 @@
 // sw.js — الإصدار v6
 
-const CACHE_NAME = 'royal-book-v9';
+const CACHE_NAME = 'royal-book-v10';
 
 const urlsToCache = [
   'index.html',
@@ -15,6 +15,7 @@ const urlsToCache = [
   'app-bridge.js',
   'royal-theme.js',
   'app-settings.html',
+  'app-notifications.html',
   'app-config.js',
   'app.html',
   'app.css',

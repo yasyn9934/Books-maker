@@ -1043,7 +1043,16 @@
     /* ثيم الكتابة الليلي */
     .pe-overlay.night{ --bg:#0a0a0a; --card:#151515; --border:#333;
       --green:#2e7d32; --gold:#ffd700; --text:#f0f0f0; }
-  </style>
+  
+/* [التطبيق] زر الرجوع في الشريط العلوي للتطبيق يغني عن سهم هذه الصفحة */
+.in-app .topbar .back-btn{display:none !important;}
+/* طيّ نصوص المنشورات والوثائق الطويلة */
+.post-text{position:relative;}
+.post-text.pt-collapsed{max-height:calc(1.7em * 5);overflow:hidden;cursor:pointer;}
+.post-text.pt-expanded{cursor:pointer;}
+.post-text .pt-more{position:absolute;bottom:0;left:0;padding:0 2px 0 8px;font-weight:700;font-size:12.5pt;color:var(--rt-a1d,var(--green,#6b8e23));
+  background:var(--card,#fff);box-shadow:-14px 0 10px 6px var(--card,#fff);line-height:1.7;pointer-events:none;}
+</style>
 </head>
 <body>
 
@@ -1898,7 +1907,7 @@ function showShareInfo(bookId) {
       ${sh.expiryAt?`<div class="info-row"><span class="info-label">ينتهي</span><span class="info-val">${expired?'<span style="color:#e74c3c">منتهي</span>':new Date(sh.expiryAt).toLocaleString('ar')}</span></div>`:''}
       <div class="info-row"><span class="info-label">الرابط</span>
         <span class="info-val" style="font-size:8.5pt;word-break:break-all">
-          ${location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+sh.shareId}</span></div>
+          ${royalPublicUrl(location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+sh.shareId)}</span></div>
     </div>`;
   }).join('');
   openModal('shareInfoModal');
@@ -1907,7 +1916,7 @@ function showShareInfo(bookId) {
 function copyShareLink(bookId) {
   const entry = myShares.find(e=>e.book.id===bookId);
   if (!entry) return;
-  const url = location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+entry.shares[0].shareId;
+  const url = royalPublicUrl(location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+entry.shares[0].shareId);
   navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ الرابط')).catch(()=>{}); // [FIX] كانت alert
 }
 
@@ -1960,7 +1969,7 @@ function openOthersMenu(shareId, e) {
 }
 
 function copyOthersLink(shareId) {
-  const url = location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+shareId;
+  const url = royalPublicUrl(location.origin+location.pathname.replace(/[^/]*$/,'')+'s/?id='+shareId);
   navigator.clipboard.writeText(url).then(()=>showToast('✅ تم نسخ الرابط')).catch(()=>{}); // [FIX] كانت alert
 }
 
@@ -3050,7 +3059,7 @@ function copyPostText(postId) {
 function sharePostLink(postId) {
   // uid دائماً هو صاحب المنشور: إن كنا في وضع المالك نستخدم id المالك، وإلا id المزار
   const ownerUid = _isOwner ? (currentUser && currentUser.id) : _targetUid;
-  const url = location.href.split('?')[0] + '?uid=' + ownerUid + '&post=' + postId;
+  const url = royalPublicUrl(location.href.split('?')[0] + '?uid=' + ownerUid + '&post=' + postId);
   navigator.clipboard.writeText(url).then(() => showToast('✅ تم نسخ رابط المنشور'));
 }
 
@@ -5101,7 +5110,7 @@ function openVisitorBookMenu(shareId, e) {
 }
 
 function copyVisitorShareLink(shareId) {
-  const url = location.origin + location.pathname.replace(/profile\.html.*/, '') + 's/index.html?id=' + shareId;
+  const url = royalPublicUrl(location.origin + location.pathname.replace(/profile\.html.*/, '') + 's/index.html?id=' + shareId);
   navigator.clipboard.writeText(url).then(() => showToast('✅ تم نسخ الرابط')).catch(() => {});
 }
 
@@ -5283,13 +5292,13 @@ function openProfileDotsMenu(e) {
 }
 
 function copyMyProfileLink() {
-  const url = location.origin + location.pathname.split('/').slice(0,-1).join('/') +
-              '/profile.html?uid=' + (currentUser && currentUser.id);
+  const url = royalPublicUrl(location.origin + location.pathname.split('/').slice(0,-1).join('/') +
+              '/profile.html?uid=' + (currentUser && currentUser.id));
   navigator.clipboard.writeText(url).then(() => showToast('✅ تم نسخ رابط حسابك'));
 }
 
 function copyVisitorProfileLink() {
-  const url = location.origin + location.pathname + '?uid=' + _targetUid;
+  const url = royalPublicUrl(location.origin + location.pathname + '?uid=' + _targetUid);
   navigator.clipboard.writeText(url).then(() => showToast('✅ تم نسخ رابط الحساب'));
 }
 
@@ -5298,6 +5307,35 @@ function reportUser() {
     showToast('📝 تم إرسال البلاغ. شكرًا.');
   });
 }
+</script>
+
+<script>
+/* طيّ نص المنشورات والوثائق: إظهار المزيد.. بلون مميز، والنقر على النص يوسّعه ثم يطويه من جديد */
+(function(){
+  var LINES = 5;
+  function process(){
+    document.querySelectorAll('.post-text:not([data-pt])').forEach(function(el){
+      el.setAttribute('data-pt','1');
+      var lh = parseFloat(getComputedStyle(el).lineHeight) || (parseFloat(getComputedStyle(el).fontSize) * 1.7);
+      if (el.scrollHeight <= lh * (LINES + 0.6)) return;          // قصير: لا يحتاج طيّاً
+      el.classList.add('pt-collapsed');
+      var m = document.createElement('span'); m.className = 'pt-more'; m.textContent = '… إظهار المزيد..'; el.appendChild(m);
+    });
+  }
+  document.addEventListener('click', function(e){
+    var el = e.target.closest && e.target.closest('.post-text');
+    if (!el || e.target.closest('a') || !el.hasAttribute('data-pt')) return;
+    var more = el.querySelector('.pt-more');
+    if (!more && !el.classList.contains('pt-expanded')) return;
+    if (el.classList.contains('pt-collapsed')) { el.classList.remove('pt-collapsed'); el.classList.add('pt-expanded'); if (more) more.style.display = 'none'; }
+    else { el.classList.remove('pt-expanded'); el.classList.add('pt-collapsed'); if (more) more.style.display = ''; }
+  });
+  var raf = 0;
+  new MutationObserver(function(){ if (!raf) raf = requestAnimationFrame(function(){ raf = 0; process(); }); })
+    .observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener('load', process);
+  setTimeout(process, 800);
+})();
 </script>
 </body>
 </html>

@@ -17,6 +17,22 @@
   var inApp = !!host || !!window.RoyalNative || /RoyalBooksApp/i.test(navigator.userAgent) || flagged;
   window.ROYAL_IN_APP = inApp;
 
+  // رابط الموقع العلني: داخل التطبيق تكون الصفحات على أصل محلي (appassets…/site/) لا يصلح للمشاركة،
+  // فنستبدل جزء البداية بعنوان الموقع المنشور ونُبقي باقي الرابط كما هو.
+  function publicBase() {
+    try { var c = window.parent.ROYAL_APP_CONFIG; if (c && c.SITE_BASE) return c.SITE_BASE.replace(/\/?$/, '/'); } catch (e) {}
+    return 'https://yasyn9934.github.io/Books-maker/';
+  }
+  function appBase() {
+    try { if (window.parent !== window) return new URL('.', window.parent.location.href).href; } catch (e) {}
+    return 'https://appassets.androidplatform.net/site/';
+  }
+  window.royalPublicUrl = function (u) {
+    if (!inApp || u == null) return u;
+    var s = String(u), ab = appBase(), pb = publicBase();
+    return s.split(ab).join(pb).split('https://appassets.androidplatform.net/site/').join(pb);
+  };
+
   // تنقّل آمن: في المتصفح = انتقال عادي، وفي التطبيق = يمرّ عبر موجّه التبويبات
   window.royalNavigate = function (url) {
     if (inApp && host) {
@@ -24,7 +40,7 @@
     }
     location.href = url;
   };
-  if (!inApp) return;
+  if (!inApp) { window.royalPublicUrl = function (u) { return u; }; return; }
 
   var root = document.documentElement;
   root.classList.add('in-app');
@@ -87,5 +103,16 @@
   }
 
   // واجهة مساعدة للصفحات
+  // أي نص يُنسخ أو يُشارك من أي صفحة: روابط التطبيق تُحوَّل تلقائياً إلى روابط الموقع
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      var _w = navigator.clipboard.writeText.bind(navigator.clipboard);
+      navigator.clipboard.writeText = function (t) { return _w(window.royalPublicUrl(t)); };
+    }
+    if (navigator.share) {
+      var _s = navigator.share.bind(navigator);
+      navigator.share = function (d) { d = Object.assign({}, d); if (d.url) d.url = window.royalPublicUrl(d.url); if (d.text) d.text = window.royalPublicUrl(d.text); return _s(d); };
+    }
+  } catch (e) {}
   window.RoyalAppHost = host;
 })();

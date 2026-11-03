@@ -16,7 +16,9 @@
     <button id="avatarBtn" class="avatar-btn" aria-label="حسابي"><span id="avatarInner">👤</span></button>
     <button id="backBtn" class="back-btn" aria-label="رجوع" hidden><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     <div class="tb-title" id="tbTitle">الرئيسية</div>
-    <button id="syncPill" hidden>⟳ مزامنة</button>
+    <button id="syncBtn" class="sync-btn" aria-label="مزامنة" title="مزامنة">
+      <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 00-14.9-3M4 5v4h4"/><path d="M4 13a8 8 0 0014.9 3M20 19v-4h-4"/></svg><i id="syncDot" hidden></i>
+    </button>
     <button id="bellBtn" class="bell-btn" aria-label="الإشعارات">
       <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 003.4 0"/></svg>
       <span id="bellBadge" hidden>0</span>
@@ -35,12 +37,6 @@
   </nav>
 </div>
 
-<div id="notifBackdrop"></div>
-<section id="notifSheet" aria-hidden="true">
-  <div class="ns-head"><h3>🔔 الإشعارات</h3><button class="ns-link" id="markAllRead">تعليم الكل كمقروء</button></div>
-  <div class="ns-perm" id="permBox" hidden><span>فعّل تنبيهات النظام لتصلك الإشعارات خارج التطبيق</span><button id="permBtn">تفعيل</button></div>
-  <div id="notifList"></div>
-</section>
 <div id="toastHost"></div>
 <script src="app.js"></script>
 </body>

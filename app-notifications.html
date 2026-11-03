@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>الإشعارات</title>
+<script>window.ROYAL_IN_APP=true</script>
+<script src="royal-theme.js"></script>
+<script src="app-bridge.js"></script>
+<style>
+@font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf')}
+@font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf');font-weight:700}
+:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--surf3:#2c291a;--gold-line:rgba(201,162,39,.3);--gold-dim:rgba(201,162,39,.16);--dim:#a89b7c;--muted:#6b5f48;--red:#d9534f}
+*{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--text);font-family:'Amiri',serif;min-height:100vh}
+.head{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 14px 8px;border-bottom:1px solid var(--gold-line)}
+.row{display:flex;align-items:center;gap:8px}h1{flex:1;font-family:'Aref Ruqaa',serif;color:var(--gold);font-size:22px}
+.lnk{background:none;border:0;color:var(--green);font:15px 'Amiri',serif;cursor:pointer;padding:4px 6px}
+.chips{display:flex;gap:7px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:6px 13px;border-radius:18px;background:var(--surf2);border:1px solid var(--gold-line);color:var(--dim);font:15px 'Amiri',serif;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--gold);color:var(--rt-ink,#1a1405);border-color:var(--gold);font-weight:700}
+.chip b{font-weight:700;margin-right:4px;font-size:13px;opacity:.9}
+.perm{margin:10px 14px 0;padding:10px 12px;border-radius:12px;background:var(--gold-dim);border:1px dashed var(--gold-line);font-size:14.5px;display:flex;gap:10px;align-items:center}
+.perm button{margin-right:auto;padding:5px 12px;border-radius:10px;background:var(--gold);color:var(--rt-ink,#1a1405);border:0;font:700 14px 'Amiri',serif}
+.list{padding:10px 12px 30px;display:flex;flex-direction:column;gap:9px}
+.item{display:flex;gap:11px;padding:12px;border-radius:16px;background:var(--surf2);border:1px solid transparent;text-align:right;width:100%;color:inherit;font:inherit;cursor:pointer}
+.item.unread{background:var(--surf3);border-color:var(--gold-line)}
+.item.update{border-color:var(--green)}
+.av{width:46px;height:46px;border-radius:50%;flex:none;background:var(--gold-dim);display:grid;place-items:center;font-size:22px;overflow:hidden;border:2px solid var(--gold-line)}
+.av img{width:100%;height:100%;object-fit:cover}.av.click{cursor:pointer}
+.body{flex:1;min-width:0}.t{font-weight:700;font-size:16px;display:flex;gap:6px;align-items:center}.t i{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
+.m{color:var(--dim);font-size:14.5px;line-height:1.55;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tm{color:var(--muted);font-size:12.5px;margin-top:4px}
+.empty{padding:50px 10px;text-align:center;color:var(--muted)}
+.detail{padding:14px}.detail .card{background:var(--card);border:1px solid var(--gold-line);border-radius:18px;padding:16px}
+.detail h2{color:var(--gold);font-size:20px;margin-bottom:8px}.detail .full{font-size:17px;line-height:1.85;white-space:pre-wrap;word-break:break-word;margin:10px 0}
+.meta{display:flex;flex-wrap:wrap;gap:8px;color:var(--dim);font-size:14px;margin-bottom:6px}.meta span{background:var(--surf3);padding:2px 10px;border-radius:12px}
+.btn{width:100%;padding:12px;border-radius:13px;border:0;font:700 16.5px 'Amiri',serif;cursor:pointer;margin-top:10px;background:var(--gold);color:var(--rt-ink,#1a1405)}
+.btn.sec{background:var(--surf3);color:var(--text);border:1px solid var(--gold-line)}
+.sender{display:flex;align-items:center;gap:10px;margin:8px 0}
+</style></head><body>
+<div id="listView">
+  <div class="head">
+    <div class="row"><h1>🔔 الإشعارات</h1><button class="lnk" id="readAll">تعليم الكل كمقروء</button></div>
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="perm" id="perm" hidden><span>فعّل تنبيهات النظام لتصلك الإشعارات خارج التطبيق</span><button id="permBtn">تفعيل</button></div>
+  <div class="list" id="list"></div>
+</div>
+<div id="detailView" class="detail" hidden></div>
+
+<script>
+(function(){
+  const H=(function(){try{return window.parent.RoyalApp}catch(e){return null}})();
+  const $=id=>document.getElementById(id);
+  if(!H){document.body.innerHTML='<p style="padding:30px;text-align:center">افتح هذه الصفحة من داخل التطبيق.</p>';return}
+  const CATS=[['all','الكل'],['unread','غير المقروءة'],['comments','التعليقات والردود'],['follow','المتابعة'],['posts','المنشورات'],['admin','الإدارة'],['updates','التحديثات'],['other','أخرى']];
+  const TYPE_CAT={comment:'comments',comment_reply:'comments',reply:'comments',mention:'comments',follow:'follow',follower:'follow',post:'posts',new_post:'posts',document:'posts',doc:'posts',site:'admin',admin:'admin',note:'admin',announcement:'admin',update:'updates'};
+  const ICON={comments:'💬',follow:'👤',posts:'📝',admin:'🏛️',updates:'⬇️',other:'📩'};
+  const LABEL={comments:'تعليق / رد',follow:'متابعة',posts:'منشور / وثيقة',admin:'من الإدارة',updates:'تحديث',other:'إشعار'};
+  let cat='all', open=null;
+  const catOf=n=>n._cat||TYPE_CAT[n.type]||'other';
+  function items(){
+    const arr=(H.notifs()||[]).map(n=>Object.assign({},n));
+    const U=H.Updater.state;
+    if(U.status==='available'&&U.release) arr.push({id:'__update',_cat:'updates',type:'update',title:'تحديث جديد للتطبيق',message:'الإصدار '+U.release.version+' — '+(U.release.summary||U.release.title||''),createdAt:U.lastCheck||Date.now(),read:false,_update:U.release});
+    return arr.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+  }
+  const ago=ts=>{if(!ts)return'';const s=Math.max(1,(Date.now()-new Date(ts).getTime())/1000);if(s<60)return'الآن';if(s<3600)return'قبل '+Math.floor(s/60)+' د';if(s<86400)return'قبل '+Math.floor(s/3600)+' س';return'قبل '+Math.floor(s/86400)+' يوم'};
+  const me=()=>{try{return H.getUser().id}catch(e){return null}};
+  function avatar(n,big){
+    const d=document.createElement('div');d.className='av';
+    const s=n.sender;
+    if(s&&s.photo&&/^(https?:|data:image\/)/i.test(s.photo)){const im=document.createElement('img');im.src=s.photo;im.alt='';d.appendChild(im)}else d.textContent=(s&&s.id)?'👤':ICON[catOf(n)];
+    // لا نذهب لحساب إلا بالنقر على صورة المُرسِل نفسها
+    if(s&&s.id&&s.id!==me()){d.classList.add('click');d.title='عرض حساب '+(s.name||'');d.addEventListener('click',e=>{e.stopPropagation();royalNavigate('profile.html?uid='+encodeURIComponent(s.id))})}
+    return d;
+  }
+  function renderChips(all){
+    const box=$('chips');box.innerHTML='';
+    CATS.forEach(([k,l])=>{
+      const c=k==='all'?all.length:k==='unread'?all.filter(n=>!n.read).length:all.filter(n=>catOf(n)===k).length;
+      const b=document.createElement('button');b.className='chip'+(cat===k?' on':'');b.textContent=l;
+      if(c){const s=document.createElement('b');s.textContent=c;b.appendChild(s)}
+      b.onclick=()=>{cat=k;render()};box.appendChild(b);
+    });
+  }
+  function renderList(){
+    const all=items();renderChips(all);
+    const f=cat==='all'?all:cat==='unread'?all.filter(n=>!n.read):all.filter(n=>catOf(n)===cat);
+    const L=$('list');L.innerHTML='';
+    if(!f.length){const e=document.createElement('div');e.className='empty';e.textContent='لا توجد إشعارات في هذا القسم 🌙';L.appendChild(e);return}
+    f.forEach(n=>{
+      const b=document.createElement('div');b.className='item'+(n.read?'':' unread')+(n._update?' update':'');b.setAttribute('role','button');b.tabIndex=0;
+      b.appendChild(avatar(n));
+      const body=document.createElement('div');body.className='body';
+      const t=document.createElement('div');t.className='t';const tt=document.createElement('span');tt.textContent=n.title||LABEL[catOf(n)];t.appendChild(tt);if(!n.read)t.appendChild(document.createElement('i'));
+      const m=document.createElement('div');m.className='m';m.textContent=n.message||'';
+      const tm=document.createElement('div');tm.className='tm';tm.textContent=LABEL[catOf(n)]+' · '+ago(n.createdAt);
+      body.append(t,m,tm);b.appendChild(body);
+      b.addEventListener('click',()=>showDetail(n));
+      L.appendChild(b);
+    });
+  }
+  function showDetail(n){
+    open=n; if(!n.read&&n.id!=='__update'){H.markRead(n.id);n.read=true}
+    const v=$('detailView');v.innerHTML='';
+    const back=document.createElement('button');back.className='lnk';back.textContent='‹ كل الإشعارات';back.onclick=()=>{open=null;render()};v.appendChild(back);
+    const card=document.createElement('div');card.className='card';
+    const h=document.createElement('h2');h.textContent=n.title||LABEL[catOf(n)];card.appendChild(h);
+    const meta=document.createElement('div');meta.className='meta';
+    [LABEL[catOf(n)],n.createdAt?new Date(n.createdAt).toLocaleString('ar'):''].filter(Boolean).forEach(x=>{const s=document.createElement('span');s.textContent=x;meta.appendChild(s)});card.appendChild(meta);
+    if(n.sender&&(n.sender.name||n.sender.id)){const s=document.createElement('div');s.className='sender';s.appendChild(avatar(n));const nm=document.createElement('div');nm.textContent=n.sender.name||'مستخدم';nm.style.fontWeight='700';s.appendChild(nm);card.appendChild(s)}
+    const full=document.createElement('div');full.className='full';full.textContent=n.message||'';card.appendChild(full);
+    if(Array.isArray(n.attachments)&&n.attachments.length){const a=document.createElement('div');a.className='meta';n.attachments.forEach(x=>{const s=document.createElement('span');s.textContent='📎 '+(x.name||'مرفق');a.appendChild(s)});card.appendChild(a)}
+    if(n._update){const b=document.createElement('button');b.className='btn';b.textContent='⬇️ فتح صفحة التحديث';b.onclick=()=>H.activate('updates');card.appendChild(b)}
+    else if(typeof n.link==='string'&&n.link){const b=document.createElement('button');b.className='btn';b.textContent='فتح';b.onclick=()=>royalNavigate(n.link);card.appendChild(b)}
+    v.appendChild(card);
+    $('listView').hidden=true;v.hidden=false;window.scrollTo(0,0);
+  }
+  function render(){
+    if(open){showDetail(open);return}
+    $('detailView').hidden=true;$('listView').hidden=false;renderList();
+    const native=window.parent.RoyalNative;
+    $('perm').hidden=!(native?!!native.requestNotificationPermission:('Notification' in window&&Notification.permission==='default'));
+  }
+  $('readAll').onclick=()=>{H.markRead('all');setTimeout(render,50)};
+  $('permBtn').onclick=async()=>{try{const n=window.parent.RoyalNative;if(n&&n.requestNotificationPermission)n.requestNotificationPermission();else await Notification.requestPermission()}catch(e){}render()};
+  ['royal-notifs-changed','royal-sync-done'].forEach(ev=>window.addEventListener(ev,()=>{if(!open)render()}));
+  window.addEventListener('storage',e=>{if(e.key==='royal_notifications'&&!open)render()});
+  render();
+  // فتح إشعار محدَّد (من نقر على إشعار نظام): ?open=<id>
+  (async function(){
+    const id=new URLSearchParams(location.search).get('open'); if(!id) return;
+    let n=items().find(x=>x.id===id);
+    if(!n&&H.pollNotifs){ try{await H.pollNotifs()}catch(e){} n=items().find(x=>x.id===id) }
+    if(n) showDetail(n);
+  })();
+})();
+</script></body></html>

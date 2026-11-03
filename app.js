@@ -9,7 +9,7 @@
   const native = () => window.RoyalNative || null;
 
   /* ═══════════════ الإعدادات ═══════════════ */
-  const settings = Object.assign({ autoUpdate: true, sound: true }, jget('royal_app_settings', {}));
+  const settings = Object.assign({ autoUpdate: true, sound: true, autoSync: true }, jget('royal_app_settings', {}));
   const saveSettings = () => jset('royal_app_settings', settings);
 
   /* ═══════════════ المستخدم ═══════════════ */
@@ -31,11 +31,24 @@
     shares:  { title: 'المشاركات',           root: 'app-shares.html' },
     updates: { title: 'التحميل والتحديثات',  root: 'app-updates.html' },
     settings:{ title: 'الإعدادات',           root: 'app-settings.html' },
+    notifications: { title: 'الإشعارات',     root: 'app-notifications.html' },
     admin:   { title: 'الإدارة',             root: 'admin.html' },
     account: { title: 'الحساب',              root: null }
   };
   let active = 'home';
   const frames = {};
+  // مكدّس الرجوع: الصفحات التي لا تبويب أساسياً لها (بروفايل، معاينة مشاركة، إشعارات…) تعيد المستخدم لآخر صفحة كان فيها
+  const navStack = [];
+  let suppressPush = false;
+  function curUrl(slot) { try { return frames[slot].contentWindow.location.href; } catch (e) { return ''; } }
+  function pushNav(slot, url) {
+    if (suppressPush || !slot || slot === 'editor' || !url || url === 'about:blank') return;
+    const top = navStack[navStack.length - 1];
+    if (top && top.slot === slot && top.url === url) return;
+    navStack.push({ slot: slot, url: url });
+    if (navStack.length > 30) navStack.shift();
+  }
+  function hostNavigating() { suppressPush = true; setTimeout(() => { suppressPush = false; }, 450); }
 
   function ensureFrame(slot, url) {
     if (frames[slot]) return frames[slot];
@@ -48,6 +61,7 @@
     return f;
   }
   function navigateFrame(slot, url) {
+    hostNavigating();
     const f = ensureFrame(slot);
     try { if (f.contentWindow && f.contentWindow.location.href !== 'about:blank') { f.contentWindow.location.replace(url); return; } } catch (e) {}
     f.src = url;
@@ -83,11 +97,18 @@
     const b = frameBase(slot); return b.path === r && !b.search;
   }
   function updateBack() {
-    const show = active !== 'editor' && active !== 'account' && !isAtRoot(active);
+    const show = active !== 'editor' && (navStack.length > 0 || (active !== 'account' && active !== 'notifications' && !isAtRoot(active)));
     $('backBtn').hidden = !show;
   }
   function goBack() {
-    try { const w = frames[active].contentWindow; if (w.history.length > 1) { w.history.back(); return; } } catch (e) {}
+    const e = navStack.pop();
+    if (e) {
+      hostNavigating();
+      if (e.slot !== active) activate(e.slot);
+      if (curUrl(e.slot) !== e.url) navigateFrame(e.slot, e.url);
+      updateBack(); return;
+    }
+    try { const w = frames[active].contentWindow; if (w.history.length > 1) { w.history.back(); return; } } catch (er) {}
     if (SLOTS[active].root) navigateFrame(active, SLOTS[active].root);
   }
   function updateAvatarState() {
@@ -107,12 +128,13 @@
     const p = relPath(u), q = u.searchParams;
     if (p === 'index.html') return q.get('v') ? 'shares' : 'home';
     if (p === 'editor.html') return 'editor';
-    if (p === 'profile.html') return from === 'shares' ? 'shares' : 'account';   // بروفايل صاحب الكتاب يبقى داخل المشاركات
+    if (p === 'profile.html') return (from === 'shares' || from === 'notifications') ? from : 'account';   // بروفايل صاحب الكتاب/المُرسِل يبقى داخل صفحته
     if (p === 'login.html' || p === 'edit-account.html') return 'account';
     if (p === 'admin.html') return 'admin';
     if (p === 's/' || p === 's/index.html' || p === 's/comments.html' || p === 'share.html' || p === 'app-shares.html') return 'shares';
     if (p === 'app-updates.html') return 'updates';
     if (p === 'app-settings.html') return 'settings';
+    if (p === 'app-notifications.html') return 'notifications';
     return null;                                                                  // صفحة غير مخصّصة: تبقى في مكانها
   }
   function clearEditingState() { ['bookData', 'bookData_cover', 'bookData_frameMedia'].forEach(k => localStorage.removeItem(k)); updateEditDot(); }
@@ -122,22 +144,26 @@
     clearEditingState();
     if (frames.editor) { try { frames.editor.contentWindow.location.replace('about:blank'); } catch (e) { frames.editor.src = 'about:blank'; } }
     navigateFrame('home', 'index.html'); activate('home');      // تحديث الرئيسية لتعكس تعديلات الكتاب
+    if (settings.autoSync) Sync.schedule(2500);                   // دفع تعديلات الكتاب إلى درايف تلقائياً
   }
   function route(href, from) {
     let u; try { u = new URL(href); } catch (e) { return false; }
     const target = classify(u, from);
-    if (!target || target === from) return false;
     const p = relPath(u);
+    if (from && from !== 'editor' && curUrl(from) !== href && !(target === 'home' && from === 'account') && !(target === 'home' && p === 'index.html' && !u.search)) pushNav(from, curUrl(from));
+    if (!target || target === from) { updateBack(); return false; }
+    if (target === 'editor' || (target === 'home' && from === 'editor')) navStack.length = 0;
     if (target === 'editor') { openEditor(href); return true; }
     if (target === 'home' && from === 'editor') { closeEditor(); return true; }
     if (target === 'home' && from === 'account') {                                // بعد الدخول/الخروج: رئيسية محدَّثة
-      navigateFrame('account', 'about:blank'); navigateFrame('home', href); refreshUser(); activate('home'); return true;
+      navStack.length = 0; navigateFrame('account', 'about:blank'); navigateFrame('home', href); refreshUser(); activate('home'); return true;
     }
-    if (target === 'home' && p === 'index.html' && !u.search) { activate('home'); return true; }
+    if (target === 'home' && p === 'index.html' && !u.search) { navStack.length = 0; activate('home'); return true; }
     navigateFrame(target, href); activate(target); return true;
   }
   function openAccount() {
     if (active === 'account') return;
+    pushNav(active, curUrl(active));
     const want = isMember() ? 'profile.html' : 'login.html';
     const cur = frameBase('account');
     if (!frames.account || cur.path !== want) navigateFrame('account', want);
@@ -195,34 +221,13 @@
     $('bellBtn').classList.toggle('ring', c > 0);
     $('updDot').hidden = Updater.state.status !== 'available';
   }
-  function renderNotifs() {
-    const list = $('notifList'); list.innerHTML = '';
-    if (Updater.state.status === 'available' && Updater.state.release) {
-      const r = Updater.state.release, b = document.createElement('button');
-      b.className = 'n-item update unread';
-      b.innerHTML = '<div class="n-ico">⬇️</div><div class="n-body"><div class="n-title">تحديث جديد للتطبيق <i></i></div><div class="n-msg">الإصدار ' + esc(r.version) + ' — ' + esc(r.title || r.summary || '') + '</div><div class="n-time">اضغط لعرض التفاصيل والتحديث</div></div>';
-      b.onclick = () => { closeNotifs(); activate('updates'); };
-      list.appendChild(b);
-    }
-    const items = notifs.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    items.forEach(n => {
-      const b = document.createElement('button'); b.className = 'n-item' + (n.read ? '' : ' unread');
-      const ico = (n.sender && n.sender.avatar) ? '👤' : (TYPE_ICON[n.type] || '📩');
-      b.innerHTML = '<div class="n-ico">' + ico + '</div><div class="n-body"><div class="n-title">' + esc(n.title || TYPE_LABEL[n.type] || 'إشعار') + (n.read ? '' : ' <i></i>') +
-        '</div><div class="n-msg">' + esc(n.message || '') + '</div><div class="n-time">' + esc(timeAgo(n.createdAt)) + '</div></div>';
-      b.onclick = () => {
-        n.read = true; persistNotifs(); renderBell(); b.classList.remove('unread');
-        if (n.sender && n.sender.id && n.sender.id !== getUser().id) { closeNotifs(); navigateFrame('shares', 'profile.html?uid=' + encodeURIComponent(n.sender.id)); activate('shares'); }
-      };
-      list.appendChild(b);
-    });
-    if (!list.children.length) list.innerHTML = '<div class="ns-empty">لا توجد إشعارات بعد 🌙</div>';
-    const needPerm = native() ? !!native().requestNotificationPermission : ('Notification' in window && Notification.permission === 'default');
-    $('permBox').hidden = !needPerm;
-  }
   function persistNotifs() { jset('royal_notifications', notifs.slice(0, 200)); }
-  function openNotifs() { renderNotifs(); $('notifBackdrop').classList.add('open'); $('notifSheet').classList.add('open'); $('notifSheet').setAttribute('aria-hidden', 'false'); }
-  function closeNotifs() { $('notifBackdrop').classList.remove('open'); $('notifSheet').classList.remove('open'); $('notifSheet').setAttribute('aria-hidden', 'true'); }
+  function closeNotifs() {}
+  function openNotifs() {
+    if (active === 'notifications') return;
+    pushNav(active, curUrl(active));
+    navigateFrame('notifications', 'app-notifications.html'); activate('notifications');
+  }
   function sysNotify(title, body) {
     try {
       if (native() && native().notify) { native().notify(title, body); return; }
@@ -247,10 +252,11 @@
           msg: added.length > 1 ? '' : (n.message || ''), actionLabel: 'عرض', onAction: openNotifs });
         sysNotify('صانع الكتب', added.length > 1 ? added.length + ' إشعارات جديدة' : (n.message || n.title || 'إشعار جديد'));
       }
-      firstPoll = false; renderBell(); if ($('notifSheet').classList.contains('open')) renderNotifs();
+      firstPoll = false; renderBell(); broadcast('royal-notifs-changed');
     } catch (e) {}
   }
-  function markAllRead() { notifs.forEach(n => n.read = true); persistNotifs(); renderBell(); renderNotifs(); pollNotifs(); }
+  function markRead(id) { notifs.forEach(n => { if (id === 'all' || n.id === id) n.read = true; }); persistNotifs(); renderBell(); pollNotifs(); }
+  function broadcast(name) { Object.keys(frames).forEach(k => { try { frames[k].contentWindow.dispatchEvent(new Event(name)); } catch (e) {} }); }
 
   /* ═══════════════ المحدِّث ═══════════════ */
   const b64 = (s) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -376,18 +382,87 @@
   }
 
   /* ═══════════════ المزامنة ═══════════════ */
-  function updatePill() {
-    const pend = !!(localStorage.getItem('pending_sync_book') || localStorage.getItem('pending_sync_categories'));
-    $('syncPill').hidden = !(pend && navigator.onLine && isMember());
+  /* ═══════════════ المزامنة الشاملة ═══════════════
+     نطاقها: كل بيانات التطبيق لا الصفحة المفتوحة فقط، لأن بياناتها مشتركة (المكتبة والتصنيفات والحساب والإشعارات والمنشورات).
+     تلقائية: عند الفتح، وعودة الاتصال، والعودة للتطبيق، وبعد إغلاق المحرر، ودورياً. ويدوية: زر المزامنة في الشريط العلوي. */
+  const HEAVY_KEYS = ['text', 't', 'cover', 'coverImg', 'cardImage', 'frames', 'customBgs', 'chapterFmt'];
+  function prepareBooks(books) {            // الكتب المتغيرة كاملة، والباقي "ظلّ" خفيف
+    const last = Number(localStorage.getItem('royal_last_sync') || 0);
+    return (books || []).map(b => {
+      const t = b.updatedAt || 0, hasText = typeof b.text === 'string' || typeof b.t === 'string';
+      if (hasText && (!t || t > last - 60000)) return b;
+      const stub = Object.assign({}, b); HEAVY_KEYS.forEach(k => delete stub[k]); stub._light = true; return stub;
+    });
   }
-  function onPillClick() {
-    activate('home');
-    const w = frames.home && frames.home.contentWindow;
-    if (w && typeof w.showSyncPrompt === 'function') {
-      const had = localStorage.getItem('hideSyncPrompt'); localStorage.removeItem('hideSyncPrompt');
-      try { w.showSyncPrompt(); } finally { if (had != null) localStorage.setItem('hideSyncPrompt', had); }
-    }
+  function keepLocalFull(serverBooks) {     // لا تستبدل نسخة محلية كاملة وليست أقدم بنسخة خفيفة من الخادم
+    const byId = {}; jget('royal_books_list', []).forEach(b => { if (b && b.id) byId[b.id] = b; });
+    return (serverBooks || []).map(sb => {
+      const lb = byId[sb.id], hasText = lb && (typeof lb.text === 'string' || typeof lb.t === 'string');
+      if (hasText && (lb.updatedAt || 0) >= (sb.updatedAt || 0)) { const m = Object.assign({}, sb, lb); delete m._light; return m; }
+      return sb;
+    });
   }
+  const Sync = {
+    state: 'idle', error: null, running: false, last: Number(localStorage.getItem('royal_last_full_sync') || 0),
+    pending() { return !!(localStorage.getItem('pending_sync_book') || localStorage.getItem('pending_sync_categories')); },
+    render() {
+      const b = $('syncBtn'), d = $('syncDot'); if (!b) return;
+      const off = !navigator.onLine;
+      b.classList.toggle('spin', this.state === 'syncing'); b.classList.toggle('off', off);
+      let dot = '', title = 'مزامنة';
+      if (!isMember()) { title = 'سجّل الدخول لتفعيل المزامنة'; }
+      else if (off) { title = 'لا يوجد اتصال — ستُزامَن البيانات تلقائياً عند عودته'; dot = this.pending() ? '' : ''; }
+      else if (this.state === 'error') { dot = 'err'; title = 'فشلت آخر مزامنة: ' + (this.error || ''); }
+      else if (this.pending()) { dot = ''; title = 'توجد تغييرات لم تُزامَن بعد'; }
+      else if (this.last) { dot = 'ok'; title = 'آخر مزامنة ' + timeAgo(this.last); }
+      d.hidden = !(dot || this.pending() || off && this.pending()); d.className = dot || ''; b.title = title;
+      if (this.pending() && !dot) { d.hidden = false; d.className = ''; }
+    },
+    async call(body) {
+      const u = getUser();
+      const res = await fetch(window.AUTH_SCRIPT_URL, { method: 'POST', body: JSON.stringify(Object.assign({ userId: u.id, userName: u.username, token: u.token }, body)) });
+      return res.json();
+    },
+    async run(opts) {
+      opts = opts || {};
+      if (this.running) return;
+      if (!isMember()) { if (opts.manual) toast({ icon: '🔑', type: 'warn', title: 'سجّل الدخول أولاً', msg: 'المزامنة مع درايف تتطلب حساباً.', actionLabel: 'دخول', onAction: openAccount }); return; }
+      if (!navigator.onLine) { this.render(); if (opts.manual) toast({ icon: '📴', type: 'warn', title: 'لا يوجد اتصال بالإنترنت', msg: 'ستُزامَن بياناتك تلقائياً حين يعود الاتصال.' }); return; }
+      if (!window.AUTH_SCRIPT_URL) { await loadScriptUrl(); if (!window.AUTH_SCRIPT_URL) return; }
+      this.running = true; this.state = 'syncing'; this.error = null; this.render();
+      const t0 = Date.now(); let failed = null;
+      try {
+        // 1) المكتبة والتصنيفات (الكتب + الأغلفة تُرفع للمتغيّر منها فقط)
+        const r = await this.call({ action: 'sync_library', localBooks: prepareBooks(jget('royal_books_list', [])), localCategories: jget('royal_categories_list', []) });
+        if (!r.success) throw new Error(r.message || 'رفض الخادم المزامنة');
+        if (Array.isArray(r.mergedBooks)) jset('royal_books_list', keepLocalFull(r.mergedBooks));
+        if (Array.isArray(r.mergedCategories)) jset('royal_categories_list', r.mergedCategories);
+        ['pending_sync_book', 'pending_sync_categories'].forEach(k => localStorage.removeItem(k));
+        localStorage.setItem('royal_last_sync', String(t0));
+        // 2) الحساب والإشعارات والمنشورات والوثائق والمشاركات المشاهَدة (دوال auth.js في الإطار الرئيسي)
+        const w = frames.home && frames.home.contentWindow;
+        if (w && typeof w._syncProfileData === 'function') {
+          try { await w._syncProfileData(); } catch (e) {}
+          try { await w._syncNotificationsFromCloud(); } catch (e) {}
+          try { await w._syncUserContent(); } catch (e) {}
+        }
+        await pollNotifs();
+        this.last = Date.now(); localStorage.setItem('royal_last_full_sync', String(this.last)); this.state = 'idle';
+        refreshUser(); notifs = jget('royal_notifications', notifs); renderBell();
+        broadcast('royal-sync-done');
+        if (opts.manual) toast({ icon: '✅', type: 'ok', title: 'تمت المزامنة', msg: 'كل بياناتك محدَّثة مع درايف.', sound: false });
+      } catch (e) {
+        failed = e; this.state = 'error'; this.error = e && e.message ? e.message : String(e);
+        if (opts.manual) toast({ icon: '⚠️', type: 'error', title: 'تعذّرت المزامنة', msg: this.error, actionLabel: 'إعادة', onAction: () => Sync.run({ manual: true }) });
+      } finally { this.running = false; this.render(); }
+    },
+    schedule(ms) { clearTimeout(this._t); this._t = setTimeout(() => this.run({}), ms || 4000); }
+  };
+  function loadScriptUrl() {
+    return fetch('auth.js').then(r => r.text()).then(t => { const m = t.match(/SCRIPT_URL:\s*"([^"]+)"/); if (m) window.AUTH_SCRIPT_URL = m[1]; }).catch(() => {});
+  }
+  function updatePill() { Sync.render(); }
+  function onPillClick() { Sync.run({ manual: true }); }
 
   /* ═══════════════ الأحداث العامة ═══════════════ */
   function onFrameLoad(slot) {
@@ -407,6 +482,7 @@
   function wire() {
     document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
       const slot = t.dataset.slot;
+      navStack.length = 0;
       if (slot === 'editor') {
         if (!isEditing()) {
           toast({ icon: '✍️', type: 'warn', title: 'لا يمكن فتح المحرر الآن', msg: 'اختر كتاباً من الرئيسية أو أنشئ كتاباً جديداً أولاً.', actionLabel: 'الرئيسية', onAction: () => activate('home') });
@@ -421,26 +497,23 @@
     $('avatarBtn').addEventListener('click', openAccount);
     $('backBtn').addEventListener('click', goBack);
     window.addEventListener('resize', applyView);
-    $('bellBtn').addEventListener('click', () => $('notifSheet').classList.contains('open') ? closeNotifs() : openNotifs());
-    $('notifBackdrop').addEventListener('click', closeNotifs);
-    $('markAllRead').addEventListener('click', markAllRead);
-    $('syncPill').addEventListener('click', onPillClick);
-    $('permBtn').addEventListener('click', async () => {
-      try { if (native() && native().requestNotificationPermission) native().requestNotificationPermission(); else await Notification.requestPermission(); } catch (e) {}
-      renderNotifs();
-    });
+    $('bellBtn').addEventListener('click', openNotifs);
+    $('syncBtn').addEventListener('click', onPillClick);
     window.addEventListener('storage', (e) => {
-      if (!e.key || e.key === 'royal_user') refreshUser();
+      if (!e.key || e.key === 'royal_user') { refreshUser(); applyBackground(); }
       if (!e.key || e.key === 'bookData') updateEditDot();
-      if (!e.key || e.key.startsWith('pending_sync')) updatePill();
+      if (!e.key || e.key.startsWith('pending_sync')) Sync.render();
       if (e.key === 'royal_notifications') { notifs = jget('royal_notifications', []); renderBell(); }
     });
-    window.addEventListener('online', () => { updatePill(); pollNotifs(); backgroundUpdateCheck(); });
+    window.addEventListener('online', () => { Sync.render(); pollNotifs(); backgroundUpdateCheck(); if (settings.autoSync) Sync.schedule(1500); });
     window.addEventListener('offline', updatePill);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - Updater.state.lastCheck > 30 * 60 * 1000) backgroundUpdateCheck(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) return;
+      if (Date.now() - Updater.state.lastCheck > 30 * 60 * 1000) backgroundUpdateCheck();
+      if (settings.autoSync && Date.now() - Sync.last > 2 * 60 * 1000) Sync.schedule(1500);
+    });
     // زر الرجوع في أندرويد: يغلق اللوحة أولاً ثم يعود داخل الإطار النشط
     window.RoyalAppBack = function () {
-      if ($('notifSheet').classList.contains('open')) { closeNotifs(); return true; }
       try { const w = frames[active].contentWindow; if (w.history.length > 1) { w.history.back(); return true; } } catch (e) {}
       if (active !== 'home') { activate('home'); return true; }
       return false;
@@ -459,11 +532,17 @@
     notifs = []; knownIds = new Set(); clearEditingState();
     ['editor', 'account', 'admin', 'shares'].forEach(s => { if (frames[s]) { try { frames[s].contentWindow.location.replace('about:blank'); } catch (e) {} } });
     navigateFrame('home', 'index.html'); refreshUser(); renderBell(); activate('home');
+    try { const n = native(); if (n && n.setBackground) n.setBackground(false, 0, '', '', ''); } catch (e) {}
+  }
+  function applyBackground() {
+    const n = native(); if (!n || !n.setBackground) return;
+    const c = jget('royal_bg', {}), u = getUser();
+    try { n.setBackground(!!(c.on && u.role === 'member'), c.every || 180, u.id || '', u.token || '', window.AUTH_SCRIPT_URL || ''); } catch (e) {}
   }
   function setTheme(patch) { const s = RoyalTheme.set(patch); applyView(); return s; }
 
   /* ═══════════════ الواجهة البرمجية ═══════════════ */
-  window.RoyalApp = { route, toast, refreshUser, openEditor, closeEditor, activate, Updater, settings, saveSettings, isEditing, logout, setTheme, getUser, applyView,
+  window.RoyalApp = { route, toast, refreshUser, openEditor, closeEditor, activate, Updater, settings, saveSettings, isEditing, logout, setTheme, getUser, applyView, Sync, markRead, openNotifs, goBack, pollNotifs,
                       get active() { return active; }, notifs: () => notifs };
 
   /* ═══════════════ الإقلاع ═══════════════ */
@@ -481,14 +560,16 @@
       });
     }
     // نعرّف رابط الخادم من auth.js دون تحميله في هذه الصفحة
-    fetch('auth.js').then(r => r.text()).then(t => { const m = t.match(/SCRIPT_URL:\s*"([^"]+)"/); if (m) { window.AUTH_SCRIPT_URL = m[1]; pollNotifs(); } }).catch(() => {});
+    loadScriptUrl().then(() => { pollNotifs(); applyBackground(); });
     wire(); refreshUser();
     ensureFrame('home'); activate('home'); applyView();
-    renderBell(); updateEditDot(); updatePill();
+    renderBell(); updateEditDot(); Sync.render();
+    setTimeout(() => { if (settings.autoSync) Sync.run({}); }, 6000);
+    setInterval(() => { if (settings.autoSync && !document.hidden) Sync.run({}); }, 5 * 60 * 1000);
     setTimeout(backgroundUpdateCheck, 2500);
     setInterval(backgroundUpdateCheck, CFG.CHECK_INTERVAL_MS || 21600000);
     setInterval(pollNotifs, CFG.NOTIF_POLL_MS || 120000);
-    setInterval(updatePill, 15000);
+    setInterval(() => Sync.render(), 15000);
   }
   boot();
 })();
