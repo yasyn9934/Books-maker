@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محرك الكتب الملكي - الإصدار الماسي المعتمد</title>
-    <script src="royal-theme.js"></script>
+    <script src="royal-find.js"></script>
+<script src="royal-export.js"></script>
+<script src="royal-theme.js"></script>
 <script src="app-bridge.js"></script>
 <script src="auth.js"></script>
     <!-- [FIX] أُزيلت مكتبة jsPDF — كانت محمّلة بالكامل (~200 كيلوبايت) دون أي استخدام فعلي
@@ -806,6 +808,7 @@
   .brand-gem{font-size:15pt;} .brand-name{font-size:12pt; letter-spacing:0;}
   .hdr-stats{gap:3px; flex-wrap:nowrap; overflow:hidden; justify-content:flex-end;}
   .stat-chip{padding:1px 8px 1px 6px; font-size:9pt; gap:4px;}
+  #saveChip .stat-lbl{display:none;}
   #main-content{overflow-x:hidden; position:relative;}
   #book-container{margin:10px 0 0 !important; transform-origin:50% 0;}
   #floating-panel{border-radius:16px 16px 0 0; border-top:2px solid var(--gold);}
@@ -984,6 +987,10 @@
         <div class="stat-chip"><span class="stat-lbl">كلمات</span><span  class="stat-val" id="stat-words">0</span></div>
         <div class="stat-chip"><span class="stat-lbl">حروف</span><span   class="stat-val" id="stat-chars">0</span></div>
         <div class="stat-chip"><span class="stat-lbl">عناوين</span><span class="stat-val" id="stat-headers">0</span></div>
+        <div class="stat-chip" id="goalChipWrap" title="كلمات اليوم / الهدف"><span class="stat-val" id="goal-chip" style="font-size:9.5pt">🎯 0</span></div>
+        <button class="stat-chip" id="findBtn" title="بحث واستبدال في الكتاب" style="cursor:pointer;background:none;color:inherit" onclick="RoyalFind.open({root:'#book-container',textarea:document.getElementById('mainText')})">🔍</button>
+        <button class="stat-chip" id="exportBtn" title="تصدير الكتاب" style="cursor:pointer;background:none;color:inherit" onclick="event.stopPropagation();RoyalExport.menu(getCurrentBookObject())">⬇️</button>
+        <div class="stat-chip" id="saveChip" title="حالة الحفظ"><span class="stat-lbl">الحفظ</span><span class="stat-val" id="save-status" style="font-size:9.5pt">—</span></div>
     </div>
 </header>
 
@@ -1042,6 +1049,11 @@
         <div class="info-field" style="min-width:140px;">
             <label>اسم المؤلف</label>
             <input type="text" id="cAuthor" oninput="autoSaveAndBuild()" placeholder="المؤلف">
+        </div>
+
+        <div class="info-field" style="min-width:160px;">
+            <label>🏷️ الوسوم (افصل بفاصلة)</label>
+            <input type="text" id="cTags" oninput="autoSaveAndBuild()" placeholder="فقه، تفسير، …">
         </div>
 
         <div class="info-field" style="min-width:110px;">
@@ -2581,6 +2593,7 @@
             id:            currentBookId || 'book_' + Date.now(),
             title:         document.getElementById('cTitle').value,
             author:        document.getElementById('cAuthor').value,
+            tags:          (document.getElementById('cTags').value || '').split(/[,،]/).map(t => t.trim()).filter(Boolean).slice(0, 12),
             date:          document.getElementById('cDate').value,
             text:          document.getElementById('mainText').value,
             color:         document.getElementById('globalBgPicker').value,
@@ -2610,6 +2623,16 @@
 
     async function saveAndExit() { await saveToDrive(); royalNavigate('index.html'); }
 
+    // مؤشر الحفظ التلقائي الظاهر في الشريط العلوي
+    (function () { try { const day = new Date().toISOString().slice(0, 10), st = JSON.parse(localStorage.getItem('royal_writing_stats') || '{}'), goal = Number(localStorage.getItem('royal_writing_goal') || 500), c = document.getElementById('goal-chip'); if (c) c.textContent = '🎯 ' + (st[day] || 0) + '/' + goal; } catch (e) {} })();
+    function setSaveStatus(kind) {
+        const el = document.getElementById('save-status'); if (!el) return;
+        const M = { saving: ['⏳ يحفظ…', '#e0a030'], local: ['✓ على الجهاز', '#7fb069'], cloud: ['☁️ في درايف', '#5aa9e6'], pending: ['⚠️ لم يُرفع بعد', '#e0a030'], offline: ['📴 دون اتصال', '#9aa'] };
+        const m = M[kind] || M.local; el.textContent = m[0]; el.style.color = m[1];
+    }
+    window.addEventListener('online', () => { if (localStorage.getItem('pending_sync_book')) setSaveStatus('pending'); });
+    window.addEventListener('offline', () => setSaveStatus('offline'));
+
     async function saveToDrive() {
         const bookData = getCurrentBookObject();
         currentBookId  = bookData.id;
@@ -2632,16 +2655,19 @@
             if (result.success) {
                 lastSavedData = JSON.stringify(bookData);
                 localStorage.removeItem('pending_sync_book');
+                setSaveStatus('cloud');
                 alert("تم الحفظ في درايف بنجاح ✅");
                 if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
                 return true;
             } else {
+                setSaveStatus('pending');
                 // [FIX] كانت هذه الحالة تُترك دون معالجة: الزر يبقى معطلاً للأبد ودون تنبيه المستخدم
                 alert("⚠️ فشل الحفظ في درايف: " + (result.message || "خطأ غير معروف") + "\nتم الاحتفاظ بالتغييرات محلياً وستتم إعادة المحاولة لاحقاً.");
                 if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
                 return false;
             }
         } catch (error) {
+            setSaveStatus(navigator.onLine ? 'pending' : 'offline');
             alert("تم الحفظ محلياً. سيتم الرفع عند توفر الإنترنت.");
             if (btn) { btn.innerText = "☁️ حفظ في درايف"; btn.disabled = false; }
             return false;
@@ -2756,7 +2782,8 @@
         // إعادة بناء الترقيم/الحواشي الكاملة لكتاب طويل، فكانت تتكرر مع كل توقف طبيعي بسيط
         // أثناء الكتابة المتصلة (بين الكلمات مثلاً)، لا فقط عند توقف حقيقي عن الكتابة.
         clearTimeout(_buildDebounceTimer);
-        _buildDebounceTimer = setTimeout(() => { updateGlobalBooksList(bookData); buildBook(); }, 700);
+        setSaveStatus('saving');
+        _buildDebounceTimer = setTimeout(() => { updateGlobalBooksList(bookData); buildBook(); setSaveStatus(navigator.onLine ? 'local' : 'offline'); }, 700);
     }
 
     function updateGlobalBooksList(book) {
@@ -2847,7 +2874,7 @@
             document.getElementById('mainText').value   = "";
             document.getElementById('focusText').value  = "";
             document.getElementById('cTitle').value     = "";
-            document.getElementById('cAuthor').value    = "";
+            document.getElementById('cAuthor').value    = ""; document.getElementById('cTags').value = "";
             document.getElementById('cDate').value      = "";
             document.getElementById('cCoverImg').value  = "";
             document.getElementById('cHideTitleCover').checked  = false;
@@ -2904,7 +2931,7 @@
         document.getElementById('mainText').value  = s.t || s.text || "";
         document.getElementById('focusText').value = s.t || s.text || "";
         document.getElementById('cTitle').value    = s.title  || "";
-        document.getElementById('cAuthor').value   = s.author || "";
+        document.getElementById('cAuthor').value   = s.author || ""; document.getElementById('cTags').value = (s.tags || []).join('، ');
         document.getElementById('cDate').value     = s.date   || "";
         document.getElementById('cCoverImg').value = s.cover  || "";
         _writeCoverIfChanged(s.cover || ""); // [FIX] غلاف مستورد جديد — يُحفظ فوراً في مفتاحه الخاص
@@ -3017,12 +3044,29 @@
 
     // --- 5. بناء صفحات الكتاب (مع محرك الحواشي الاحترافي) ---
     // [FIX] إحصاءات الكتاب (كلمات/حروف/عناوين): كانت تُحسب فقط عند الكتابة، فتظهر أصفاراً عند فتح كتاب موجود.
+    // إحصاءات الكتابة اليومية: نحسب الكلمات المضافة فقط (لا يُحسب النص الموجود عند فتح الكتاب)
+    var _prevWords = null;
+    function _trackWriting(words) {
+        if (_prevWords === null) { _prevWords = words; return; }
+        const d = words - _prevWords; _prevWords = words;
+        if (d <= 0 || d > 5000) return;                       // الحذف لا يُنقِص الإنجاز، واللصق الضخم لا يُحتسب
+        try {
+            const day = new Date().toISOString().slice(0, 10);
+            const st = JSON.parse(localStorage.getItem('royal_writing_stats') || '{}');
+            st[day] = (st[day] || 0) + d;
+            const keys = Object.keys(st).sort(); if (keys.length > 120) delete st[keys[0]];
+            localStorage.setItem('royal_writing_stats', JSON.stringify(st));
+            const goal = Number(localStorage.getItem('royal_writing_goal') || 500), chip = document.getElementById('goal-chip');
+            if (chip) chip.textContent = '🎯 ' + st[day] + '/' + goal;
+        } catch (e) {}
+    }
     function _updateStatsFromText() {
         const t = (document.getElementById('mainText') || {}).value || '';
         const w = document.getElementById('stat-words'), c = document.getElementById('stat-chars'), h = document.getElementById('stat-headers');
         if (w) w.innerText = t.trim() ? t.trim().split(/\s+/).length : 0;
         if (c) c.innerText = t.length;
         if (h) h.innerText = (t.match(/^# /gm) || []).length;
+        _trackWriting(t.trim() ? t.trim().split(/\s+/).length : 0);
     }
     // [FIX] الترقيم يقيس أبعاد العناصر فعلياً؛ إن بُني الكتاب والإطار مخفيّ (تبويب آخر في التطبيق) كانت كل الأبعاد
     // أصفاراً فتخرج معاينة ناقصة (عناوين فصول بلا نص) إلى أن يكتب المستخدم شيئاً. نؤجّل البناء حتى يظهر الإطار.
@@ -3946,7 +3990,7 @@
                 document.getElementById('mainText').value  = s.text || s.t || "";
                 document.getElementById('focusText').value = s.text || s.t || "";
                 document.getElementById('cTitle').value    = s.title  || "";
-                document.getElementById('cAuthor').value   = s.author || "";
+                document.getElementById('cAuthor').value   = s.author || ""; document.getElementById('cTags').value = (s.tags || []).join('، ');
                 document.getElementById('cDate').value     = s.date   || "";
                 document.getElementById('cCoverImg').value = s.cover  || s.coverImg || "";
                 document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;
@@ -4034,7 +4078,7 @@
         document.getElementById('mainText').value  = s.text  || '';
         document.getElementById('focusText').value = s.text  || '';
         document.getElementById('cTitle').value    = s.title  || '';
-        document.getElementById('cAuthor').value   = s.author || '';
+        document.getElementById('cAuthor').value   = s.author || ''; document.getElementById('cTags').value = (s.tags || []).join('، ');
         document.getElementById('cDate').value     = s.date   || '';
         document.getElementById('cCoverImg').value = s.cover  || '';
         document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;

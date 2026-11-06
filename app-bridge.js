@@ -103,6 +103,24 @@
   }
 
   // واجهة مساعدة للصفحات
+  // window.print() لا تفعل شيئاً داخل WebView: نمرّر نسخة ثابتة من الصفحة (بلا سكربتات) إلى مدير الطباعة الأصلي
+  (function () {
+    var _p = window.print;
+    window.print = function () {
+      try {
+        if (window.RoyalNative && window.RoyalNative.printHtml) {
+          var d = document.documentElement.cloneNode(true);
+          d.querySelectorAll('script').forEach(function (s) { s.remove(); });
+          var head = d.querySelector('head');
+          if (head) { var base = document.createElement('base'); base.href = document.baseURI; head.insertBefore(base, head.firstChild); }
+          window.RoyalNative.printHtml('<!DOCTYPE html>' + d.outerHTML, document.title || 'كتاب');
+          return;
+        }
+      } catch (e) {}
+      return _p.apply(window, arguments);
+    };
+  })();
+
   // أي نص يُنسخ أو يُشارك من أي صفحة: روابط التطبيق تُحوَّل تلقائياً إلى روابط الموقع
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {

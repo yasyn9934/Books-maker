@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
-    <script src="royal-theme.js"></script>
+    <script src="royal-find.js"></script>
+<script src="royal-theme.js"></script>
 <script src="app-bridge.js"></script>
 <script src="auth.js"></script>
     <script src="sanitize.js"></script>
@@ -970,6 +971,7 @@
             </div>
             <div class="shared-top-bar-center" id="sharedBookTitle" style="font-family: 'Aref Ruqaa'; font-size: 16pt; color: var(--royal-green);"></div>
             <div class="shared-top-bar-left">
+                <button class="shared-btn" onclick="RoyalFind.open({root:'#sharedBookContainer'})" title="بحث في الكتاب">🔍 بحث</button>
                 <button class="shared-btn gold" id="sharedToggleViewBtn" onclick="toggleSharedViewMode()">تبديل طريقة العرض</button>
                 <button class="shared-btn" id="sharedCommentBtn" onclick="openSharedComments()" title="التعليقات" disabled>التعليقات</button>
                 <button class="shared-btn primary" id="sharedDownloadBtn" onclick="downloadSharedBook()">تحميل الكتاب</button>
@@ -1178,6 +1180,9 @@
                 </div>
                 
                 <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--gold-line);">
+                
+                <label style="display: block; margin-bottom: 10px; font-weight: bold;">🔒 كلمة مرور للمشاركة (اختياري):</label>
+                <input type="password" id="sharePassword" class="modal-input" placeholder="اتركها فارغة لمشاركة مفتوحة" autocomplete="new-password">
                 
                 <label style="display: block; margin-bottom: 10px; font-weight: bold;">من يمكنه تعديل الكتاب (خاص):</label>
                 <input type="text" id="allowedUsers" class="modal-input" placeholder="أدخل البريد الإلكتروني للمستخدمين المأذون لهم...">
@@ -1840,9 +1845,10 @@ function saveData() {
                 if (cat) bookCats = [cat];
             }
 
+            const tagsHtml = (book.tags || []).slice(0, 4).map(t => `<span class="card-category-tag" style="background-color:rgba(127,127,127,.35)">#${royalEscapeHtml(t)}</span>`).join('');
             const catsHtml = bookCats.map(c =>
                 `<span class="card-category-tag" style="background-color: ${royalEscapeAttr(c.color)}">${royalEscapeHtml(c.name)}</span>`
-            ).join('');
+            ).join('') + tagsHtml;
 
             // [FIX] صورة البطاقة تتبع غلاف الكتاب تلقائياً بشكل افتراضي — لا يوجد داعٍ
             // لتكرار اختيار صورة الغلاف مرتين (مرة في editor كغلاف، ومرة هنا كبطاقة).
@@ -1902,7 +1908,7 @@ function saveData() {
         const order = document.getElementById('searchOrder').value;
 
         return list.filter(book => {
-            const targetText = ((book.title || "") + " " + (book.quote || "") + " " + (book.text || "")).toLowerCase();
+            const targetText = ((book.title || "") + " " + (book.quote || "") + " " + (book.text || "") + " " + (book.tags || []).join(" ")).toLowerCase();
             if (criteria === 'partial') return targetText.includes(query);
 
             const queryParts = query.split(/\s+/);
@@ -3234,11 +3240,16 @@ function _pvLoadScript(url, cb) {
                 body: JSON.stringify({
                     action: "get_shared_book",
                     shareId: shareId,
-                    viewerId: currentUser?.id || 'guest'
+                    viewerId: currentUser?.id || 'guest',
+                    password: window.__sharePw || ''
                 })
             })
             .then(r => r.json())
             .then(result => {
+                if (!result.success && result.needPassword) {
+                    const p = prompt(result.wrong ? 'كلمة المرور غير صحيحة، أعد المحاولة:' : 'هذه المشاركة محمية. أدخل كلمة المرور:');
+                    if (p) { window.__sharePw = p; return loadSharedBook(shareId); }
+                }
                 if (loading) loading.style.display = 'none';
                 if (result.success) {
                     sharedBookData = result.bookData;
@@ -3381,6 +3392,8 @@ async function generateShareLink() {
         bookId: book.id,
         userId: currentUser.id
     };
+    const _pw = (document.getElementById('sharePassword') || {}).value || '';
+    if (_pw) settings.password = _pw;
 
     if (currentShareType === 'temp') {
         settings.expireTime = {

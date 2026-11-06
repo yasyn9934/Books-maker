@@ -1009,7 +1009,8 @@
       font-family:'Aref Ruqaa',serif;font-size:15pt;text-align:center;}
     .pc-warn-body{background:#fff8f8;padding:12px 16px;font-size:11pt;
       line-height:1.8;color:var(--rt-text,#333);white-space:pre-line;}
-    #postDeepOverlay{
+    /* [FIX] كانت 1200 فتظهر فوق التعليقات (1100) وكل النوافذ الأخرى؛ نخفضها لتحت أدنى نافذة (600) */
+    #postDeepOverlay{ z-index:550 !important;
       position:fixed;inset:0;z-index:1200;background:var(--bg);
       display:none;flex-direction:column;overflow-y:auto;
     }
@@ -1052,6 +1053,21 @@
 .post-text.pt-expanded{cursor:pointer;}
 .post-text .pt-more{position:absolute;bottom:0;left:0;padding:0 2px 0 8px;font-weight:700;font-size:12.5pt;color:var(--rt-a1d,var(--green,#6b8e23));
   background:var(--card,#fff);box-shadow:-14px 0 10px 6px var(--card,#fff);line-height:1.7;pointer-events:none;}
+
+/* [تحسين] صفحة المنشور المفتوح بالرابط على الهاتف: بطاقة بعرض الشاشة، نص أكبر، وشريط أزرار ثابت في الأسفل */
+@media (max-width:700px){
+  #postDeepContent{padding:0 !important;display:flex;flex-direction:column;min-height:calc(100vh - 56px);}
+  #postDeepOverlay .post-card{margin:0 !important;border-radius:0 !important;border-left:0 !important;border-right:0 !important;box-shadow:none !important;
+    flex:1;display:flex;flex-direction:column;}
+  #postDeepOverlay .post-body{flex:1;padding-bottom:14px;}
+  #postDeepOverlay .post-text{font-size:15.5pt;line-height:1.95;}
+  #postDeepOverlay .post-text.pt-collapsed{max-height:none;cursor:default;}
+  #postDeepOverlay .post-text .pt-more{display:none !important;}
+  #postDeepOverlay .post-actions{position:sticky;bottom:0;z-index:5;background:var(--card,#fff);border-top:1px solid var(--border,#eee);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));justify-content:space-around;}
+  #postDeepOverlay .post-action-btn{padding:8px 10px;font-size:13pt;}
+  #postDeepOverlay .post-imgs-grid img{border-radius:8px;}
+}
 </style>
 </head>
 <body>
@@ -1528,15 +1544,19 @@ function buildRanksHTML(u) {
   const badges = Array.isArray(u.badges) ? u.badges : [];
   badges.forEach(b => {
     if (!b) return;
-    const shape  = b.shape === 'soft' ? 'soft' : 'rounded';
+    // [FIX] صفحة الإدارة تحفظ الشارة بحقول: text / img / shape('round'|'square')، بينما كانت هذه الدالة تقرأ label / imageUrl
+    // فلا يظهر نص الشارة أبداً. نقبل الصيغتين.
+    const label  = b.text || b.label || '';
+    const imgSrc = b.img || b.imageUrl || '';
+    const square = b.shape === 'square' || b.shape === 'soft';
     const bgCol  = b.bgColor  || '#e0e0e0';
     const txtCol = b.txtColor || '#333';
-    const style  = `background:${bgCol};color:${txtCol};`;
-    const imgTag = b.imageUrl
-      ? `<img class="rank-img" src="${b.imageUrl}" alt="" loading="lazy">`
+    const style  = `background:${bgCol};color:${txtCol};${square ? 'border-radius:6px;' : ''}`;
+    const imgTag = /^(https?:|data:image\/)/i.test(imgSrc)
+      ? `<img class="rank-img" src="${escHtml(imgSrc)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
       : '';
     chips.push(
-      `<span class="rank-chip ${shape}" style="${style}">${imgTag}${escHtml(b.label||'')}</span>`
+      `<span class="rank-chip ${square ? 'soft' : 'rounded'}" style="${style}">${imgTag}${escHtml(label)}</span>`
     );
   });
 
@@ -3195,7 +3215,7 @@ const PC = (() => {
       const gc = `pc-grid-${Math.min(imgs.length,4)}`;
       html += `<div class="pc-imgs"><div class="pc-imgs-grid ${gc}">`;
       imgs.slice(0,4).forEach(img=>{
-        html += `<div class="pc-img-wrap" onclick="openMediaViewer('${esc(img.data)}','image')">
+        html += `<div class="pc-img-wrap" onclick="openMediaViewer('image','${esc(img.data)}')">
           <img src="${esc(img.data)}" alt="" loading="lazy"></div>`;
       });
       html += '</div></div>';
@@ -3939,6 +3959,7 @@ function sliderNav(postId, type, dir) {
 
 // ── buildImgGrid: grid ذكي للصور — تُحمَّل عبر MediaProxy ──
 function buildImgGrid(images, pid) {
+  (window._imgRegistry = window._imgRegistry || {})[pid] = images;     // [FIX] لمنشورات لا توجد محلياً (حسابات الآخرين/الرابط المباشر)
   const n       = Math.min(images.length, 6);
   const visImgs = images.slice(0, n);
   const more    = images.length > 6 ? images.length - 5 : 0;
@@ -3994,8 +4015,10 @@ let _galleryType  = 'image';
 function openGallery(postId, idx) {
   const allPosts = getAllLocalPosts();
   const post     = allPosts.find(p => p.id === postId);
-  if (!post) return;
-  _galleryItems = (post.attachments||[]).filter(a=>a.type==='image');
+  const reg      = (window._imgRegistry || {})[postId];
+  const imgs     = post ? (post.attachments||[]).filter(a=>a.type==='image') : (reg || []);
+  if (!imgs.length) return;
+  _galleryItems = imgs;
   _galleryType  = 'image';
   _openGalleryAt(idx);
 }

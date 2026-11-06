@@ -5,12 +5,13 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const jget = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
-  const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); if (window.RoyalFiles && RoyalFiles.tracked(k)) RoyalFiles.schedule(); } catch (e) {} };
   const native = () => window.RoyalNative || null;
 
   /* ═══════════════ الإعدادات ═══════════════ */
   const settings = Object.assign({ autoUpdate: true, sound: true, autoSync: true }, jget('royal_app_settings', {}));
-  const saveSettings = () => jset('royal_app_settings', settings);
+  const touchPrefs = () => { localStorage.setItem('royal_app_prefs_at', String(Date.now())); localStorage.setItem('royal_app_prefs_dirty', '1'); };
+  const saveSettings = () => { jset('royal_app_settings', settings); touchPrefs(); };
 
   /* ═══════════════ المستخدم ═══════════════ */
   function getUser() { return jget('royal_user', null) || { role: 'guest', id: 'guest_tmp', username: 'زائر' }; }
@@ -40,6 +41,7 @@
   // مكدّس الرجوع: الصفحات التي لا تبويب أساسياً لها (بروفايل، معاينة مشاركة، إشعارات…) تعيد المستخدم لآخر صفحة كان فيها
   const navStack = [];
   let suppressPush = false;
+  const staleFrames = {};        // صفحات تغيّرت بياناتها بعد مزامنة: تُحدَّث عند الدخول إليها
   function curUrl(slot) { try { return frames[slot].contentWindow.location.href; } catch (e) { return ''; } }
   function pushNav(slot, url) {
     if (suppressPush || !slot || slot === 'editor' || !url || url === 'about:blank') return;
@@ -73,6 +75,7 @@
     if (!SLOTS[slot]) return;
     active = slot;
     ensureFrame(slot);
+    if (staleFrames[slot] && frames[slot] && frames[slot].getAttribute('src') && curUrl(slot) !== 'about:blank') { delete staleFrames[slot]; try { frames[slot].contentWindow.location.reload(); } catch (e) {} }
     Object.keys(frames).forEach(k => frames[k].classList.toggle('active', k === slot));
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.slot === slot));
     $('tbTitle').textContent = SLOTS[slot].title;
@@ -446,10 +449,27 @@
           try { await w._syncNotificationsFromCloud(); } catch (e) {}
           try { await w._syncUserContent(); } catch (e) {}
         }
+        // 3) إعدادات التطبيق (المظهر واللون وخيارات التطبيق) تُحفظ مع إعدادات المحرر في درايف وتُطبَّق على كل أجهزتك
+        try {
+          const rs = await this.call({ action: 'fetch_editor_settings' });
+          const cloud = rs && rs.success && rs.settings && rs.settings.appPrefs;
+          const at = Number(localStorage.getItem('royal_app_prefs_at') || 0);
+          if (cloud && (cloud.at || 0) > at) {
+            if (cloud.theme) { jset('royal_app_theme', cloud.theme); RoyalTheme.syncEditorPrefs(RoyalTheme.isDark(RoyalTheme.get().mode)); RoyalTheme.apply(document); }
+            if (cloud.app) { Object.assign(settings, cloud.app); jset('royal_app_settings', settings); }
+            localStorage.setItem('royal_app_prefs_at', String(cloud.at)); localStorage.removeItem('royal_app_prefs_dirty'); applyView();
+          } else if (localStorage.getItem('royal_app_prefs_dirty') === '1' || (!cloud && rs && rs.success !== undefined)) {
+            const mine = { theme: jget('royal_app_theme', null), app: settings, at: at || Date.now() };
+            const sv = await this.call({ action: 'save_editor_settings', settings: Object.assign({}, (rs && rs.settings) || {}, { appPrefs: mine }) });
+            if (sv && sv.success) localStorage.removeItem('royal_app_prefs_dirty');
+          }
+        } catch (e) {}
         await pollNotifs();
+        Object.keys(frames).forEach(k => { if (k !== 'home' && k !== 'editor' && k !== active) staleFrames[k] = true; });
         this.last = Date.now(); localStorage.setItem('royal_last_full_sync', String(this.last)); this.state = 'idle';
         refreshUser(); notifs = jget('royal_notifications', notifs); renderBell();
         broadcast('royal-sync-done');
+        if (window.RoyalFiles) RoyalFiles.schedule(800);
         if (opts.manual) toast({ icon: '✅', type: 'ok', title: 'تمت المزامنة', msg: 'كل بياناتك محدَّثة مع درايف.', sound: false });
       } catch (e) {
         failed = e; this.state = 'error'; this.error = e && e.message ? e.message : String(e);
@@ -500,6 +520,7 @@
     $('bellBtn').addEventListener('click', openNotifs);
     $('syncBtn').addEventListener('click', onPillClick);
     window.addEventListener('storage', (e) => {
+      if (window.RoyalFiles && (!e.key || RoyalFiles.tracked(e.key))) RoyalFiles.schedule();
       if (!e.key || e.key === 'royal_user') { refreshUser(); applyBackground(); }
       if (!e.key || e.key === 'bookData') updateEditDot();
       if (!e.key || e.key.startsWith('pending_sync')) Sync.render();
@@ -525,6 +546,7 @@
     const pend = !!localStorage.getItem('pending_sync_book');
     if (!confirm(pend ? 'تنبيه: لديك تغييرات لم تُحفظ في السحابة بعد. هل تريد الخروج وفقدانها؟' : 'هل أنت متأكد من تسجيل الخروج؟')) return;
     const u = getUser();
+    try { if (window.RoyalFiles) { RoyalFiles.mirrorAll(); RoyalFiles.archiveForLogout(u.id); } } catch (e) {}
     try { if (window.AUTH_SCRIPT_URL && u.token) fetch(window.AUTH_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'logout', userId: u.id, token: u.token }) }).catch(() => {}); } catch (e) {}
     ['royal_user', 'royal_books_list', 'royal_categories_list', 'royal_notifications', 'royal_viewed_shares', 'royal_following', 'royal_posts', 'royal_docs',
      'royal_deleted_books', 'royal_pending_profile_sync', 'royal_pending_posts_sync', 'pending_sync_book', 'pending_sync_categories', 'hideSyncPrompt', 'royal_last_sync'
@@ -539,14 +561,16 @@
     const c = jget('royal_bg', {}), u = getUser();
     try { n.setBackground(!!(c.on && u.role === 'member'), c.every || 180, u.id || '', u.token || '', window.AUTH_SCRIPT_URL || ''); } catch (e) {}
   }
-  function setTheme(patch) { const s = RoyalTheme.set(patch); applyView(); return s; }
+  function setTheme(patch) { const s = RoyalTheme.set(patch); touchPrefs(); applyView(); if (window.RoyalFiles) RoyalFiles.schedule(); return s; }
 
   /* ═══════════════ الواجهة البرمجية ═══════════════ */
-  window.RoyalApp = { route, toast, refreshUser, openEditor, closeEditor, activate, Updater, settings, saveSettings, isEditing, logout, setTheme, getUser, applyView, Sync, markRead, openNotifs, goBack, pollNotifs,
+  window.RoyalApp = { route, toast, refreshUser, openEditor, closeEditor, activate, Updater, settings, saveSettings, isEditing, logout, setTheme, getUser, applyView, Sync, markRead, openNotifs, goBack, pollNotifs, Files: window.RoyalFiles,
                       get active() { return active; }, notifs: () => notifs };
 
   /* ═══════════════ الإقلاع ═══════════════ */
   function boot() {
+    // الملفات مخزن دائم: استعد منها قبل أن تُحمَّل أي صفحة إن كانت بيانات المتصفح مفقودة
+    try { if (window.RoyalFiles && RoyalFiles.available) { const r = RoyalFiles.restore(); RoyalFiles.schedule(1500); if (r.books) setTimeout(() => toast({ icon: '📂', type: 'ok', title: 'استُعيدت كتبك من ملفات الجهاز', msg: r.books + ' كتاب', sound: false }), 1500); } } catch (e) {}
     RoyalTheme.apply(document); RoyalTheme.syncEditorPrefs(RoyalTheme.isDark(RoyalTheme.get().mode));
     // شبكة أمان: أي انتقال للصفحة العليا نفسها (مثل window.top.location) لا يستبدل التطبيق؛ يُوجَّه إلى تبويبه
     if (window.navigation && navigation.addEventListener) {
