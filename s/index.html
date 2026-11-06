@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>عرض الكتاب المشترك - صانع الكتب</title>
     <!-- ══ توجيه فوري لروابط التعليقات والردود — قبل أي مورد ══ -->
-    <script src="../royal-theme.js"></script>
+    <script src="../royal-find.js"></script>
+<script src="../royal-progress.js"></script>
+<script src="../royal-theme.js"></script>
 <script src="../app-bridge.js"></script>
 <script src="../sanitize.js"></script>
 <script>
@@ -368,6 +370,7 @@
              style="font-family: 'Aref Ruqaa'; font-size: 16pt; color: var(--royal-green);"></div>
 
         <div class="top-bar-left">
+            <button class="top-btn" id="findBtn" title="بحث في الكتاب" onclick="RoyalFind.open({root:'#book-container'})">🔍 بحث</button>
             <button class="top-btn gold" id="toggleViewBtn" onclick="toggleViewMode()">📱 <span class="btn-label">عرض تفاعلي</span></button>
             <button class="top-btn" id="commentBtn" onclick="openComments()" title="التعليقات">💬 <span class="btn-label">التعليقات</span></button>
             <button class="top-btn primary" id="downloadBtn" onclick="downloadBook()">⬇️ <span class="btn-label">تحميل</span></button>
@@ -420,13 +423,19 @@
         } catch (e) {}
     }
 
+    var _sharePw = '';
     async function fetchSharedBook() {
         try {
             const response = await fetch(AUTH_CONFIG.SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ action: "get_shared_book", shareId: shareId })
+                body: JSON.stringify({ action: "get_shared_book", shareId: shareId, password: _sharePw })
             });
             const result = await response.json();
+            if (!result.success && result.needPassword) {
+                const p = prompt(result.wrong ? 'كلمة المرور غير صحيحة، أعد المحاولة:' : 'هذه المشاركة محمية. أدخل كلمة المرور:');
+                if (p) { _sharePw = p; return fetchSharedBook(); }
+                showError('هذه المشاركة محمية بكلمة مرور.'); return;
+            }
             if (result.success) {
                 currentBookData  = result.bookData;
                 shareSettings    = result.shareSettings;
@@ -599,9 +608,16 @@
         return b;
     }
 
+    // [FIX] الإضافة تدفع كائنات {id, text} لا نصوصاً خاماً؛ كانت هذه الدالة تمرّر الكائن إلى applyStyles فينهار عرض أي كتاب
+    // مشارك فيه حواشٍ (text.replace is not a function). نقبل الصيغتين ونرقّم المراجع ونربطها بنص الحاشية.
     function printFnsShare(body, fns) {
         let h = '<div class="footnotes-section">';
-        fns.forEach((f, i) => h += `<div>[${i + 1}] ${applyStyles(f, [])}</div>`);
+        fns.forEach((f, i) => {
+            const o = (typeof f === 'string') ? { id: '', text: f } : (f || {});
+            const n = i + 1;
+            if (o.id) body.querySelectorAll('a[data-fn-pending="' + o.id + '"]').forEach(a => { a.textContent = '(' + n + ')'; a.removeAttribute('data-fn-pending'); });
+            h += `<div${o.id ? ' id="fnbody-' + o.id + '"' : ''}>[${n}] ${applyStyles(o.text || '', [])}</div>`;
+        });
         body.innerHTML += h + '</div>';
     }
 
@@ -840,7 +856,7 @@
                     if(hasContent || currentHtml !== "") {
                         if(currentFns.length > 0) {
                             currentHtml += '<div style="border-top:1px solid var(--border); margin-top:40px; padding-top:15px; font-size:0.8em; color:gray;">';
-                            currentFns.forEach((f, i) => currentHtml += '<div style="margin-bottom:8px;">[' + (i+1) + '] ' + applyStyles(f, []) + '</div>');
+                            currentFns.forEach((f, i) => currentHtml += '<div style="margin-bottom:8px;">[' + (i+1) + '] ' + applyStyles((typeof f === 'string' ? f : ((f && f.text) || '')), []) + '</div>');
                             currentHtml += '</div>'; currentFns = [];
                         }
                         chapters.push({ title: currentTitle, html: currentHtml });
@@ -859,7 +875,7 @@
             if(hasContent || currentHtml !== "") {
                 if(currentFns.length > 0) {
                     currentHtml += '<div style="border-top:1px solid var(--border); margin-top:40px; padding-top:15px; font-size:0.8em; color:gray;">';
-                    currentFns.forEach((f, i) => currentHtml += '<div style="margin-bottom:8px;">[' + (i+1) + '] ' + applyStyles(f, []) + '</div>');
+                    currentFns.forEach((f, i) => currentHtml += '<div style="margin-bottom:8px;">[' + (i+1) + '] ' + applyStyles((typeof f === 'string' ? f : ((f && f.text) || '')), []) + '</div>');
                     currentHtml += '</div>';
                 }
                 chapters.push({ title: currentTitle, html: currentHtml });
@@ -1042,5 +1058,6 @@
 
 </script>
 
+<script>window.addEventListener('load',function(){try{RoyalProgress.init({key:new URLSearchParams(location.search).get('id')})}catch(e){}});</script>
 </body>
 </html>
