@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="manifest.json">
     <script src="royal-find.js"></script>
+<script src="royal-editions.js"></script>
 <script src="royal-theme.js"></script>
 <script src="app-bridge.js"></script>
 <script src="auth.js"></script>
@@ -1120,6 +1121,7 @@
                 
                 <div class="modal-actions-list">
                     <button onclick="openEditorFromModal()"><span>📝</span> متابعة التحرير</button>
+                    <button onclick="openEditionsFromModal()"><span>📚</span> الطبعات (طبعة جديدة / مقارنة)</button>
                     <button onclick="openInputModal('title')"><span>✏️</span> تعديل عنوان الكتاب</button>
                     <button onclick="openInputModal('quote')"><span>💬</span> إضافة/تعديل الاقتباس</button>
                     <button onclick="openMultiCategoryModal()"><span>🏷️</span> إلحاق بتصنيف (أو أكثر)</button>
@@ -1845,7 +1847,8 @@ function saveData() {
                 if (cat) bookCats = [cat];
             }
 
-            const tagsHtml = (book.tags || []).slice(0, 4).map(t => `<span class="card-category-tag" style="background-color:rgba(127,127,127,.35)">#${royalEscapeHtml(t)}</span>`).join('');
+            const edHtml = (book.editionNumber && book.editionNumber > 1) ? `<span class="card-category-tag" style="background-color:#8e5bd6">📚 ${royalEscapeHtml(RoyalEditions.editionLabel(book.editionNumber))}</span>` : '';
+            const tagsHtml = edHtml + (book.tags || []).slice(0, 4).map(t => `<span class="card-category-tag" style="background-color:rgba(127,127,127,.35)">#${royalEscapeHtml(t)}</span>`).join('');
             const catsHtml = bookCats.map(c =>
                 `<span class="card-category-tag" style="background-color: ${royalEscapeAttr(c.color)}">${royalEscapeHtml(c.name)}</span>`
             ).join('') + tagsHtml;
@@ -2710,6 +2713,10 @@ function _pvObserve(side, total) {
     }
 
     // ربط أزرار النافذة الملكية بالدوال
+    function openEditionsFromModal() {
+        if (currentActionBookId) royalNavigate('editions.html?book=' + encodeURIComponent(currentActionBookId));
+    }
+
     function openEditorFromModal() {
         if(currentActionBookId) openBook(currentActionBookId);
     }

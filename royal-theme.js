@@ -72,7 +72,7 @@
   function kindOf(doc) {
     var p = (doc.location && doc.location.pathname || '').replace(/^.*\/Books-maker\//, '/');
     var f = p.split('/').pop() || 'index.html';
-    if (/^app(-[a-z]+)?\.html$/.test(f)) return 'app';
+    if (/^(app(-[a-z]+)?|editions)\.html$/.test(f)) return 'app';
     if (f === 'index.html' && !/\/s\/$/.test(p) && p.indexOf('/s/') < 0) return 'dark';
     if (f === 'editor.html') return 'dark';
     if (f === 'share.html' || (f === 'index.html' && p.indexOf('/s/') >= 0)) return 'reader';

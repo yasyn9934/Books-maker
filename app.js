@@ -29,7 +29,7 @@
   const SLOTS = {
     home:    { title: 'الرئيسية',            root: 'index.html' },
     editor:  { title: 'المحرر',              root: null },
-    shares:  { title: 'المشاركات',           root: 'app-shares.html' },
+    shares:  { title: 'فتح الروابط',          root: 'app-shares.html' },
     updates: { title: 'التحميل والتحديثات',  root: 'app-updates.html' },
     settings:{ title: 'الإعدادات',           root: 'app-settings.html' },
     notifications: { title: 'الإشعارات',     root: 'app-notifications.html' },

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>المشاركات</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>فتح الروابط</title>
 <script src="royal-theme.js"></script>
 <script src="app-bridge.js"></script>
 <style>
@@ -18,26 +18,48 @@ h2{font-size:17px;color:var(--green);margin:4px 0 10px}
 .item small{display:block;color:var(--muted);font-size:12px}.err{color:#e07a73;font-size:14px;margin-top:8px;min-height:18px}
 .empty{color:var(--muted);text-align:center;padding:14px}
 </style></head><body>
-<h1>🌍 المشاركات</h1>
-<p class="sub">افتح كتاباً شاركه أحدهم بلصق رابط المشاركة</p>
+<h1>🔗 فتح الروابط</h1>
+<p class="sub">الصق أي رابط من هذا الموقع (كتاب مشارَك، منشور، حساب، تعليقات…) ليُفتح في مكانه الصحيح</p>
 <div class="box">
-  <div class="row"><input id="lnk" placeholder="الصق رابط المشاركة هنا" autocomplete="off"><button id="go">فتح</button></div>
+  <div class="row"><input id="lnk" placeholder="الصق رابط الموقع هنا" autocomplete="off"><button id="go">فتح</button></div>
   <div class="err" id="err"></div>
 </div>
-<div class="box"><h2>🕘 فتحتَها مؤخراً</h2><div id="recent"></div></div>
+<div class="box"><h2>🕘 فُتح مؤخراً</h2><div id="recent"></div></div>
 <script>
+// كل روابط هذا الموقع (حصراً): مشاركات، منشورات، حسابات، تعليقات، الصفحة الرئيسية… تُوجَّه للتبويب المناسب
+function siteBases(){
+  const b=[];
+  try{const c=window.parent.ROYAL_APP_CONFIG;if(c&&c.SITE_BASE)b.push(new URL(c.SITE_BASE).href.replace(/\/?$/,'/'))}catch(e){}
+  b.push('https://yasyn9934.github.io/Books-maker/');
+  try{b.push(new URL('.',window.parent.location.href).href)}catch(e){}
+  b.push('https://appassets.androidplatform.net/site/');
+  return [...new Set(b)];
+}
 function parse(v){
-  v=(v||'').trim(); if(!v) return null;
-  try{ const u=new URL(v, location.href); const id=u.searchParams.get('id'), enc=u.searchParams.get('v');
-       if(enc) return 'index.html?v='+encodeURIComponent(enc);
-       if(id)  return 's/index.html?id='+encodeURIComponent(id); }catch(e){}
-  if(/^[\w-]{6,}$/.test(v)) return 's/index.html?id='+encodeURIComponent(v);
-  return null;
+  v=(v||'').trim(); if(!v) return {error:'الصق رابطاً أولاً.'};
+  let u=null; try{u=new URL(v)}catch(e){}
+  if(u){
+    for(const base of siteBases()){
+      if(u.href===base.replace(/\/$/,'')||u.href===base) return {rel:'index.html'};
+      if(u.href.startsWith(base)) return check(u.href.slice(base.length));
+    }
+    return {error:'هذا الرابط لا يتبع هذا الموقع. يمكن فتح روابط الموقع فقط.'};
+  }
+  if(/^[\w-]{6,}$/.test(v)) return {rel:'s/index.html?id='+encodeURIComponent(v)};      // معرّف مشاركة مجرّد
+  if(/^(s\/|[\w-]+\.html)/.test(v)) return check(v);                                      // مسار نسبي داخل الموقع
+  return {error:'لم أتعرّف على هذا الرابط. الصق رابطاً كاملاً من الموقع.'};
+}
+function check(rel){
+  const path=rel.split(/[?#]/)[0];
+  if(path==='editor.html') return {error:'لا يمكن فتح المحرر برابط؛ افتح الكتاب من الرئيسية.'};
+  if(path===''||path==='/') rel='index.html'+rel;
+  return {rel};
 }
 document.getElementById('go').onclick=()=>{
-  const t=parse(document.getElementById('lnk').value);
-  if(!t){document.getElementById('err').textContent='الرابط غير صالح، تأكد من نسخه كاملاً.';return}
-  royalNavigate(t);
+  const r=parse(document.getElementById('lnk').value);
+  if(r.error){document.getElementById('err').textContent=r.error;return}
+  document.getElementById('err').textContent='';
+  royalNavigate(r.rel);
 };
 document.getElementById('lnk').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('go').click()});
 let rec=[];try{rec=JSON.parse(localStorage.getItem('royal_app_recent_shares')||'[]')}catch(e){}

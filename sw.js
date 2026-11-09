@@ -1,6 +1,6 @@
 // sw.js — الإصدار v6
 
-const CACHE_NAME = 'royal-book-v13';
+const CACHE_NAME = 'royal-book-v14';
 
 const urlsToCache = [
   'index.html',
@@ -18,6 +18,9 @@ const urlsToCache = [
   'app-notifications.html',
   'app-files.js',
   'royal-find.js',
+  'royal-editions.js',
+  'editor-editions.js',
+  'editions.html',
   'royal-progress.js',
   'royal-export.js',
   'app-config.js',

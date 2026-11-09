@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>الطبعات</title>
+<script src="royal-theme.js"></script>
+<script src="app-bridge.js"></script>
+<script src="auth.js"></script>
+<script src="royal-editions.js"></script>
+<style>
+@font-face{font-family:'Amiri';src:url('fonts/Amiri-Regular.ttf')}
+@font-face{font-family:'Aref Ruqaa';src:url('fonts/ArefRuqaa-Bold.ttf');font-weight:700}
+:root{--gold:#c9a227;--green:#7fa855;--bg:#0d0c09;--text:#ede8d5;--card:#181510;--surf2:#21200f;--surf3:#2c291a;--gold-line:rgba(201,162,39,.3);--gold-dim:rgba(201,162,39,.16);--dim:#a89b7c;--muted:#6b5f48;--red:#d9534f;--purple:#8e5bd6}
+*{box-sizing:border-box;margin:0}body{background:var(--bg);color:var(--text);font-family:'Amiri',serif;padding:0 0 60px;min-height:100vh}
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--gold-line);padding:10px 14px;display:flex;align-items:center;gap:10px}
+.top h1{flex:1;font-family:'Aref Ruqaa',serif;color:var(--gold);font-size:22px}
+.pg-back{background:var(--surf2);border:1px solid var(--gold-line);color:var(--gold);border-radius:10px;padding:6px 12px;font:15px 'Amiri',serif;cursor:pointer}
+.in-app .pg-back{display:none}
+.wrap{padding:14px}
+.card{background:var(--card);border:1px solid var(--gold-line);border-radius:18px;padding:14px;margin-bottom:12px}
+.bk-title{font-size:21px;font-weight:700;color:var(--gold)}.bk-sub{color:var(--dim);margin-top:2px}
+.ed{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:var(--surf2);border:1px solid transparent;margin-bottom:8px}
+.ed.sel{border-color:var(--gold)}
+.ed .no{width:46px;height:46px;border-radius:50%;background:var(--gold-dim);border:2px solid var(--gold-line);display:grid;place-items:center;font:700 20px 'Amiri',serif;color:var(--gold);flex:none}
+.ed .meta{flex:1;min-width:0}.ed .nm{font-weight:700;font-size:17px}.ed .sm{color:var(--dim);font-size:13.5px;margin-top:2px}
+.badge{display:inline-block;padding:1px 9px;border-radius:10px;font-size:12px;background:rgba(142,91,214,.25);color:#c7a8f5;margin-right:6px}
+.ed input[type=checkbox]{width:22px;height:22px;accent-color:var(--gold)}
+.btn{padding:11px 14px;border-radius:12px;border:0;font:700 16px 'Amiri',serif;cursor:pointer;background:var(--gold);color:var(--rt-ink,#1a1405)}
+.btn.sec{background:var(--surf3);color:var(--text);border:1px solid var(--gold-line)}.btn.ai{background:linear-gradient(135deg,#8e5bd6,#5b6bd6);color:#fff}
+.btn.sm{padding:6px 11px;font-size:14px}.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>.btn{flex:1;min-width:130px}
+.fld{margin-bottom:11px}.fld label{display:block;color:var(--dim);font-size:14.5px;margin-bottom:5px}
+input[type=text],input[type=number],select,textarea{width:100%;background:var(--surf2);color:var(--text);border:1px solid var(--gold-line);border-radius:11px;padding:10px;font:16px 'Amiri',serif}
+textarea{min-height:90px;resize:vertical}
+.seg{display:flex;background:var(--surf2);border:1px solid var(--gold-line);border-radius:13px;padding:3px;gap:3px}
+.seg button{flex:1;padding:10px 6px;border:0;border-radius:10px;background:none;color:var(--dim);font:16px 'Amiri',serif;cursor:pointer}
+.seg button.on{background:var(--gold);color:var(--rt-ink,#1a1405);font-weight:700}
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);display:none;align-items:flex-end}
+.sheet.open{display:flex}
+.sheet .box{width:100%;max-height:92vh;overflow-y:auto;background:var(--bg);border-top:2px solid var(--gold);border-radius:20px 20px 0 0;padding:16px 14px 30px}
+.sheet h2{color:var(--gold);font-family:'Aref Ruqaa',serif;font-size:21px;margin-bottom:10px}
+.add{border:1px dashed var(--gold-line);border-radius:14px;padding:10px;margin-bottom:10px;background:var(--card)}
+.add .r2{display:flex;gap:6px;margin-top:6px}.add .r2>*{flex:1;min-width:0}
+.note{font-size:13.5px;color:var(--muted);line-height:1.7;margin-top:6px}.err{color:#f08a82;font-size:14.5px;margin-top:8px;min-height:18px}
+.pair h3{font-size:17px;color:var(--gold);margin-bottom:8px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.stat{background:var(--surf2);border-radius:12px;padding:8px;text-align:center}.stat b{display:block;font-size:20px}.stat span{font-size:12.5px;color:var(--dim)}
+.stat.add b{color:#7fb069}.stat.del b{color:#e07a73}.stat.chg b{color:#e0a030}
+.chap{border:1px solid var(--gold-line);border-radius:12px;margin-bottom:6px;overflow:hidden}
+.chap>summary{padding:9px 11px;cursor:pointer;display:flex;gap:8px;align-items:center;list-style:none}
+.chap>summary::-webkit-details-marker{display:none}
+.chip{font-size:12px;padding:1px 9px;border-radius:10px}
+.chip.added{background:rgba(127,176,105,.25);color:#9fd16f}.chip.removed{background:rgba(224,122,115,.25);color:#f08a82}
+.chip.changed{background:rgba(224,160,48,.25);color:#f0b94a}.chip.same{background:var(--surf3);color:var(--dim)}
+.dp{padding:8px 11px;border-top:1px dashed var(--gold-line);line-height:1.9;font-size:16px}
+ins{background:rgba(127,176,105,.3);text-decoration:none;border-radius:3px;padding:0 2px}del{background:rgba(224,122,115,.3);border-radius:3px;padding:0 2px}
+.dp.p{background:rgba(127,176,105,.1)}.dp.m{background:rgba(224,122,115,.1)}
+.toast{position:fixed;bottom:18px;left:12px;right:12px;z-index:99;background:#25220f;border:1px solid var(--gold);border-radius:14px;padding:11px 14px;display:none}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+</style></head><body>
+<div class="top"><button class="pg-back" onclick="if(history.length>1)history.back();else location.href='index.html'">→ المكتبة</button><h1>📚 الطبعات</h1></div>
+<div class="wrap">
+  <div class="card"><div class="bk-title" id="bkTitle">—</div><div class="bk-sub" id="bkSub"></div></div>
+  <div class="card"><div id="edList"></div>
+    <div class="row"><button class="btn" id="newBtn">➕ طبعة جديدة</button><button class="btn sec" id="cmpBtn">🔍 مقارنة المحدد</button><button class="btn ai" id="aiBtn">🤖 مشاركة للذكاء الاصطناعي</button></div>
+    <div class="note">حدّد طبعتين أو أكثر ثم «مقارنة المحدد». زر الذكاء الاصطناعي يرسل ملفاً واحداً فيه كل طبعات الكتاب مع طلب مقارنة مفصّل.</div>
+  </div>
+  <div id="cmpOut"></div>
+</div>
+
+<div class="sheet" id="sheet"><div class="box">
+  <h2>➕ طبعة جديدة</h2>
+  <div class="fld"><label>الاعتماد على الطبعة</label><select id="baseSel"></select></div>
+  <div class="row" style="gap:8px"><div class="fld" style="flex:1"><label>رقم الطبعة</label><input type="number" id="edNo" min="2"></div>
+    <div class="fld" style="flex:2"><label>عنوان الكتاب</label><input type="text" id="edTitle"></div></div>
+  <div class="fld"><label>اسم المؤلف</label><input type="text" id="edAuthor"></div>
+  <div class="fld"><label>طريقة الاعتماد</label>
+    <div class="seg" id="modeSeg"><button data-v="full" class="on">📄 اعتماد كلي (نسخ النص كاملاً)</button><button data-v="partial">🧩 اعتماد جزئي (كتاب فارغ وأنقل منه ما أشاء)</button></div></div>
+
+  <div id="fullPane">
+    <div class="card" style="margin-top:6px">
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><input type="checkbox" id="prefOn" checked style="width:20px;height:20px;accent-color:var(--gold)"> <b>مقدمة الطبعة <span id="prefNo"></span></b></label>
+      <textarea id="prefText" placeholder="اكتب مقدمة هذه الطبعة: ما الجديد، وما الذي تغيّر…"></textarea>
+      <div class="note">إضافة إلزامية: لا بدّ من مقدمة الطبعة أو من نص جديد بموضع محدد (أو الاثنين).</div>
+    </div>
+    <div style="margin-top:8px"><b>نصوص مضافة بمواضع محددة</b></div>
+    <div id="adds"></div>
+    <button class="btn sec sm" id="addBtn">+ إضافة نص جديد بموضع</button>
+  </div>
+
+  <div id="partialPane" hidden class="card">
+    <div class="note" style="margin:0">سيُنشأ كتاب فارغ يحمل بيانات الكتاب (العنوان والمؤلف… وتستطيع تغييرها). يُفتح في المحرر ومعه لوحة «📥 من الطبعة السابقة» تتيح البحث وأخذ كلمات أو عبارات أو فصول كاملة إلى موضع تحدده في الطبعة الجديدة. لا يُنقل إلا ما تحدده أنت، وفي المكان الذي تحدده.</div>
+  </div>
+
+  <div class="err" id="edErr"></div>
+  <div class="row" style="margin-top:10px"><button class="btn" id="createBtn">إنشاء الطبعة</button><button class="btn sec" id="cancelBtn">إلغاء</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id), E=window.RoyalEditions;
+  const qs=new URLSearchParams(location.search), bookId=qs.get('book');
+  const jget=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
+  let all=jget('royal_books_list',[]), book=all.find(b=>b.id===bookId), selected=new Set();
+  const toast=(m)=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',3500)};
+  const saveAll=()=>{try{localStorage.setItem('royal_books_list',JSON.stringify(all))}catch(e){toast('تعذّر الحفظ: مساحة التخزين ممتلئة')}};
+
+  // الكتاب الخفيف (بلا نص) يُجلب كاملاً قبل أي عمل
+  async function ensureFull(b){
+    if(typeof b.text==='string') return b;
+    if(!navigator.onLine||typeof currentUser==='undefined'||currentUser.role!=='member') throw new Error('محتوى «'+(b.title||'الكتاب')+'» غير محمَّل على هذا الجهاز. اتصل بالإنترنت وأعد المحاولة.');
+    const r=await fetch(AUTH_CONFIG.SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'fetch_book',userId:currentUser.id,token:currentUser.token,userName:currentUser.username,bookId:b.id})});
+    const d=await r.json(); if(!d.success||!d.book||typeof d.book.text!=='string') throw new Error('تعذّر جلب الكتاب من درايف.');
+    Object.assign(b,d.book); delete b._light; saveAll(); return b;
+  }
+  const eds=()=>E.editionsOf(book,all);
+  const fmt=n=>n.toLocaleString('ar');
+
+  function render(){
+    if(!book){ $('bkTitle').textContent='الكتاب غير موجود'; $('edList').innerHTML='<div class="empty">افتح هذه الصفحة من قائمة الكتب (زر «الطبعات» في نافذة الكتاب).</div>'; ['newBtn','cmpBtn','aiBtn'].forEach(i=>$(i).disabled=true); return; }
+    const list=eds(); $('bkTitle').textContent=list[list.length-1].title||'بدون عنوان'; $('bkSub').textContent=(list[0].author||'')+(list.length>1?' — '+list.length+' طبعات':' — طبعة واحدة');
+    const box=$('edList'); box.innerHTML='';
+    list.forEach(b=>{
+      const n=b.editionNumber||1, d=document.createElement('div'); d.className='ed'+(selected.has(b.id)?' sel':'');
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=selected.has(b.id); cb.onchange=()=>{cb.checked?selected.add(b.id):selected.delete(b.id);d.classList.toggle('sel',cb.checked)};
+      const no=document.createElement('div'); no.className='no'; no.textContent=n;
+      const m=document.createElement('div'); m.className='meta';
+      const nm=document.createElement('div'); nm.className='nm'; nm.textContent=E.editionLabel(n);
+      if(b.editionMode){const bd=document.createElement('span');bd.className='badge';bd.textContent=b.editionMode==='full'?'اعتماد كلي':'اعتماد جزئي';nm.appendChild(bd)}
+      const sm=document.createElement('div'); sm.className='sm';
+      const full=typeof b.text==='string'; sm.textContent=full?(fmt(E.words(b.text))+' كلمة · '+E.chapters(b.text).length+' فصلاً'):'غير محمَّل محلياً';
+      m.append(nm,sm);
+      const op=document.createElement('button'); op.className='btn sm'; op.textContent='فتح'; op.onclick=()=>openInEditor(b);
+      d.append(cb,no,m,op); box.appendChild(d);
+    });
+  }
+
+  // ───── فتح الطبعة في المحرر (بنفس تقسيم التخزين الذي يقرؤه editor.html) ─────
+  async function openInEditor(b){
+    try{ b=await ensureFull(b); }catch(e){ return toast(e.message); }
+    const light=Object.assign({},b), cover=light.cover||light.coverImg||''; delete light.cover; delete light.coverImg; delete light.cardImage; delete light._light;
+    const media={frameGeneral:null,framePages:{},chapterGeneral:null,chapterCustom:{}};
+    if(light.frames){const f=JSON.parse(JSON.stringify(light.frames));if(f.general&&f.general.imageData){media.frameGeneral=f.general.imageData;f.general.imageData=null;f.general.hasImage=true}
+      for(const p in f.pages||{})if(f.pages[p].imageData){media.framePages[p]=f.pages[p].imageData;f.pages[p].imageData=null;f.pages[p].hasImage=true}light.frames=f}
+    if(light.chapterFmt){const c=JSON.parse(JSON.stringify(light.chapterFmt));if(c.general&&c.general.frameImage){media.chapterGeneral=c.general.frameImage;c.general.frameImage=null;c.general.hasImage=true}
+      for(const k in c.chapters||{})if(c.chapters[k].frameImage){media.chapterCustom[k]=c.chapters[k].frameImage;c.chapters[k].frameImage=null;c.chapters[k].hasImage=true}light.chapterFmt=c}
+    try{
+      localStorage.removeItem('bookData_cover');localStorage.removeItem('bookData_frameMedia');
+      localStorage.setItem('bookData',JSON.stringify(light));localStorage.setItem('bookData_cover',JSON.stringify({cover}));localStorage.setItem('bookData_frameMedia',JSON.stringify(media));
+    }catch(e){ return toast('تعذّر فتح الطبعة: مساحة التخزين ممتلئة'); }
+    royalNavigate('editor.html');
+  }
+
+  // ───── طبعة جديدة ─────
+  let mode='full', adds=[];
+  function baseBook(){ return all.find(b=>b.id===$('baseSel').value)||book; }
+  function openSheet(){
+    const list=eds(); $('baseSel').innerHTML=''; list.slice().reverse().forEach(b=>{const o=document.createElement('option');o.value=b.id;o.textContent=E.editionLabel(b.editionNumber||1)+' — '+(b.title||'');$('baseSel').appendChild(o)});
+    const base=list[list.length-1]; const n=E.nextNumber(base,all);
+    $('edNo').value=n; $('edTitle').value=base.title||''; $('edAuthor').value=base.author||''; $('prefNo').textContent='('+E.editionLabel(n)+')';
+    $('prefText').value='هذه هي '+E.editionLabel(n)+' من الكتاب، وقد تمّ فيها: '; $('prefOn').checked=true; adds=[]; $('adds').innerHTML=''; $('edErr').textContent='';
+    setMode('full'); $('sheet').classList.add('open');
+  }
+  function setMode(m){ mode=m; document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===m)); $('fullPane').hidden=m!=='full'; $('partialPane').hidden=m!=='partial'; }
+  $('modeSeg').onclick=e=>{const b=e.target.closest('button'); if(b) setMode(b.dataset.v)};
+  $('edNo').oninput=()=>{ $('prefNo').textContent='('+E.editionLabel(Number($('edNo').value)||2)+')' };
+  $('baseSel').onchange=()=>{ const b=baseBook(); $('edTitle').value=b.title||''; $('edAuthor').value=b.author||''; refreshTargets(); };
+
+  async function targetsFor(type){
+    const b=await ensureFull(baseBook());
+    if(type==='chapter') return E.chapters(b.text).map((h,i)=>({v:i,t:h.title||('فصل '+(i+1))}));
+    if(type==='sub') return E.subChapters(b.text).map((h,i)=>({v:i,t:h.title||('فصل جانبي '+(i+1))}));
+    return [];
+  }
+  function addRow(){
+    const row=document.createElement('div'); row.className='add';
+    row.innerHTML='<textarea placeholder="النص الجديد الذي سيُضاف…"></textarea><div class="r2"><select class="type"><option value="chapter">فصل</option><option value="sub">فصل جانبي</option><option value="page">صفحة</option><option value="phrase">عبارة محددة</option></select><span class="tgtWrap" style="flex:2"></span><select class="pos"><option value="before">قبل</option><option value="after">بعد</option></select></div><button class="btn sec sm" style="margin-top:6px">🗑️ حذف</button>';
+    $('adds').appendChild(row);
+    const type=row.querySelector('.type'), wrap=row.querySelector('.tgtWrap');
+    async function fill(){
+      wrap.innerHTML=''; const t=type.value;
+      if(t==='phrase'){ const i=document.createElement('input'); i.type='text'; i.placeholder='اكتب العبارة كما في النص'; i.className='tgt'; wrap.appendChild(i); }
+      else if(t==='page'){ const i=document.createElement('input'); i.type='number'; i.min=1; i.placeholder='رقم الصفحة'; i.className='tgt'; wrap.appendChild(i); const pm=(baseBook().pageMap||[]).length; if(!pm){const n=document.createElement('div');n.className='note';n.textContent='ترقيم الصفحات غير محسوب لهذا الكتاب: افتحه في المحرر مرة ليُحسب.';wrap.appendChild(n)} else { i.max=pm; i.placeholder='رقم الصفحة (1 – '+pm+')'; } }
+      else { const s=document.createElement('select'); s.className='tgt'; wrap.appendChild(s); try{ const T=await targetsFor(t); T.forEach(x=>{const o=document.createElement('option');o.value=x.v;o.textContent=x.t;s.appendChild(o)}); if(!T.length){const o=document.createElement('option');o.textContent='لا يوجد في هذه الطبعة';o.value='';s.appendChild(o)} }catch(e){ s.innerHTML='<option>'+e.message+'</option>' } }
+    }
+    type.onchange=fill; fill();
+    row.querySelector('button').onclick=()=>row.remove();
+  }
+  function refreshTargets(){ document.querySelectorAll('#adds .add .type').forEach(t=>t.onchange&&t.onchange()); }
+  $('addBtn').onclick=addRow;
+  $('newBtn').onclick=openSheet; $('cancelBtn').onclick=()=>$('sheet').classList.remove('open');
+
+  $('createBtn').onclick=async()=>{
+    $('edErr').textContent=''; const btn=$('createBtn'); btn.disabled=true;
+    try{
+      const base=await ensureFull(baseBook()), n=Number($('edNo').value)||E.nextNumber(base,all);
+      if(all.some(b=>E.groupOf(b)===E.groupOf(base)&&(b.editionNumber||1)===n)) throw new Error('توجد طبعة بالرقم '+n+' مسبقاً. اختر رقماً آخر.');
+      const opts={mode,number:n,title:$('edTitle').value.trim()||base.title,author:$('edAuthor').value.trim()};
+      if(mode==='full'){
+        opts.preface=$('prefOn').checked?$('prefText').value:'';
+        opts.additions=[...document.querySelectorAll('#adds .add')].map(r=>{
+          const type=r.querySelector('.type').value, tg=r.querySelector('.tgt'), a={type}; const v=tg?tg.value:'';
+          if(type==='phrase') a.value=v; else a.index=type==='page'?Number(v):Number(v);
+          if((type==='chapter'||type==='sub')&&v==='') throw new Error('اختر العنصر الذي تُضاف قبله/بعده');
+          if(type==='page'&&!(Number(v)>=1)) throw new Error('اكتب رقم الصفحة');
+          return {text:r.querySelector('textarea').value,anchor:a,pos:r.querySelector('.pos').value};
+        });
+        if(opts.additions.some(a=>!a.text.trim())) throw new Error('هناك نص مضاف فارغ: اكتبه أو احذف الصف.');
+      }
+      const ed=E.createEdition(base,all,opts);
+      all.push(ed); saveAll(); $('sheet').classList.remove('open'); render();
+      toast('تم إنشاء '+E.editionLabel(n)); await openInEditor(ed);
+    }catch(e){ $('edErr').textContent=e.message||String(e); }
+    btn.disabled=false;
+  };
+
+  // ───── المقارنة ─────
+  $('cmpBtn').onclick=async()=>{
+    const list=eds().filter(b=>selected.has(b.id)); if(list.length<2) return toast('حدّد طبعتين على الأقل للمقارنة');
+    const out=$('cmpOut'); out.innerHTML='<div class="empty">⏳ جارٍ المقارنة…</div>';
+    try{ for(const b of list) await ensureFull(b); }catch(e){ out.innerHTML=''; return toast(e.message); }
+    await new Promise(r=>setTimeout(r,30)); out.innerHTML='';
+    for(let i=0;i+1<list.length;i++){
+      const a=list[i], b=list[i+1], r=E.compare(a,b), s=r.stats;
+      const card=document.createElement('div'); card.className='card pair';
+      const h=document.createElement('h3'); h.textContent=E.editionLabel(a.editionNumber||1)+'  ←  '+E.editionLabel(b.editionNumber||1); card.appendChild(h);
+      const st=document.createElement('div'); st.className='stats';
+      [['فصول مضافة',s.chaptersAdded,'add'],['فصول محذوفة',s.chaptersRemoved,'del'],['فصول معدَّلة',s.chaptersChanged,'chg'],['كلمات مضافة',s.wordsAdded,'add'],['كلمات محذوفة',s.wordsRemoved,'del'],['فصول كما هي',s.chaptersSame,'']].forEach(x=>{
+        const d=document.createElement('div'); d.className='stat '+x[2]; d.innerHTML='<b></b><span></span>'; d.firstChild.textContent=fmt(x[1]); d.lastChild.textContent=x[0]; st.appendChild(d); });
+      card.appendChild(st);
+      const sum=document.createElement('div'); sum.className='note'; sum.textContent='عدد الكلمات: '+fmt(s.wordsA)+' ← '+fmt(s.wordsB)+' ('+(s.wordsB-s.wordsA>=0?'+':'')+fmt(s.wordsB-s.wordsA)+')'; card.appendChild(sum);
+      const LBL={added:'مضاف',removed:'محذوف',changed:'معدَّل',same:'كما هو'};
+      r.chapters.forEach(c=>{
+        const det=document.createElement('details'); det.className='chap';
+        const sm=document.createElement('summary'); const ch=document.createElement('span'); ch.className='chip '+c.status; ch.textContent=LBL[c.status]; const t=document.createElement('span'); t.textContent=c.title; sm.append(ch,t); det.appendChild(sm);
+        if(c.status==='changed') c.paras.forEach(p=>{
+          const d=document.createElement('div'); d.className='dp'+(p.t==='+'?' p':p.t==='-'?' m':'');
+          if(p.t==='~') p.diff.forEach(w=>{ const el=w.t==='+'?document.createElement('ins'):w.t==='-'?document.createElement('del'):document.createElement('span'); el.textContent=w.w+' '; d.appendChild(el); });
+          else { const el=p.t==='+'?document.createElement('ins'):document.createElement('del'); el.textContent=E.plain(p.text); d.appendChild(el); }
+          det.appendChild(d); });
+        else if(c.status!=='same'){ const d=document.createElement('div'); d.className='dp '+(c.status==='added'?'p':'m'); d.textContent=E.plain(c.status==='added'?c.b:c.a).slice(0,1500)+((c.b||c.a||'').length>1500?' …':''); det.appendChild(d); }
+        card.appendChild(det);
+      });
+      out.appendChild(card);
+    }
+    out.scrollIntoView({behavior:'smooth'});
+  };
+
+  // ───── مشاركة للذكاء الاصطناعي ─────
+  $('aiBtn').onclick=async()=>{
+    const list=eds(); if(list.length<2) return toast('تحتاج طبعتين على الأقل لمقارنتهما.');
+    const btn=$('aiBtn'); btn.disabled=true;
+    try{
+      for(const b of list) await ensureFull(b);
+      const pk=E.aiPackage(list,{title:list[list.length-1].title});
+      const file=new File([pk.content],pk.filename,{type:'text/markdown'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],text:pk.prompt,title:pk.filename}); }
+      else if(window.RoyalNative&&window.RoyalNative.shareFile){
+        const bytes=new TextEncoder().encode(pk.content); let bin=''; bytes.forEach(x=>bin+=String.fromCharCode(x));
+        window.RoyalNative.shareFile(pk.filename,'text/markdown',btoa(bin),pk.prompt);
+      } else {
+        const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=pk.filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
+        try{ await navigator.clipboard.writeText(pk.prompt); toast('نُزِّل الملف ونُسخ طلب المقارنة: أرفق الملف والصق الطلب في الذكاء الاصطناعي.'); }catch(e){ toast('نُزِّل الملف. الطلب: '+pk.prompt.slice(0,80)+'…'); }
+      }
+    }catch(e){ if(e&&e.name!=='AbortError') toast(e.message||'تعذّرت المشاركة'); }
+    btn.disabled=false;
+  };
+
+  render();
+})();
+</script></body></html>

@@ -6,6 +6,7 @@
     <title>محرك الكتب الملكي - الإصدار الماسي المعتمد</title>
     <script src="royal-find.js"></script>
 <script src="royal-export.js"></script>
+<script src="royal-editions.js"></script>
 <script src="royal-theme.js"></script>
 <script src="app-bridge.js"></script>
 <script src="auth.js"></script>
@@ -989,6 +990,8 @@
         <div class="stat-chip"><span class="stat-lbl">عناوين</span><span class="stat-val" id="stat-headers">0</span></div>
         <div class="stat-chip" id="goalChipWrap" title="كلمات اليوم / الهدف"><span class="stat-val" id="goal-chip" style="font-size:9.5pt">🎯 0</span></div>
         <button class="stat-chip" id="findBtn" title="بحث واستبدال في الكتاب" style="cursor:pointer;background:none;color:inherit" onclick="RoyalFind.open({root:'#book-container',textarea:document.getElementById('mainText')})">🔍</button>
+        <span class="stat-chip" id="edChip" style="display:none;background:rgba(142,91,214,.25)"></span>
+        <button class="stat-chip" id="editionBtn" title="نقل من الطبعة السابقة" style="display:none;cursor:pointer;background:none;color:inherit" onclick="event.stopPropagation();RoyalEditionPicker.open()">📥</button>
         <button class="stat-chip" id="exportBtn" title="تصدير الكتاب" style="cursor:pointer;background:none;color:inherit" onclick="event.stopPropagation();RoyalExport.menu(getCurrentBookObject())">⬇️</button>
         <div class="stat-chip" id="saveChip" title="حالة الحفظ"><span class="stat-lbl">الحفظ</span><span class="stat-val" id="save-status" style="font-size:9.5pt">—</span></div>
     </div>
@@ -2590,6 +2593,7 @@
         // JSON.parse لمكتبتك الكاملة (بنصوص كل كتبك) مع كل ضغطة حرف. نستخدم القيمة
         // المحفوظة مسبقاً في _cachedBookCategory بدلاً من ذلك.
         return {
+            ...(window._preservedMeta || {}),               // حقول الطبعة (المجموعة، الرقم، السابقة…) لا تضيع بالحفظ التلقائي
             id:            currentBookId || 'book_' + Date.now(),
             title:         document.getElementById('cTitle').value,
             author:        document.getElementById('cAuthor').value,
@@ -2608,6 +2612,7 @@
             pageNumbering: pageNumbering,
             selectedTheme: activeTheme,   // [FIX] كان مفقوداً
             category:      _cachedBookCategory,
+            pageMap:       window._pageMap || (window._preservedMeta && window._preservedMeta.pageMap) || [],
             updatedAt:     Date.now()
         };
     }
@@ -2874,7 +2879,7 @@
             document.getElementById('mainText').value   = "";
             document.getElementById('focusText').value  = "";
             document.getElementById('cTitle').value     = "";
-            document.getElementById('cAuthor').value    = ""; document.getElementById('cTags').value = "";
+            document.getElementById('cAuthor').value    = ""; document.getElementById('cTags').value = ""; window._captureEditionMeta && window._captureEditionMeta({});
             document.getElementById('cDate').value      = "";
             document.getElementById('cCoverImg').value  = "";
             document.getElementById('cHideTitleCover').checked  = false;
@@ -2931,7 +2936,7 @@
         document.getElementById('mainText').value  = s.t || s.text || "";
         document.getElementById('focusText').value = s.t || s.text || "";
         document.getElementById('cTitle').value    = s.title  || "";
-        document.getElementById('cAuthor').value   = s.author || ""; document.getElementById('cTags').value = (s.tags || []).join('، ');
+        document.getElementById('cAuthor').value   = s.author || ""; document.getElementById('cTags').value = (s.tags || []).join('، '); window._captureEditionMeta && window._captureEditionMeta(s);
         document.getElementById('cDate').value     = s.date   || "";
         document.getElementById('cCoverImg').value = s.cover  || "";
         _writeCoverIfChanged(s.cover || ""); // [FIX] غلاف مستورد جديد — يُحفظ فوراً في مفتاحه الخاص
@@ -3990,7 +3995,7 @@
                 document.getElementById('mainText').value  = s.text || s.t || "";
                 document.getElementById('focusText').value = s.text || s.t || "";
                 document.getElementById('cTitle').value    = s.title  || "";
-                document.getElementById('cAuthor').value   = s.author || ""; document.getElementById('cTags').value = (s.tags || []).join('، ');
+                document.getElementById('cAuthor').value   = s.author || ""; document.getElementById('cTags').value = (s.tags || []).join('، '); window._captureEditionMeta && window._captureEditionMeta(s);
                 document.getElementById('cDate').value     = s.date   || "";
                 document.getElementById('cCoverImg').value = s.cover  || s.coverImg || "";
                 document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;
@@ -4078,7 +4083,7 @@
         document.getElementById('mainText').value  = s.text  || '';
         document.getElementById('focusText').value = s.text  || '';
         document.getElementById('cTitle').value    = s.title  || '';
-        document.getElementById('cAuthor').value   = s.author || ''; document.getElementById('cTags').value = (s.tags || []).join('، ');
+        document.getElementById('cAuthor').value   = s.author || ''; document.getElementById('cTags').value = (s.tags || []).join('، '); window._captureEditionMeta && window._captureEditionMeta(s);
         document.getElementById('cDate').value     = s.date   || '';
         document.getElementById('cCoverImg').value = s.cover  || '';
         document.getElementById('cHideTitleCover').checked  = !!s.hideTitleOnCover;
@@ -4880,5 +4885,6 @@ function qhStripHTML(s = '') {
   });
 })();
 </script>
+<script src="editor-editions.js"></script>
 </body>
 </html>
